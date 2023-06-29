@@ -9,7 +9,6 @@ class GaussianProcess:
         self.x_train = None
         self.y_train = None
         self.alpha = None
-        self.K_star = None
 
     def kernel(self, x1, x2):
         """
@@ -67,21 +66,19 @@ class GaussianProcess:
         L = cholesky(K, lower=True)
         self.alpha = cho_solve((L, True), y_train)
 
+    @profile
     def predict(self, x_pred):
         """
         予測
         """
-        if self.K_star is None:
-            
-            n_train = len(self.x_train)
-            n_pred = len(x_pred)
-            
-            
-            self.K_star = np.zeros((n_pred, n_train))
-            for i in range(n_pred):
-                for j in range(n_train):
-                    self.K_star[i, j] = self.kernel(x_pred[i], self.x_train[j])
+        n_train = len(self.x_train)
+        n_pred = len(x_pred)
+                
+        K_star = np.zeros((n_pred, n_train))
+        for i in range(n_pred):
+            for j in range(n_train):
+                K_star[i, j] = self.kernel(x_pred[i], self.x_train[j])
 
-        mean = np.dot(self.K_star, self.alpha)
+        mean = np.dot(K_star, self.alpha)
 
         return mean

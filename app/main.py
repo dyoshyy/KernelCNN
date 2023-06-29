@@ -4,9 +4,10 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 import numpy as np
-#import layer_classes_test as layers
 
 import layers
+#import layers_originalGP as layers
+
 from functions import binarize_images
 from functions import display_images
 
@@ -45,9 +46,9 @@ if __name__ == '__main__':
 
     #モデル定義
     model = layers.Model(display=True)
-    model.add_layer(layers.KIMLayer(block_size=3, channels_next = 6, stride = 1, num_samples=100))
+    model.add_layer(layers.KIMLayer(block_size=3, channels_next = 20, stride = 2, num_samples=100))
     model.add_layer(layers.MaxPoolingLayer(pool_size=2))
-    model.add_layer(layers.KIMLayer(block_size=3, channels_next = 16, stride = 1, num_samples=100))
+    model.add_layer(layers.KIMLayer(block_size=3, channels_next = 50, stride = 1, num_samples=100))
     model.add_layer(layers.MaxPoolingLayer(pool_size=2))
 
     start1 = time.time()

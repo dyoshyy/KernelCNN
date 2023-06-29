@@ -22,6 +22,4 @@ RUN pip install tensorflow
 RUN pip install scikit-learn
 RUN pip install opencv-python
 RUN pip install matplotlib
-
-
-RUN python -m pip install jupyterlab
+RUN pip install line_profiler

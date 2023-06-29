@@ -3,7 +3,7 @@ services:
   python3:
     restart: always
     build: .
-    container_name: 'prml'
+    container_name: 'exp'
     working_dir: '/root/'
     tty: true
     volumes:

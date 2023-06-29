@@ -177,7 +177,7 @@ class KernelLearningLayer:
         X = X.reshape(X.shape[0], input_dim)
         Y_predicted, _ = self.GP.predict(X)
         Y_predicted = np.array(Y_predicted)
-
+        print(Y_predicted)
         output = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
         return output
 

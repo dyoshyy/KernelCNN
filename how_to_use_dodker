@@ -1,0 +1,11 @@
+create a container
+
+    $ docker run --name {container_name} -it {image_name} bash
+
+start a container
+
+    $ docker start {container ID or name}
+
+execute a container
+
+    $ docker attach {container ID or name}
