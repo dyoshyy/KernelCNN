@@ -1,6 +1,10 @@
+create a image 
+
+    $ docker compose up -d
+
 create a container
 
-    $ docker run --name {container_name} -it {image_name} bash
+    $ docker run --volume ./app:/root/app --name {container_name} -it {image_name} bash
 
 start a container
 
@@ -9,3 +13,8 @@ start a container
 execute a container
 
     $ docker attach {container ID or name}
+
+#########################################
+
+    $ docker compose up -d --build
+    $ docker exec -it exp bash

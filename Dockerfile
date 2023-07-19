@@ -10,7 +10,9 @@ ENV LC_ALL ja_JP.UTF-8
 ENV TZ JST-9
 ENV TERM xterm
 
-RUN apt install -y libopencv-dev
+#RUN apt install -y libopencv-dev
+RUN apt-get update && apt-get upgrade -y
+RUN apt-get install -y libgl1-mesa-dev
 RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
 RUN apt-get install -y vim less

@@ -10,12 +10,24 @@ class GaussianProcess:
         self.y_train = None
         self.alpha = None
 
+    '''
     def kernel(self, x1, x2):
         """
         ガウシアンカーネル関数の計算
         """
         diff = x1 - x2
         sq_dist = np.dot(diff.T, diff)
+        return np.exp(-0.5 * sq_dist / self.length_scale**2)
+    '''
+    
+    def kernel(self, x1, x2):
+        """
+        ガウシアンカーネル関数の計算
+        """
+        diff = x1 - x2
+        if diff.ndim == 3:  # 3次元の場合は転置
+            diff = diff.transpose((0, 2, 1))
+        sq_dist = np.sum(diff**2, axis=-1)
         return np.exp(-0.5 * sq_dist / self.length_scale**2)
 
     def _negative_log_likelihood(self, params):
@@ -66,7 +78,6 @@ class GaussianProcess:
         L = cholesky(K, lower=True)
         self.alpha = cho_solve((L, True), y_train)
 
-    @profile
     def predict(self, x_pred):
         """
         予測
@@ -75,10 +86,13 @@ class GaussianProcess:
         n_pred = len(x_pred)
                 
         K_star = np.zeros((n_pred, n_train))
+        
+        '''
         for i in range(n_pred):
             for j in range(n_train):
                 K_star[i, j] = self.kernel(x_pred[i], self.x_train[j])
-
-        mean = np.dot(K_star, self.alpha)
+        '''
+        K_star = self.kernel(x_pred[:, None, :], self.x_train[None, :, :])
+        mean = np.dot(K_star.T, self.alpha)
 
         return mean
