@@ -1,0 +1,11 @@
+#1
+GPLVM_model = embedding.GPLVM(θ1=1.0, θ2=0.03, θ3=0.01)
+embedded_blocks = GPLVM_model.fit(sampled_blocks,latent_dim=self.C_next, epoch=100, eta=0.0001)
+
+#2
+GPLVM_model = embedding.GPLVM(θ1=1.0, θ2=0.03, θ3=0.05)
+embedded_blocks = GPLVM_model.fit(sampled_blocks,latent_dim=self.C_next, epoch=200, eta=0.001)
+
+#3
+GPLVM_model = embedding.GPLVM(θ1=1.5, θ2=0.03, θ3=0.05)
+embedded_blocks = GPLVM_model.fit(sampled_blocks,latent_dim=self.C_next, epoch=50, eta=0.001)

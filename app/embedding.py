@@ -17,11 +17,15 @@ from scipy.linalg import eigh
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import math
+import random
+from tqdm import tqdm
+
+np.set_printoptions(threshold=np.inf)
 
 np.random.seed(2)
 
 
-def create_3d_data(num_classes=5,num_samples_per_class=50):
+def create_3d_data(num_classes=5, num_samples_per_class=50):
     # データのクラス数と特徴量の次元数
     num_features = 3
 
@@ -43,10 +47,11 @@ def create_3d_data(num_classes=5,num_samples_per_class=50):
     return data, labels
 
 
-def visualize_data(data_3d, labels_3d, compressed_data, filename='compressed_data_visualization.png'):
+def visualize_data(labels_3d, compressed_data, filename='compressed_data_visualization.png'):
 
     # 圧縮前の散布図
-    fig = plt.figure(figsize=(12, 6))
+    fig = plt.figure(figsize=(6, 6))
+    '''
     ax1 = fig.add_subplot(121, projection='3d')
     ax1.scatter(data_3d[:, 0], data_3d[:, 1],
                 data_3d[:, 2], c=labels_3d, marker='o', s=50)
@@ -54,9 +59,9 @@ def visualize_data(data_3d, labels_3d, compressed_data, filename='compressed_dat
     ax1.set_ylabel('Feature 2')
     ax1.set_zlabel('Feature 3')
     ax1.set_title('Original Data')
-
+    '''
     # 圧縮後の散布図
-    ax2 = fig.add_subplot(122)
+    ax2 = fig.add_subplot(111)
     ax2.scatter(
         compressed_data[:, 0], compressed_data[:, 1], c=labels_3d, marker='o', s=50)
     ax2.set_xlabel('Component 1')
@@ -135,16 +140,29 @@ class LaplacianEigenmap:
         return the ndarray containing bool value represents whether the value is in k nearest neighbor of x_i
         e.g. ndarray [True False True]
         """
+        # print("X", X)
         dist_list = [self.dist(x_i, x_j) for x_j in X]
+        # print("dist_list", dist_list)
         sorted_list = sorted(dist_list)  # 昇順
+        #print("sorted_list", sorted_list)
         threshold = sorted_list[self.k - 1]
         dist_list = np.array(dist_list)
         knn_list = dist_list <= threshold
+        # 距離が同じ点の集合を作成
+        same_dist_indices = [i for i, dist in enumerate(dist_list) if dist == threshold]
+        
+        # もし同じ距離の点がself.kよりも多い場合はランダムサンプリング
+        if sum(knn_list) > self.k:
+            knn_list[same_dist_indices] = False
+            random_indices = random.sample(same_dist_indices, self.k-sum(knn_list))
+            knn_list[random_indices] = True
+
         assert sum(knn_list) == self.k, knn_list
         return knn_list
 
     def dist(self, x_i, x_j):
-        return np.dot(x_i - x_j, x_i - x_j)
+        return np.dot(x_i-x_j, x_i-x_j)
+
 
 class GPLVM(object):
     def __init__(self, θ1, θ2, θ3):
@@ -157,35 +175,93 @@ class GPLVM(object):
         T = epoch
         N, D = X.shape
         L = latent_dim
-        Z = np.random.randn(N, L) /100
+        Z = np.random.randn(N, L) / 100
 
         history = {}
         history['Z'] = np.zeros((T, N, L))
         history['f'] = np.zeros((T, resolution, resolution, D))
-           
-        for t in range(T):
-            K = self.θ1 * self.kernel(Z, Z, self.θ2) +  self.θ3 * np.eye(N)
+
+        for t in tqdm(range(T)):
+            K = self.θ1 * self.kernel(Z, Z, self.θ2) + self.θ3 * np.eye(N)
             inv_K = np.linalg.inv(K)
             dLdK = 0.5 * (inv_K @ (X @ X.T) @ inv_K - D * inv_K)
-            dKdX = -2.0*(((Z[:,None,:]-Z[None,:,:])*K[:,:,None]))/self.θ2
-            dLdX = np.sum(dLdK[:, :, None] *  dKdX, axis=1)
+            dKdX = -2.0*(((Z[:, None, :]-Z[None, :, :])*K[:, :, None]))/self.θ2
+            dLdX = np.sum(dLdK[:, :, None] * dKdX, axis=1)
 
             Z = Z + eta * dLdX
             history['Z'][t] = Z
 
-            z_new_x = np.linspace(min(Z[:,0]),max(Z[:,0]), resolution)
-            z_new_y = np.linspace(min(Z[:,1]),max(Z[:,1]), resolution)
+            '''
+            z_new_x = np.linspace(min(Z[:, 0]), max(Z[:, 0]), resolution)
+            z_new_y = np.linspace(min(Z[:, 1]), max(Z[:, 1]), resolution)
             z_new = np.dstack(np.meshgrid(z_new_x, z_new_y)).reshape(resolution**2, L)
-            k_star = self.θ1 * self.kernel(z_new, Z, self.θ2) 
+            k_star = self.θ1 * self.kernel(z_new, Z, self.θ2)
             F = (k_star @ inv_K @ X).reshape(resolution, resolution, D)
             history['f'][t] = F
+            '''
         return history['Z'][-1]
-    
-    def kernel(self,X1, X2, θ2):
-        Dist = np.sum(((X1[: , None, :] - X2[None, :, :])**2), axis=2)
-        K = np.exp((-0.5/θ2) * Dist) 
+
+    def kernel(self, X1, X2, θ2):
+        Dist = np.sum(((X1[:, None, :] - X2[None, :, :])**2), axis=2)
+        K = np.exp((-0.5/θ2) * Dist)
         return K
-    
+
+class GPLVM2(object):
+    def __init__(self,Y,LatentDim,HyperParam,X=None):
+        self.Y = Y
+        self.hyperparam = HyperParam
+        self.dataNum = self.Y.shape[0]
+        self.dataDim = self.Y.shape[1]
+
+        self.latentDim = LatentDim
+        if X is not None:
+            self.X = X
+        else:
+            self.X = 0.1*np.random.randn(self.dataNum,self.latentDim)
+        self.S = Y @ Y.T
+        self.history = {}
+
+    def fit(self,epoch=100,epsilonX=0.5,epsilonSigma=0.0025,epsilonAlpha=0.00005):
+
+        self.history['X'] = np.zeros((epoch, self.dataNum, self.latentDim))
+        sigma = np.log(self.hyperparam[0])
+        alpha = np.log(self.hyperparam[1])
+        for i in tqdm(range(epoch)):
+
+            # 潜在変数の更新
+            K = self.kernel(self.X,self.X,self.hyperparam[0]) + self.hyperparam[1]*np.eye(self.dataNum)
+            Kinv = np.linalg.inv(K)
+            G = 0.5*(Kinv @ self.S @ Kinv-self.dataDim*Kinv)
+            dKdX = -2.0*(((self.X[:,None,:]-self.X[None,:,:])*K[:,:,None]))/self.hyperparam[0]
+            # dFdX = (G[:,:,None] * dKdX).sum(axis=1)-self.X
+            dFdX = (G[:,:,None] * dKdX).sum(axis=1)
+
+            # ハイパーパラメータの更新
+            Dist = ((self.X[:, None, :] - self.X[None, :, :]) ** 2).sum(axis=2)
+            dKdSigma = 0.5*Dist/self.hyperparam[0] * ( K- self.hyperparam[1]*np.eye(self.dataNum) )
+            dFdSigma = np.trace(G @ dKdSigma)
+
+            dKdAlpha = self.hyperparam[1]*np.eye(self.dataNum)
+            dFdAlpha = np.trace(G @ dKdAlpha)
+
+            self.X = self.X + epsilonX * dFdX
+            self.history['X'][i] = self.X
+            sigma = sigma + epsilonSigma * dFdSigma
+            self.hyperparam[0] = np.exp(sigma)
+            alpha = alpha + epsilonAlpha * dFdAlpha
+            self.hyperparam[1] = np.exp(alpha)
+
+            #K = self.kernel(self.X,self.X,self.hyperparam[0]) + self.hyperparam[1]*np.eye(self.dataNum)
+            #Kinv = np.linalg.inv(K)
+
+        return self.history['X'][-1]
+
+    def kernel(self,X1, X2, length):
+        Dist = (((X1[:, None, :] - X2[None, :, :]) ** 2) / length).sum(axis=2)
+        K = np.exp(-0.5 * Dist)
+        return K
+
+
 class LPP:
     """Locality Preserving Projection."""
 
@@ -230,25 +306,27 @@ class LPP:
             W.append(K_i)
         return np.array(W)
 
-# 3次元データの作成
-X, label = create_3d_data(num_classes=7, num_samples_per_class=50)
 
-# PCA
-reduced_data = pca(X, 2)
-visualize_data(X, label, reduced_data, "PCA.png")
+if __name__ == '__main__':
+    # 3次元データの作成
+    X, label = create_3d_data(num_classes=7, num_samples_per_class=50)
+    print("X shape:", np.shape(X))
 
-# LE
-LE = LaplacianEigenmap(2, 60)
-reduced_data = LE.transform(X)
-visualize_data(X, label, reduced_data, "LE.png")
+    # PCA
+    reduced_data = pca(X, 2)
+    visualize_data(X, label, reduced_data, "PCA.png")
 
-# GPLVM
-GPLVM_model = GPLVM(θ1=1.0, θ2=0.03, θ3=0.05)
-reduced_data = GPLVM_model.fit(X,latent_dim=2, epoch=100, eta=0.0001)
-visualize_data(X, label, reduced_data, "GPLVM.png")
+    # LE
+    LE = LaplacianEigenmap(2, 60)
+    reduced_data = LE.transform(X)
+    visualize_data(X, label, reduced_data, "LE.png")
 
-# LPP
-LPP_model = LPP(n_components=2,h=0.01)
-reduced_data = LPP_model.transform(X)
-visualize_data(X, label, reduced_data, "LPP.png")
+    # GPLVM
+    GPLVM_model = GPLVM(θ1=1.0, θ2=0.03, θ3=0.05)
+    reduced_data = GPLVM_model.fit(X, latent_dim=2, epoch=100, eta=0.0001)
+    visualize_data(X, label, reduced_data, "GPLVM.png")
 
+    # LPP
+    LPP_model = LPP(n_components=2, h=0.01)
+    reduced_data = LPP_model.transform(X)
+    visualize_data(X, label, reduced_data, "LPP.png")

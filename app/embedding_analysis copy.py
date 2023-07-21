@@ -10,46 +10,29 @@ import embedding
 from functions import display_images
 from functions import binarize_images
 import GPy
-import random
 from sklearn.manifold import SpectralEmbedding
 import matplotlib.pyplot as plt
-from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-from skimage import util
-from tqdm import tqdm
 
 from keras.datasets import mnist
 from keras.utils import to_categorical
 
-random.seed(1)
 
-def visualize_data(compressed_data, sampled_blocks, filename, emb):
+def visualize_data(compressed_data, filename='compressed_data_visualization.png'):
 
-    fig = plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(6, 6))
 
     # 圧縮後の散布図
     ax2 = fig.add_subplot(111)
-    ax2.scatter(compressed_data[:, 0], compressed_data[:, 1], c='blue', marker='o', s=30)
+    ax2.scatter(compressed_data[:, 0], compressed_data[:, 1], c='blue', marker='o', s=10)
     ax2.set_xlabel('Component 1')
     ax2.set_ylabel('Component 2')
-    ax2.set_title('Embedded data '+"("+emb+")")
-
-    # ランダムに一部の点にのみブロックの画像を表示
-    num_samples = len(compressed_data)
-    num_blocks_to_display = min(300, num_samples) 
-    random_indices = random.sample(range(num_samples), num_blocks_to_display)
-
-    for i in random_indices:
-        x, y = compressed_data[i]
-        img = sampled_blocks[i].reshape(5, 5)  # ブロック画像を5x5に変形
-        imgbox = OffsetImage(img, zoom=4, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
-        ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
-        ax2.add_artist(ab)
-
+    ax2.set_title('Embedded Data')
     plt.tight_layout()
 
     # 画像として保存
     plt.savefig(filename)
     plt.show()
+
 
 
 class KIMLayer:
@@ -75,7 +58,6 @@ class KIMLayer:
                 start_i = np.random.randint(0, self.H - self.b + 1)
                 start_j = np.random.randint(0, self.W - self.b + 1)
                 sampled_blocks.append(data[:, start_i : start_i + self.b, start_j : start_j + self.b])
-                
         print('[KIM] Completed')
         #train_data = binarize_images(train_data) #画像を二値化
         sampled_blocks = binarize_images(sampled_blocks)
@@ -109,26 +91,16 @@ class KIMLayer:
                 
             elif self.embedding == "GPLVM":
                 GPLVM_model = embedding.GPLVM(θ1=1.0, θ2=0.03, θ3=0.05)
-                embedded_blocks = GPLVM_model.fit(sampled_blocks,latent_dim=self.C_next, epoch=50, eta=0.001)
-                
-            elif self.embedding == "GPLVM2":
-                sigma=3
-                alpha=0.05
-                beta=0.08
-                model = embedding.GPLVM2(sampled_blocks,self.C_next, np.array([sigma**2,alpha/beta]))
-                embedded_blocks = model.fit(epoch=100,epsilonX=0.05,epsilonSigma=0.0005,epsilonAlpha=0.00001)
+                embedded_blocks = GPLVM_model.fit(sampled_blocks,latent_dim=self.C_next, epoch=100, eta=0.0001)
                 
             elif self.embedding == "LPP":
                 LPP_model = embedding.LPP(n_components=self.C_next)
                 embedded_blocks = LPP_model.transform(sampled_blocks)
-            
-            else:
-                print('Error: No embedding selected.')
 
             print("embedded shape:", np.shape(embedded_blocks))
             # 埋め込みデータを可視化
             principal_data = embedded_blocks[:,0:2]
-            visualize_data(principal_data, sampled_blocks, "emb_"+self.embedding+".png", self.embedding)
+            visualize_data(principal_data, "emb_"+self.embedding+".png")
 
             #ガウス過程回帰で学習
             print('[KIM] Fitting samples...')
@@ -142,6 +114,7 @@ class KIMLayer:
     def convert_image(self, n):
         b_radius = int((self.b-1)/2)
         output_tmp = np.zeros((self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
+        print('[KIM] Converting the image %d' % (n+1))
 
         blocks = []
         for i in range(b_radius, self.H-b_radius, self.stride):
@@ -179,8 +152,7 @@ class KIMLayer:
         train_data = input_data[:100] #先頭から１００枚の画像を埋め込みの学習に使う
         self.learn_embedding(train_data) 
         
-        print('[KIM] Converting the image...')
-        for n in tqdm(range(num_inputs)):
+        for n in range(num_inputs):
             self.convert_image(n)
         
         return self.output_data
