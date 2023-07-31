@@ -21,7 +21,6 @@ import random
 from tqdm import tqdm
 
 np.set_printoptions(threshold=np.inf)
-
 np.random.seed(2)
 
 
@@ -75,138 +74,22 @@ def visualize_data(labels_3d, compressed_data, filename='compressed_data_visuali
     plt.show()
 
 
-def pca(X, num_components):
-    # データの平均を計算して中心化
+def PCA(X, num_components):
     mean = np.mean(X, axis=0)
     centered_data = X - mean
 
-    # 共分散行列を計算
     cov_matrix = np.cov(centered_data, rowvar=False)
-
-    # 共分散行列の固有値と固有ベクトルを計算
     eigenvalues, eigenvectors = np.linalg.eigh(cov_matrix)
 
-    # 固有値の大きい順に固有ベクトルを並び替え
     sorted_indices = np.argsort(eigenvalues)[::-1]
-    # sorted_eigenvalues = eigenvalues[sorted_indices]
     sorted_eigenvectors = eigenvectors[:, sorted_indices]
 
-    # 上位 num_components 個の固有ベクトルを取得
     selected_eigenvectors = sorted_eigenvectors[:, :num_components]
-
-    # 新しい特徴空間にデータを射影
     projected_data = np.dot(centered_data, selected_eigenvectors)
 
     return projected_data
 
-
-class LaplacianEigenmap:
-    def __init__(self, n_components, k):
-        """
-        param: n_component : embedding dim
-        param: k : knn of similarity matrix
-        """
-        self.n_components = n_components
-        self.k = k
-
-    def transform(self, X):
-        W = self.create_similarity_matrix(X)
-        D = self.get_degree_matrix(W)
-        D = D.astype(float)
-        L = D - W
-        eig_val, eig_vec = eigh(L, D)
-        eig_vec = eig_vec.T
-        index = np.argsort(eig_val)
-        eig_vec = eig_vec[index]
-        phi = eig_vec[1:self.n_components + 1]
-        return phi.T
-
-    def get_degree_matrix(self, W):
-        return np.diag([sum(W[i]) for i in range(len(W))])
-
-    def create_similarity_matrix(self, X):
-        """create Similarity matrix (knn)
-
-        :param X: data matrix (data_nX,feature_n)
-        """
-        W = []
-        for x_i in X:
-            W.append(self.k_nearest_list(X, x_i))
-        W = np.array(W)
-        return np.where(np.logical_or(W, W.T), 1, 0)
-
-    def k_nearest_list(self, X, x_i):
-        """
-        return the ndarray containing bool value represents whether the value is in k nearest neighbor of x_i
-        e.g. ndarray [True False True]
-        """
-        # print("X", X)
-        dist_list = [self.dist(x_i, x_j) for x_j in X]
-        # print("dist_list", dist_list)
-        sorted_list = sorted(dist_list)  # 昇順
-        #print("sorted_list", sorted_list)
-        threshold = sorted_list[self.k - 1]
-        dist_list = np.array(dist_list)
-        knn_list = dist_list <= threshold
-        # 距離が同じ点の集合を作成
-        same_dist_indices = [i for i, dist in enumerate(dist_list) if dist == threshold]
-        
-        # もし同じ距離の点がself.kよりも多い場合はランダムサンプリング
-        if sum(knn_list) > self.k:
-            knn_list[same_dist_indices] = False
-            random_indices = random.sample(same_dist_indices, self.k-sum(knn_list))
-            knn_list[random_indices] = True
-
-        assert sum(knn_list) == self.k, knn_list
-        return knn_list
-
-    def dist(self, x_i, x_j):
-        return np.dot(x_i-x_j, x_i-x_j)
-
-
 class GPLVM(object):
-    def __init__(self, θ1, θ2, θ3):
-        self.θ1 = θ1
-        self.θ2 = θ2
-        self.θ3 = θ3
-
-    def fit(self, X, latent_dim, epoch, eta):
-        resolution = 10
-        T = epoch
-        N, D = X.shape
-        L = latent_dim
-        Z = np.random.randn(N, L) / 100
-
-        history = {}
-        history['Z'] = np.zeros((T, N, L))
-        history['f'] = np.zeros((T, resolution, resolution, D))
-
-        for t in tqdm(range(T)):
-            K = self.θ1 * self.kernel(Z, Z, self.θ2) + self.θ3 * np.eye(N)
-            inv_K = np.linalg.inv(K)
-            dLdK = 0.5 * (inv_K @ (X @ X.T) @ inv_K - D * inv_K)
-            dKdX = -2.0*(((Z[:, None, :]-Z[None, :, :])*K[:, :, None]))/self.θ2
-            dLdX = np.sum(dLdK[:, :, None] * dKdX, axis=1)
-
-            Z = Z + eta * dLdX
-            history['Z'][t] = Z
-
-            '''
-            z_new_x = np.linspace(min(Z[:, 0]), max(Z[:, 0]), resolution)
-            z_new_y = np.linspace(min(Z[:, 1]), max(Z[:, 1]), resolution)
-            z_new = np.dstack(np.meshgrid(z_new_x, z_new_y)).reshape(resolution**2, L)
-            k_star = self.θ1 * self.kernel(z_new, Z, self.θ2)
-            F = (k_star @ inv_K @ X).reshape(resolution, resolution, D)
-            history['f'][t] = F
-            '''
-        return history['Z'][-1]
-
-    def kernel(self, X1, X2, θ2):
-        Dist = np.sum(((X1[:, None, :] - X2[None, :, :])**2), axis=2)
-        K = np.exp((-0.5/θ2) * Dist)
-        return K
-
-class GPLVM2(object):
     def __init__(self,Y,LatentDim,HyperParam,X=None):
         self.Y = Y
         self.hyperparam = HyperParam
@@ -261,6 +144,69 @@ class GPLVM2(object):
         K = np.exp(-0.5 * Dist)
         return K
 
+class LaplacianEigenmap:
+    def __init__(self, n_components, k):
+        """
+        param: n_component : embedding dim
+        param: k : knn of similarity matrix
+        """
+        self.n_components = n_components
+        self.k = k
+
+    def transform(self, X):
+        W = self.create_similarity_matrix(X)
+        D = self.get_degree_matrix(W)
+        D = D.astype(float)
+        L = D - W
+        eig_val, eig_vec = eigh(L, D)
+        eig_vec = eig_vec.T
+        index = np.argsort(eig_val)
+        eig_vec = eig_vec[index]
+        phi = eig_vec[1:self.n_components + 1]
+        return phi.T
+
+    def get_degree_matrix(self, W):
+        return np.diag([sum(W[i]) for i in range(len(W))])
+
+    def create_similarity_matrix(self, X):
+        """create Similarity matrix (knn)
+
+        :param X: data matrix (data_nX,feature_n)
+        """
+        W = []
+        for x_i in X:
+            W.append(self.k_nearest_list(X, x_i))
+        W = np.array(W)
+        return np.where(np.logical_or(W, W.T), 1, 0)
+
+    def k_nearest_list(self, X, x_i):
+        """
+        return the ndarray containing bool value represents whether the value is in k nearest neighbor of x_i
+        e.g. ndarray [True False True]
+        """
+        # print("X", X)
+        dist_list = [self.dist(x_i, x_j) for x_j in X]
+        # print("dist_list", dist_list)
+        sorted_list = sorted(dist_list)  # 昇順
+        #print("sorted_list", sorted_list)
+        threshold = sorted_list[self.k - 1]
+        dist_list = np.array(dist_list)
+        knn_list = dist_list <= threshold
+        
+        # 距離が同じ点の集合を作成
+        same_dist_indices = [i for i, dist in enumerate(dist_list) if dist == threshold]
+        
+        # もし同じ距離の点がself.kよりも多い場合はランダムサンプリング
+        if sum(knn_list) > self.k:
+            knn_list[same_dist_indices] = False
+            random_indices = random.sample(same_dist_indices, self.k-sum(knn_list))
+            knn_list[random_indices] = True
+
+        assert sum(knn_list) == self.k, knn_list
+        return knn_list
+
+    def dist(self, x_i, x_j):
+        return np.dot(x_i-x_j, x_i-x_j)
 
 class LPP:
     """Locality Preserving Projection."""
@@ -313,7 +259,7 @@ if __name__ == '__main__':
     print("X shape:", np.shape(X))
 
     # PCA
-    reduced_data = pca(X, 2)
+    reduced_data = PCA(X, 2)
     visualize_data(X, label, reduced_data, "PCA.png")
 
     # LE

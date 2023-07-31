@@ -24,4 +24,6 @@ RUN pip install tensorflow
 RUN pip install scikit-learn
 RUN pip install opencv-python
 RUN pip install matplotlib
-RUN pip install line_profiler
+#RUN pip install line_profiler
+RUN pip install tqdm
+RUN pip inatall scikit-image
