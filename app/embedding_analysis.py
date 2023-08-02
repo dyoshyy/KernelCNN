@@ -50,14 +50,22 @@ def visualize_data(compressed_data, sampled_blocks, sampled_blocks_label, filena
     ax2.set_title('Embedded data '+"("+emb+")")
 
     # ランダムに一部の点にのみブロックの画像を表示
-    num_samples = len(compressed_data)
-    num_blocks_to_display = min(300, num_samples) 
-    random_indices = random.sample(range(num_samples), num_blocks_to_display)
+    #num_samples = len(compressed_data)
+    #num_blocks_to_display = min(200, num_samples)
+    #random_indices = random.sample(range(num_samples), num_blocks_to_display)
 
-    for i in random_indices:
+    for i in range(0, 300, 1):
         x, y = compressed_data[i]
-        img = sampled_blocks[i].reshape(block_size, block_size)  # ブロック画像を5x5に変形
-        imgbox = OffsetImage(img, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
+        img = sampled_blocks[i].reshape(block_size, block_size)# ブロック画像を5x5に変形
+        img_rgb = np.zeros((block_size, block_size, 3))
+        
+        if 0<=i & i<=30:
+            img_rgb[:, :, 0] = img
+        else:
+            img_rgb = img
+            
+        #imgbox = OffsetImage(img_rgb, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
+        imgbox = OffsetImage(img_rgb, zoom=8, cmap='gray')
         ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
         ax2.add_artist(ab)
 
@@ -69,53 +77,66 @@ def visualize_data(compressed_data, sampled_blocks, sampled_blocks_label, filena
 
 
 class KIMLayer:
-    def __init__(self, block_size, channels_next, stride, num_samples=100, emb="LE"):
+    def __init__(self, block_size, channels_next, stride, emb="LE"):
         self.b = block_size
         self.stride = stride
         self.C_next = channels_next
         self.C_prev = None
         self.H = None
         self.W = None
-        self.num_samples = num_samples
-        self.GP = None
         self.output_data = None
         self.input_data = None
         self.embedding = emb
-        self.GP_learn = False
+        self.GP = None
+        self.GP_learned = False
 
-    def sample_block(self, n_train, train_X, train_Y, input_dim):
-        print('[KIM] Sampling blocks...')
+    def sample_block(self, n_train, train_X, train_Y):
+        '''
+        画像データからブロックをサンプリング
+            n_train : 画像の枚数
+            train_X : 学習する画像データ
+            train_Y : 画像のラベル
+        '''
         sampled_blocks = []
         sampled_blocks_label = []
         for n in range(n_train):
-            data = train_X[n,:,:,:] #画像を一枚持ってくる
-            for i in range(self.num_samples): # 画像からランダムな位置でブロックをサンプリング
-                start_i = np.random.randint(0, self.H - self.b + 1)
-                start_j = np.random.randint(0, self.W - self.b + 1)
-                sampled_blocks.append(data[:, start_i : start_i + self.b, start_j : start_j + self.b])
-                sampled_blocks_label.append(train_Y[n])
-                
-        print('[KIM] Completed')
-        #train_data = binarize_images(train_data) #画像を二値化
+            # 一枚持ってくる
+            data = train_X[n,:,:,:]
+            # すべてのブロックをサンプリング
+            for i in range(self.H - self.b + 1):
+                for j in range(self.W - self.b + 1):
+                    block = data[:, i:i+self.b, j:j+self.b]
+                    sampled_blocks.append(block)
+                    sampled_blocks_label.append(train_Y[n])      
+
+        #画像を二値化
         sampled_blocks = binarize_images(sampled_blocks)
-        sampled_blocks = np.array(sampled_blocks).reshape(self.num_samples * n_train, input_dim)
+        sampled_blocks = np.array(sampled_blocks).reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)
         print('samples shape:',np.shape(sampled_blocks))
-        sampled_blocks, indices = np.unique(sampled_blocks, axis=0, return_index=True) #重複を削除
-        sampled_blocks_label = [sampled_blocks_label[index] for index in indices]
+        
+        #重複を削除
+        sampled_blocks, indices, counts = np.unique(sampled_blocks, axis=0, return_index=True, return_counts=True) 
+        sampled_blocks_label = np.array(sampled_blocks_label)[indices]
+        
+        #重複回数の多い順にソート
+        sorted_indices = np.argsort(counts)[::-1]
+        sampled_blocks = sampled_blocks[sorted_indices]
+        
+        sampled_blocks_label = sampled_blocks_label[sorted_indices]
         print('unique samples shape:',np.shape(sampled_blocks))
         
         return sampled_blocks, sampled_blocks_label
 
     def learn_embedding(self, train_X, train_Y): 
-        
         '''
-        埋め込みをGPで学習
+        埋め込みをKIMで学習
+            train_X: 学習に使うX
+            train_Y: Xのラベルデータ
         '''
-        input_dim = self.b * self.b * self.C_prev
         n_train = train_X.shape[0]
 
         if self.GP is None:
-            sampled_blocks, sampled_blocks_label = self.sample_block(n_train, train_X, train_Y, input_dim)
+            sampled_blocks, sampled_blocks_label = self.sample_block(n_train, train_X, train_Y)
             #print("sampled_blocks shape:",sampled_blocks.shape())
             
             # 埋め込み
@@ -132,6 +153,10 @@ class KIMLayer:
                 #n_neighbors=10
                 LE = embedding.LaplacianEigenmap(self.C_next, n_neighbors)
                 embedded_blocks = LE.transform(sampled_blocks)
+            
+            elif self.embedding == "LPP":
+                LPP_model = embedding.LPP(n_components=self.C_next)
+                embedded_blocks = LPP_model.transform(sampled_blocks)
                 
             elif self.embedding == "GPLVM":
                 sigma=3
@@ -139,35 +164,37 @@ class KIMLayer:
                 beta=0.08
                 model = embedding.GPLVM(sampled_blocks,self.C_next, np.array([sigma**2,alpha/beta]))
                 embedded_blocks = model.fit(epoch=100,epsilonX=0.05,epsilonSigma=0.0005,epsilonAlpha=0.00001)
-                
-            elif self.embedding == "LPP":
-                LPP_model = embedding.LPP(n_components=self.C_next)
-                embedded_blocks = LPP_model.transform(sampled_blocks)
             
             elif self.embedding == "TSNE":
                 tsne = TSNE(n_components=self.C_next, random_state = 0, method='exact', perplexity = 30, n_iter = 500)
                 embedded_blocks = tsne.fit_transform(sampled_blocks)
             
-            
             else:
                 print('Error: No embedding selected.')
 
             print("embedded shape:", np.shape(embedded_blocks))
+            
             # 埋め込みデータを可視化
             principal_data = embedded_blocks[:,0:2]
             visualize_data(principal_data, sampled_blocks, sampled_blocks_label, "emb_"+self.embedding, self.embedding, self.b)
 
-            if self.GP_learn:
-                #ガウス過程回帰で学習
-                print('[KIM] Fitting samples...')
-                kernel = GPy.kern.RBF(input_dim = input_dim)
-                self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
-                self.GP.optimize()
-                print('[KIM] Completed')
+            '''
+            #ガウス過程回帰で学習
+            print('[KIM] Fitting samples...')
+            kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev)
+            self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
+            self.GP.optimize()
+            print('[KIM] Completed')
+            '''
+            
         else:
             print('[KIM] GPmodel found')
     
     def convert_image(self, n):
+        '''
+        学習済みのKIMで元の画像を変換
+            n : 何枚目の画像を変換するか
+        '''
         b_radius = int((self.b-1)/2)
         output_tmp = np.zeros((self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
 
@@ -195,12 +222,12 @@ class KIMLayer:
 
 
     def calculate(self, input_X, input_Y):
-
+        
+        num_inputs = input_X.shape[0]
         self.C_prev = input_X.shape[1]
         self.H = input_X.shape[2]
         self.W = input_X.shape[3]
-        num_inputs = input_X.shape[0]
-
+        
         self.input_data = input_X
         self.output_data = np.zeros((num_inputs, self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
 
@@ -210,15 +237,18 @@ class KIMLayer:
         
         self.learn_embedding(train_X, train_Y) 
         
-        if self.GP_learn:
-            print('[KIM] Converting the image...')
-            for n in tqdm(range(num_inputs)):
-                self.convert_image(n)
+        '''
+        print('[KIM] Converting the image...')
+        for n in tqdm(range(num_inputs)):
+            self.convert_image(n)
+        '''
             
         return self.output_data
 
 
 def main(channels_next, emb):
+
+    args = sys.argv
 
     #データセットのロード
     (X_train, Y_train), (X_test,Y_test) = mnist.load_data()
@@ -232,11 +262,12 @@ def main(channels_next, emb):
     #データ整形
     X_train = X_train.reshape(-1, image_color, image_rows, image_cols) 
     X_test = X_test.reshape(-1, image_color, image_rows, image_cols, ) 
-    Y_train = to_categorical(Y_train,out_size)
-    Y_test = to_categorical(Y_test,out_size)
+    #Y_train = to_categorical(Y_train,out_size)
+    #Y_test = to_categorical(Y_test,out_size)
 
-    n = 100 #train
+    n = int(args[1])  #train
     #m = int(args[2])  #test
+    emb = args[2]
 
     X_train = X_train[:n]
     Y_train = Y_train[:n]
@@ -246,7 +277,7 @@ def main(channels_next, emb):
     #X_train = binarize_images(X_train)
     #X_test = binarize_images(X_test)
     
-    KIM = KIMLayer(block_size=5, channels_next = channels_next, stride = 2, num_samples=100, emb=emb)
+    KIM = KIMLayer(block_size=5, channels_next = channels_next, stride = 1, emb=emb)
     output = KIM.calculate(X_train, Y_train)
     display_images(output,1)
 
@@ -280,6 +311,6 @@ if __name__ == '__main__':
     #X_train = binarize_images(X_train)
     #X_test = binarize_images(X_test)
     
-    KIM = KIMLayer(block_size=5, channels_next = 20, stride = 2, num_samples=100, emb=emb)
+    KIM = KIMLayer(block_size=5, channels_next = 6, stride = 1, emb=emb)
     output = KIM.calculate(X_train, Y_train)
     display_images(output,1)

@@ -9,7 +9,7 @@ import layers
 #import layers_originalGP as layers
 
 from functions import binarize_images
-from functions import display_images
+from functions import pad_images
 
 from keras.datasets import mnist
 from keras.utils import to_categorical
@@ -21,8 +21,11 @@ if __name__ == '__main__':
     #データセットのロード
     (X_train, Y_train), (X_test,Y_test) = mnist.load_data()
 
-    image_rows = 28
-    image_cols = 28
+    X_train = pad_images(X_train)
+    X_test = pad_images(X_test)
+    
+    image_rows = 32
+    image_cols = 32
     image_color = 1 #グレースケール
     input_shape = (image_rows, image_cols, image_color)
     out_size = 10
@@ -35,21 +38,23 @@ if __name__ == '__main__':
 
     n = int(args[1])  #train
     m = int(args[2])  #test
+    emb = args[3]
 
     X_train = X_train[:n]
     Y_train = Y_train[:n]
     X_test = X_test[:m]
     Y_test = Y_test[:m]
 
-    #X_train = binarize_images(X_train)
-    #X_test = binarize_images(X_test)
+    X_train = binarize_images(X_train)
+    X_test = binarize_images(X_test)
 
     #モデル定義
     model = layers.Model(display=True)
-    model.add_layer(layers.KIMLayer(block_size=3, channels_next = 20, stride = 2, num_samples=100))
-    model.add_layer(layers.MaxPoolingLayer(pool_size=2))
-    model.add_layer(layers.KIMLayer(block_size=3, channels_next = 50, stride = 1, num_samples=100))
-    model.add_layer(layers.MaxPoolingLayer(pool_size=2))
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, emb=emb))
+    model.add_layer(layers.AvgPoolingLayer(pool_size=2))
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, emb=emb))
+    model.add_layer(layers.AvgPoolingLayer(pool_size=2))
+    #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
 
     start1 = time.time()
     model.fit(X_train, Y_train)

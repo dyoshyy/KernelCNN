@@ -1,17 +1,3 @@
-
-# --------------------------------------
-# |          |     線形    |   非線形   |
-# --------------------------------------
-# | 教師あり  |    LDA     |            |
-# --------------------------------------
-# | 教師無し  |    PCA     |     LE     |
-# --------------------------------------
-
-# 線形埋め込み：PrincipalComponentsAnalysis
-# 非線形埋め込み：Laplacian Eigenmap
-# 教師あり：
-# 教師無し：
-
 import numpy as np
 from scipy.linalg import eigh
 import matplotlib.pyplot as plt
@@ -22,29 +8,6 @@ from tqdm import tqdm
 
 np.set_printoptions(threshold=np.inf)
 np.random.seed(2)
-
-
-def create_3d_data(num_classes=5, num_samples_per_class=50):
-    # データのクラス数と特徴量の次元数
-    num_features = 3
-
-    data = []
-    labels = []
-    for i in range(num_classes):
-        # 各クラスの中心点（3次元空間上のランダムな座標）
-        center = np.random.rand(num_features)
-
-        # 各クラスのデータを生成
-        class_data = center + \
-            np.random.randn(num_samples_per_class, num_features) * 0.1
-        data.append(class_data)
-        labels.extend([i] * num_samples_per_class)
-
-    data = np.vstack(data)
-    labels = np.array(labels)
-
-    return data, labels
-
 
 def visualize_data(labels_3d, compressed_data, filename='compressed_data_visualization.png'):
 
@@ -251,28 +214,3 @@ class LPP:
                 K_i.append(self.gaussian_kernel(x_i, x_j))
             W.append(K_i)
         return np.array(W)
-
-
-if __name__ == '__main__':
-    # 3次元データの作成
-    X, label = create_3d_data(num_classes=7, num_samples_per_class=50)
-    print("X shape:", np.shape(X))
-
-    # PCA
-    reduced_data = PCA(X, 2)
-    visualize_data(X, label, reduced_data, "PCA.png")
-
-    # LE
-    LE = LaplacianEigenmap(2, 60)
-    reduced_data = LE.transform(X)
-    visualize_data(X, label, reduced_data, "LE.png")
-
-    # GPLVM
-    GPLVM_model = GPLVM(θ1=1.0, θ2=0.03, θ3=0.05)
-    reduced_data = GPLVM_model.fit(X, latent_dim=2, epoch=100, eta=0.0001)
-    visualize_data(X, label, reduced_data, "GPLVM.png")
-
-    # LPP
-    LPP_model = LPP(n_components=2, h=0.01)
-    reduced_data = LPP_model.transform(X)
-    visualize_data(X, label, reduced_data, "LPP.png")
