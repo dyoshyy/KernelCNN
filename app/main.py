@@ -54,7 +54,7 @@ if __name__ == '__main__':
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
     model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, emb=emb))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
-    #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
 
     start1 = time.time()
     model.fit(X_train, Y_train)

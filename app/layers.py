@@ -174,8 +174,10 @@ class KIMLayer:
         self.input_data = input_X
         self.output_data = np.zeros((num_inputs, self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
 
-        train_X = input_X[:200] #先頭から１００枚の画像を埋め込みの学習に使う
-        train_Y = input_Y[:200]
+        #先頭からtrain_numの画像を埋め込みの学習に使う
+        train_num = 300
+        train_X = input_X[:train_num] 
+        train_Y = input_Y[:train_num]
         
         self.learn_embedding(train_X, train_Y) 
         
