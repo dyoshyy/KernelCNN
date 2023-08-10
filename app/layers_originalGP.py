@@ -1,5 +1,5 @@
 import numpy as np
-import GaussianProcess as GP
+import prml.app.KernelizedImplicitMapping as GP
 from sklearn.manifold import SpectralEmbedding
 from functions import calculate_similarity
 from functions import display_images

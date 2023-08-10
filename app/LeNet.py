@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import layers, models
 from tensorflow.keras.datasets import mnist
 from tensorflow.keras.utils import to_categorical
+from keras.callbacks import EarlyStopping
 import numpy as np
 
 from embedding_analysis import visualize_data
@@ -15,8 +16,8 @@ test_X = test_images.reshape(-1, 28, 28, 1)
 train_Y = to_categorical(train_labels, 10)
 test_Y = to_categorical(test_labels, 10)
 
-train_num = 5000
-test_num = 1000
+train_num = 60000
+test_num = 10000
 
 train_X = binarize_mnist_data(train_X[:train_num])
 train_Y = binarize_mnist_data(train_Y[:train_num])
@@ -26,17 +27,16 @@ test_Y = test_Y[:test_num]
 
 # LeNet-5 model definition
 model = models.Sequential([
-    layers.Conv2D(6, kernel_size=(5, 5), activation='relu', input_shape=(28, 28, 1)),
+    layers.Conv2D(6, kernel_size=(5, 5), activation='tanh', padding='same', input_shape=(28, 28, 1)),
     layers.AveragePooling2D(pool_size=(2, 2)),
-    layers.Conv2D(16, kernel_size=(5, 5), activation='relu'),
+    layers.Conv2D(16, kernel_size=(5, 5), activation='tanh'),
     layers.AveragePooling2D(pool_size=(2, 2)),
-    layers.Conv2D(120, kernel_size=(5, 5), activation='relu'),
     layers.Flatten(),
-    layers.Dense(84, activation='relu'),
+    layers.Dense(400, activation='tanh'),
     layers.Dense(10, activation='softmax')
 ])
 
-#model.summary()
+model.summary()
 
 # Create a list to store intermediate outputs
 block_outputs = []
@@ -52,9 +52,15 @@ model.compile(optimizer='sgd', loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 # Train the model
-batch_size = 64
-epochs = 30
-model.fit(train_X, train_Y, batch_size=batch_size,epochs=epochs, validation_split=0.1)
+batch_size = 128
+epochs = 1000
+es = EarlyStopping(monitor='val_loss', mode='auto', patience=5, verbose=0)
+model.fit(train_X, train_Y, batch_size=batch_size,epochs=epochs, callbacks=[es], validation_split=0.1)
+
+# predict test samples
+test_loss, test_acc = model.evaluate(test_X, test_Y)
+
+print(test_acc)
 
 # Get intermediate outputs for the convolutional layers and save them in the list
 block_outputs.append(get_intermediate_output(model, 'conv2d', train_X))
@@ -64,6 +70,7 @@ for i, output in enumerate(block_outputs):
     print(f"Block {i+1} output shape:", output.shape)
 
 
+'''
 # 畳み込み第1層を可視化
 sampled_blocks = []
 block_labels = []
@@ -97,7 +104,7 @@ block_labels = np.array(block_labels)[selected_indices]
 principal_data = compressed_blocks[:, 0:2]
 
 visualize_data(principal_data, sampled_blocks, block_labels, "LeNet", "LeNet", kernel_size)
-
+'''
 
 
 

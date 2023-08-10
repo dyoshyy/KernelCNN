@@ -37,8 +37,9 @@ if __name__ == '__main__':
     Y_test = to_categorical(Y_test,out_size)
 
     n = int(args[1])  #train
-    m = int(args[2])  #test
-    emb = args[3]
+    #m = int(args[2])  #test
+    m = 10000
+    emb = args[2]
 
     X_train = X_train[:n]
     Y_train = Y_train[:n]
@@ -54,7 +55,7 @@ if __name__ == '__main__':
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
     model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, emb=emb))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
+    #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
 
     start1 = time.time()
     model.fit(X_train, Y_train)

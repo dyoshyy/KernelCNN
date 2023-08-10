@@ -2,7 +2,7 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.linalg import cho_solve, cholesky
 
-class GaussianProcess:
+class KIM:
     def __init__(self, length_scale=1.0, noise_var=0.1):
         self.length_scale = length_scale
         self.noise_var = noise_var

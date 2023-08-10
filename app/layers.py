@@ -8,7 +8,7 @@ from functions import visualize_emb
 
 import embedding
 from sklearn.manifold import SpectralEmbedding
-from sklearn.manifold import TSNE
+from sklearn.manifold import TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
 
 from skimage import util
@@ -107,11 +107,15 @@ class KIMLayer:
             elif self.embedding == "TSNE":
                 tsne = TSNE(n_components=self.C_next, random_state = 0, method='exact', perplexity = 30, n_iter = 500)
                 embedded_blocks = tsne.fit_transform(sampled_blocks)
+                
+            elif self.embedding == 'LLE':
+                lle = LocallyLinearEmbedding(n_components=self.C_next)
+                embedded_blocks = lle.fit_transform(sampled_blocks)
             
             else:
                 print('Error: No embedding selected.')
 
-            print("embedded shape:", np.shape(embedded_blocks))
+            
             
             # 埋め込みデータを可視化
             principal_data = embedded_blocks[:,0:2]
@@ -121,9 +125,12 @@ class KIMLayer:
             print('[KIM] Fitting samples...')
             
             #３分の１だけ無作為に取り出す
-            selected_indices = random.sample(range(sampled_blocks.shape[0]), int(sampled_blocks.shape[0]/3))
+            select_num = max(1000, int(sampled_blocks.shape[0]/10))
+            selected_indices = random.sample(range(sampled_blocks.shape[0]), select_num)
             sampled_blocks = sampled_blocks[selected_indices]
             embedded_blocks = embedded_blocks[selected_indices]
+            
+            print("embedded shape:", np.shape(embedded_blocks))
             
             kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev)
             self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
@@ -175,7 +182,9 @@ class KIMLayer:
         self.output_data = np.zeros((num_inputs, self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
 
         #先頭からtrain_numの画像を埋め込みの学習に使う
-        train_num = 300
+        train_num = 100
+        #if self.H == 5:
+        #    train_num = 1000
         train_X = input_X[:train_num] 
         train_Y = input_Y[:train_num]
         
