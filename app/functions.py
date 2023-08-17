@@ -3,25 +3,34 @@ import numpy as np
 import os
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import matplotlib.pyplot as plt
+import math
+import random
 
 def display_images(data, layer):
-    data = data[:10]
-    N = data.shape[0]
-    C = data.shape[1]
-    fig, axes = plt.subplots(N, C, figsize=(C, N))
-    for n in range(N):
-        for c in range(C):
-            if C == 1:
-                ax = axes[n]
+    data = data[0]
+    num_in_a_row = 4
+    Channels = data.shape[0]
+    Rows = math.ceil(Channels/5)
+
+    fig, axes = plt.subplots(Rows, num_in_a_row, figsize=(15, 3*Rows))
+    fig.subplots_adjust(hspace=0.4)
+
+    for r in range(Rows):
+        for c in range(num_in_a_row):
+            if Channels == 1:
+                ax = axes[r]
             else:
-                ax = axes[n,c]
-            image = data[n, c,:,:]
-            ax.imshow(image, cmap='gray')
-            ax.set_title('Channel {}'.format(c+1))
+                ax = axes[r, c]
             ax.axis('off')
+            index = r * num_in_a_row + c
+            if(index < Channels):
+                image = data[index,:,:]
+                ax.imshow(image, cmap='gray')
+                ax.set_title('Channel {}'.format(index+1))
+
     plt.tight_layout()
     plt.savefig("./results/layer_{}_result.png".format(layer))
-    plt.show()
+    #plt.show()
 
 def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, block_size):
     '''
@@ -55,23 +64,17 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
     ax.set_title('Embedded data '+"("+emb+")")
 
     # ランダムに一部の点にのみブロックの画像を表示
-    #num_samples = len(compressed_data)
-    #num_blocks_to_display = min(200, num_samples)
-    #random_indices = random.sample(range(num_samples), num_blocks_to_display)
+    num_samples = len(compressed_data)
+    num_blocks_to_display = min(200, num_samples)
+    random_indices = random.sample(range(num_samples), num_blocks_to_display)
     #print(np.shape(sampled_blocks))
     if sampled_blocks.shape[1] == block_size * block_size:
-        for i in range(0, 300, 1):
+        for i in random_indices:
             x, y = compressed_data[i]
             img = sampled_blocks[i].reshape(block_size, block_size)# ブロック画像を5x5に変形
             img_rgb = np.zeros((block_size, block_size, 3))
-            
-            if 0<=i & i<=30:
-                img_rgb[:, :, 0] = img
-            else:
-                img_rgb = img
-                
             #imgbox = OffsetImage(img_rgb, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
-            imgbox = OffsetImage(img_rgb, zoom=8, cmap='gray')
+            imgbox = OffsetImage(img, zoom=8, cmap='gray')
             ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
             ax.add_artist(ab)
 
@@ -79,7 +82,7 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
 
     # 画像として保存
     plt.savefig("./emb_results/"+filename+'.png')
-    plt.show()
+    #plt.show()
 
 def calculate_similarity(array1, array2):
     count = 0

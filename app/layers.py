@@ -1,6 +1,7 @@
 import numpy as np
-import random
+import random, math
 import GPy
+import psutil, os
 from functions import calculate_similarity
 from functions import display_images
 from functions import binarize_images
@@ -10,15 +11,17 @@ import embedding
 from sklearn.manifold import SpectralEmbedding
 from sklearn.manifold import TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
+from scipy import stats
 
 from skimage import util
 from tqdm import tqdm
 
+from memory_profiler import profile
 
 np.random.seed(1)
 
 class KIMLayer:
-    def __init__(self, block_size, channels_next, stride, emb="LE"):
+    def __init__(self, block_size : int, channels_next : int, stride : int, emb : str):
         self.b = block_size
         self.stride = stride
         self.C_next = channels_next
@@ -59,11 +62,13 @@ class KIMLayer:
         sampled_blocks, indices, counts = np.unique(sampled_blocks, axis=0, return_index=True, return_counts=True) 
         sampled_blocks_label = np.array(sampled_blocks_label)[indices]
         
+        '''
         #重複回数の多い順にソート
         sorted_indices = np.argsort(counts)[::-1]
         sampled_blocks = sampled_blocks[sorted_indices]
         
         sampled_blocks_label = sampled_blocks_label[sorted_indices]
+        '''
         print('unique samples shape:',np.shape(sampled_blocks))
         
         return sampled_blocks, sampled_blocks_label
@@ -116,7 +121,6 @@ class KIMLayer:
                 print('Error: No embedding selected.')
 
             
-            
             # 埋め込みデータを可視化
             principal_data = embedded_blocks[:,0:2]
             visualize_emb(principal_data, sampled_blocks, sampled_blocks_label, self.embedding, self.b)
@@ -126,12 +130,14 @@ class KIMLayer:
             
             #３分の１だけ無作為に取り出す
             select_num = max(1000, int(sampled_blocks.shape[0]/10))
+            #select_num = 100
             selected_indices = random.sample(range(sampled_blocks.shape[0]), select_num)
             sampled_blocks = sampled_blocks[selected_indices]
             embedded_blocks = embedded_blocks[selected_indices]
             
             print("embedded shape:", np.shape(embedded_blocks))
             
+            print('[KIM] Training KIM')
             kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev)
             self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
             self.GP.optimize()
@@ -140,10 +146,10 @@ class KIMLayer:
         else:
             print('[KIM] GPmodel found')
     
-    def convert_image(self, n):
+    
+    def convert__image(self, n):
         '''
         学習済みのKIMで元の画像を変換
-            n : 何枚目の画像を変換するか
         '''
         b_radius = int((self.b-1)/2)
         output_tmp = np.zeros((self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
@@ -155,10 +161,10 @@ class KIMLayer:
                 j_output = int((j - b_radius)/self.stride)
                 input_cropped = self.input_data[n, :, (i-b_radius):(i+b_radius+1), (j-b_radius):(j+b_radius+1)].reshape(1, self.b * self.b * self.C_prev)
                 blocks.append(input_cropped)
-        
+            
         blocks = np.concatenate(blocks, axis=0)
         predictions, _ = self.GP.predict(blocks)
-        
+            
         #再配置
         idx = 0
         for i in range(b_radius, self.H-b_radius, self.stride):
@@ -167,10 +173,49 @@ class KIMLayer:
                 j_output = int((j - b_radius)/self.stride)
                 output_tmp[:, i_output, j_output] = predictions[idx]
                 idx += 1
-        
+            
         self.output_data[n] = output_tmp
 
+    def convert_all_images_batch(self, batch_size=10):
+        '''
+        学習済みのKIMで元画像全体を変換
+        '''
+        num_images = self.input_data.shape[0]
+        b_radius = int((self.b - 1) / 2)
+        i_range = np.arange(b_radius, self.H - b_radius, self.stride)
+        j_range = np.arange(b_radius, self.W - b_radius, self.stride)
+        
+        # Calculate starting indices for slices
+        i_indices = np.arange(len(i_range))[:, np.newaxis, np.newaxis, np.newaxis] 
+        j_indices = np.arange(len(j_range))[np.newaxis, :, np.newaxis, np.newaxis] 
 
+        # Calculate slices using broadcasting
+        slices = (i_indices + np.arange(self.b)[np.newaxis, np.newaxis, :, np.newaxis],
+                  j_indices + np.arange(self.b)[np.newaxis, np.newaxis, np.newaxis, :])
+        
+        num_batches = math.ceil(num_images / batch_size)
+        
+
+        for batch_idx in tqdm(range(num_batches)):
+            start_idx = batch_idx * batch_size
+            end_idx = min((batch_idx + 1) * batch_size, num_images)
+            batch_blocks = self.input_data[start_idx : end_idx, :, slices[0], slices[1]]
+            batch_blocks = batch_blocks.reshape(-1, self.b * self.b * self.C_prev)
+            batch_predictions, _ = self.GP.predict(batch_blocks)
+            output_tmp = np.zeros((self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
+
+            idx = 0
+            for n in range(start_idx, end_idx):
+                for i in range(b_radius, self.H-b_radius, self.stride):
+                    i_output = int((i - b_radius)/self.stride)
+                    for j in range(b_radius, self.W-b_radius, self.stride):
+                        j_output = int((j - b_radius)/self.stride)
+                        output_tmp[:, i_output, j_output] = batch_predictions[idx]
+                        idx += 1
+                
+                self.output_data[n] = output_tmp
+    
+    #@profile
     def calculate(self, input_X, input_Y):
         
         num_inputs = input_X.shape[0]
@@ -191,9 +236,11 @@ class KIMLayer:
         self.learn_embedding(train_X, train_Y) 
         
         print('[KIM] Converting the image...')
-        for n in tqdm(range(num_inputs)):
-            self.convert_image(n)
-            
+        self.convert_all_images_batch(500)
+        #for i in range(num_inputs):
+        #    self.convert__image(i)
+        print('completed')
+
         return self.output_data
 
 class MaxPoolingLayer:
@@ -227,44 +274,80 @@ class AvgPoolingLayer:
         self.pool_size = pool_size
 
     def calculate(self, input_data, Y):
+        print('[AVG] Converting')
         N, C, H, W = input_data.shape
         p = self.pool_size
         H_out = H // p
         W_out = W // p
-        output_data = np.zeros((N, C, H_out, W_out))
-        print('[AvgPooling] Converting the image...')
-        for n in tqdm(range(N)):
-            for c in range(C):
-                for i in range(H_out):
-                    for j in range(W_out):
-                        start_i = i * p
-                        start_j = j * p
-                        output_data[n, c, i, j] = np.mean(input_data[n, c, start_i:start_i + p, start_j:start_j + p])
 
+        # Calculate starting indices for slices
+        i_indices = np.arange(H_out)[:, np.newaxis, np.newaxis, np.newaxis] * p
+        j_indices = np.arange(W_out)[np.newaxis, :, np.newaxis, np.newaxis] * p
+
+        # Calculate slices using broadcasting
+        slices = (i_indices + np.arange(p)[np.newaxis, np.newaxis, :, np.newaxis],
+                  j_indices + np.arange(p)[np.newaxis, np.newaxis, np.newaxis, :])
+
+        # Perform average pooling using broadcasting and sum reduction
+        output_data = np.mean(input_data[:, :, slices[0], slices[1]], axis=(-1, -2))
+        print('[AVG] Completed')
         return output_data
+
 
 class LabelLearningLayer:
     def __init__(self):
         self.GP = None
+        self.num_GP = None
+        self.OVER_10000 = False
 
     def fit(self, X, Y):
         input_dim = X.shape[1] * X.shape[2] * X.shape[3]
+        #ベクトル化し学習
         X = X.reshape(X.shape[0], input_dim)
         if self.GP is None:
             print('Learning labels')
-            kernel = GPy.kern.RBF(input_dim = input_dim)
-            self.GP = GPy.models.GPRegression(X, Y, kernel=kernel)
-            self.GP.optimize()
-            print('Completed')
+
+            # 訓練サンプルが10000超える場合は10000ずつに分けて学習
+            pid = os.getpid()
+            process = psutil.Process(pid)
+            if X.shape[0] > 10000:
+                self.OVER_10000 = True
+                self.GP = []
+                #必要なGPの数
+                self.num_GP = int((X.shape[0]-1)/10000 + 1)
+                kernel = GPy.kern.RBF(input_dim = input_dim)
+                for i in range(self.num_GP):
+                    print('learning {}'.format(i+1))
+                    X_sep = X[10000*i:10000*(i+1)]
+                    Y_sep = Y[10000*i:10000*(i+1)]
+                    #print(process.memory_info().rss / (1024 ** 2))
+                    self.GP.append(GPy.models.GPRegression(X_sep,Y_sep, kernel=kernel))
+                    self.GP.optimize()
+            else:
+                kernel = GPy.kern.RBF(input_dim = input_dim)
+                self.GP = GPy.models.GPRegression(X, Y, kernel=kernel)
+                self.GP.optimize()
+                print('Completed')
         else:
             print('GPmodel found')
 
     def predict(self, X):
         #ベクトル化し予測
         X = X.reshape(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
-        Y_predicted, _ = self.GP.predict(X)
-        Y_predicted = np.array(Y_predicted)
-        output = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
+        if self.OVER_10000:
+            predictions = []
+            for i in range(self.num_GP):
+                Y_predicted, _ = self.GP[i].predict(X)
+                Y_predicted = np.array(Y_predicted)
+                predict = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
+                predictions.append(predict)
+            ensemble_predictions = np.vstack(predictions)
+            output = stats.mode(ensemble_predictions, axis=0).mode.ravel()
+            
+        else:
+            Y_predicted, _ = self.GP.predict(X)
+            Y_predicted = np.array(Y_predicted)
+            output = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
         return output
 
 class Model:
