@@ -164,7 +164,6 @@ class KIMLayer:
             
         blocks = np.concatenate(blocks, axis=0)
         predictions, _ = self.GP.predict(blocks)
-            
         #再配置
         idx = 0
         for i in range(b_radius, self.H-b_radius, self.stride):
@@ -195,25 +194,25 @@ class KIMLayer:
         
         num_batches = math.ceil(num_images / batch_size)
         
-
         for batch_idx in tqdm(range(num_batches)):
             start_idx = batch_idx * batch_size
             end_idx = min((batch_idx + 1) * batch_size, num_images)
             batch_blocks = self.input_data[start_idx : end_idx, :, slices[0], slices[1]]
             batch_blocks = batch_blocks.reshape(-1, self.b * self.b * self.C_prev)
-            batch_predictions, _ = self.GP.predict(batch_blocks)
+            batch_predictions, _ = self.GP.predict(batch_blocks) # batch_brediction shape: (batch_size * H_next * W_next, C_prev * block_size * block_size)
+            batch_predictions = batch_predictions.reshape(batch_size, (self.H-self.b+1)*(self.W-self.b+1), -1)
+            
             output_tmp = np.zeros((self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
 
-            idx = 0
-            for n in range(start_idx, end_idx):
-                for i in range(b_radius, self.H-b_radius, self.stride):
-                    i_output = int((i - b_radius)/self.stride)
-                    for j in range(b_radius, self.W-b_radius, self.stride):
-                        j_output = int((j - b_radius)/self.stride)
-                        output_tmp[:, i_output, j_output] = batch_predictions[idx]
+            #再配置
+            for n in range(batch_size):
+                idx = 0
+                out_idx = start_idx + n
+                for i in range(0, self.H-self.b+1, self.stride):
+                    for j in range(0, self.W - self.b+1, self.stride):
+                        output_tmp[:, i, j] = batch_predictions[n, idx]
                         idx += 1
-                
-                self.output_data[n] = output_tmp
+                self.output_data[out_idx] = output_tmp
     
     #@profile
     def calculate(self, input_X, input_Y):
@@ -236,9 +235,9 @@ class KIMLayer:
         self.learn_embedding(train_X, train_Y) 
         
         print('[KIM] Converting the image...')
-        self.convert_all_images_batch(500)
-        #for i in range(num_inputs):
-        #    self.convert__image(i)
+        #self.convert_all_images_batch(batch_size=500)
+        for i in tqdm(range(num_inputs)):
+            self.convert__image(i)
         print('completed')
 
         return self.output_data
