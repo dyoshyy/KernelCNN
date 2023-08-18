@@ -32,7 +32,7 @@ model = models.Sequential([
     layers.Conv2D(16, kernel_size=(5, 5), activation='tanh'),
     layers.AveragePooling2D(pool_size=(2, 2)),
     layers.Flatten(),
-    layers.Dense(400, activation='tanh'),
+    layers.Dense(120, activation='tanh'),
     layers.Dense(10, activation='softmax')
 ])
 
@@ -54,7 +54,7 @@ model.compile(optimizer='sgd', loss='categorical_crossentropy',
 # Train the model
 batch_size = 128
 epochs = 1000
-es = EarlyStopping(monitor='val_loss', mode='auto', patience=5, verbose=0)
+es = EarlyStopping(monitor='val_loss', mode='auto', patience=3, verbose=0)
 model.fit(train_X, train_Y, batch_size=batch_size,epochs=epochs, callbacks=[es], validation_split=0.1)
 
 # predict test samples

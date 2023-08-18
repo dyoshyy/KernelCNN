@@ -236,9 +236,9 @@ class KIMLayer:
         self.learn_embedding(train_X, train_Y) 
         
         print('[KIM] Converting the image...')
-        self.convert_all_images_batch(500)
-        #for i in range(num_inputs):
-        #    self.convert__image(i)
+        #self.convert_all_images_batch(500)
+        for i in tqdm(range(num_inputs)):
+            self.convert__image(i)
         print('completed')
 
         return self.output_data
@@ -322,7 +322,7 @@ class LabelLearningLayer:
                     Y_sep = Y[10000*i:10000*(i+1)]
                     #print(process.memory_info().rss / (1024 ** 2))
                     self.GP.append(GPy.models.GPRegression(X_sep,Y_sep, kernel=kernel))
-                    self.GP.optimize()
+                    self.GP[-1].optimize()
             else:
                 kernel = GPy.kern.RBF(input_dim = input_dim)
                 self.GP = GPy.models.GPRegression(X, Y, kernel=kernel)
