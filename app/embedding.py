@@ -116,7 +116,7 @@ class LaplacianEigenmap:
         self.n_components = n_components
         self.k = k
 
-    def transform(self, X):
+    def fit_transform(self, X):
         W = self.create_similarity_matrix(X)
         D = self.get_degree_matrix(W)
         D = D.astype(float)
@@ -126,7 +126,7 @@ class LaplacianEigenmap:
         index = np.argsort(eig_val)
         eig_vec = eig_vec[index]
         phi = eig_vec[1:self.n_components + 1]
-        return phi.T
+        return phi.T * 1000
 
     def get_degree_matrix(self, W):
         return np.diag([sum(W[i]) for i in range(len(W))])
@@ -178,7 +178,7 @@ class LPP:
         self.n_components = n_components
         self.h = h
 
-    def transform(self, X):
+    def fit_transform(self, X):
         X = X - np.mean(X, axis=0)
         W = self.create_similarity_matrix(X)
         D = self.get_degree_matrix(W)

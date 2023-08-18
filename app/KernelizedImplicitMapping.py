@@ -1,147 +1,66 @@
-import matplotlib.pyplot as plt
 import numpy as np
-import scipy.optimize
-from scipy.linalg import cholesky, cho_solve
-plt.style.use('seaborn-pastel')
+from scipy.optimize import minimize
 
-class KIM:
-    def __init__(self):
-        self.x_train = None
-        self.train_length = None
-        self.thetas = None
-        self.alpha = None
-        
-    def objective(x):
-        return 2 * np.sin(x) + 3 * np.cos(2 * x) + 5 * np.sin(2 / 3 * x)
-
-
-    def rbf(self, x, x_prime, theta_1, theta_2):
-        """RBF Kernel
+class GaussianKernel:
+    def __init__(self, length_scale: float = 1.0):
+        self.length_scale = length_scale
+    
+    def compute(self, X1: np.ndarray, X2: np.ndarray) -> np.ndarray:
+        """
+        Compute the Gaussian kernel matrix between two sets of input data.
 
         Args:
-            x (float): data
-            x_prime (float): data
-            theta_1 (float): hyper parameter
-            theta_2 (float): hyper parameter
+            X1 (np.ndarray): First set of input data with shape (n1, d), where n1 is the number of samples and d is the dimensionality.
+            X2 (np.ndarray): Second set of input data with shape (n2, d).
+
+        Returns:
+            np.ndarray: Gaussian kernel matrix with shape (n1, n2).
         """
+        dist_sq = np.sum((X1[:, np.newaxis] - X2) ** 2, axis=-1)
+        K = np.exp(-0.5 * dist_sq / self.length_scale**2)
+        return K
 
-        return theta_1 * np.exp(-1 * np.linalg.norm(x - x_prime)**2 / theta_2)
-
-    # Radiant Basis Kernel + Error
-    def kernel(self, x, x_prime, theta_1, theta_2, theta_3, noise, eval_grad=False):
-        # delta function
-        if noise:
-            delta = theta_3
-        else:
-            delta = 0
-
-        if eval_grad:
-            dk_dTheta_1 = self.kernel(x, x_prime, theta_1, theta_2, theta_3, noise) - delta
-            dk_dTheta_2 = (self.kernel(x, x_prime, theta_1, theta_2, theta_3, noise) - delta) * (np.linalg.norm(x - x_prime)**2) / theta_2
-            dk_dTheta_3 = delta
-            return self.rbf(x, x_prime, theta_1=theta_1, theta_2=theta_2) + delta, np.array([dk_dTheta_1, dk_dTheta_2, dk_dTheta_3])
-
-        return self.rbf(x, x_prime, theta_1=theta_1, theta_2=theta_2) + delta
-
-
-    def optimize(self, x_train, y_train, bounds, initial_params=np.ones(3)):
-        bounds = np.atleast_2d(bounds)
-
-        def log_marginal_likelihood(params):
-            train_length = len(x_train)
-            K = np.zeros((train_length, train_length))
-            for x_idx in range(train_length):
-                for x_prime_idx in range(train_length):
-                    K[x_idx, x_prime_idx] = self.kernel(x_train[x_idx], x_train[x_prime_idx], params[0], params[1], params[2], x_idx == x_prime_idx)
-
-            L_ = cholesky(K, lower=True)
-            alpha_ = cho_solve((L_, True), y_train)
-            return - 0.5 * np.dot(y_train.T, alpha_) - np.sum(np.log(np.diag(L_))) - 0.5 * train_length * np.log(2 * np.pi)
-
-        def log_likelihood_gradient(params):
-            train_length = len(x_train)
-            K = np.zeros((train_length, train_length))
-            dK_dTheta = np.zeros((3, train_length, train_length))
-            for x_idx in range(train_length):
-                for x_prime_idx in range(train_length):
-                    k, grad = self.kernel(x_train[x_idx], x_train[x_prime_idx], params[0],
-                                    params[1], params[2], x_idx == x_prime_idx, eval_grad=True)
-                    K[x_idx, x_prime_idx] = k
-                    dK_dTheta[0, x_idx, x_prime_idx] = grad[0]
-                    dK_dTheta[1, x_idx, x_prime_idx] = grad[1]
-                    dK_dTheta[2, x_idx, x_prime_idx] = grad[2]
-
-            L_ = cholesky(K, lower=True)
-            alpha_ = cho_solve((L_, True), y_train)
-            K_inv = cho_solve((L_, True), np.eye(K.shape[0]))
-            inner_term = np.einsum("i,j->ij", alpha_, alpha_) - K_inv
-            inner_term = np.einsum("ij,kjl->kil", inner_term, dK_dTheta)
-
-            return 0.5 * np.einsum("ijj", inner_term)
-
-        def obj_func(params):
-            lml = log_marginal_likelihood(params)
-            grad = log_likelihood_gradient(params)
-            return -lml, -grad
-
-        opt_res = scipy.optimize.minimize(
-            obj_func,
-            initial_params,
-            method="L-BFGS-B",
-            jac=True,
-            bounds=bounds,
-        )
-
-        theta_opt, func_min = opt_res.x, opt_res.fun
-        return theta_opt, func_min
-
+class KIM:
+    def __init__(self, kernel: GaussianKernel):
+        self.kernel = kernel
+        self.X_train = None
+        self.y_train = None
+        self.L = None
+        self.x_mean = None
+        self.x_std = None
     
-    def fit(self, x_train, y_train):
-        self.x_train = x_train
-        self.train_length = len(x_train)
-        '''
+    def negative_log_likelihood(self, params):
+        self.kernel.length_scale = params[0]
         
-        # カーネルパラメータの最適化
-        self.thetas, _ = self.optimize(
-            x_train, 
-            y_train, 
-            bounds=np.array([[1e-2, 1e2], [1e-2, 1e2], [1e-2, 1e2]]), 
-            initial_params=np.array([0.5, 0.5, 0.5]))
-        '''
-        print("thetas: ",self.thetas)
-        self.thetas = np.ones(3)
-
-        K = np.zeros((self.train_length, self.train_length))
-        for x_idx in range(self.train_length):
-            for x_prime_idx in range(self.train_length):
-                K[x_idx, x_prime_idx] = self.kernel(x_train[x_idx], x_train[x_prime_idx], self.thetas[0], self.thetas[1], self.thetas[2], x_idx == x_prime_idx)
-
-        L_ = cholesky(K, lower=True)
-        self.alpha_ = cho_solve((L_, True), y_train)
+        K = self.kernel.compute(self.X_train_normalized, self.X_train_normalized)
+        L = np.linalg.cholesky(K + 1e-6 * np.eye(K.shape[0]))
+        alpha = np.linalg.solve(L.T, np.linalg.solve(L, self.y_train))
         
-    def predict(self, x_test):
-        
-        test_length = len(x_test)
-        mu = []
+        nll = 0.5 * np.dot(self.y_train.T, alpha) + np.sum(np.log(np.diag(L))) + 0.5 * len(self.X_train_normalized) * np.log(2 * np.pi)
+        return nll[0, 0]  # スカラー値を返すように変更
     
-        for x_test_idx in range(test_length):
-            k = np.zeros((self.train_length,))
-            for x_idx in range(self.train_length):
-                k[x_idx] = self.kernel(
-                    self.x_train[x_idx],
-                    x_test[x_test_idx], self.thetas[0], self.thetas[1], self.thetas[2], x_idx == x_test_idx)
-            mu.append(np.dot(k, self.alpha_))
-            
-            #s = self.kernel(
-            #    x_test[x_test_idx],
-            #    x_test[x_test_idx], thetas[0], thetas[1], thetas[2], x_test_idx == x_test_idx)
-            #v_ = cho_solve((L_, True), k.T)
-            
-            #var.append(s - np.dot(k, v_))
-        return np.array(mu), None
-
-if __name__ == '__main__':
+    def fit(self, X_train: np.ndarray, y_train: np.ndarray) -> None:
+        self.x_mean = np.mean(X_train, axis=0)
+        self.x_std = np.std(X_train, axis=0)
+        self.X_train_normalized = (X_train - self.x_mean) / self.x_std
+        
+        self.X_train = self.X_train_normalized
+        self.y_train = y_train
+        
+        initial_params = np.array([self.kernel.length_scale])
+        result = minimize(self.negative_log_likelihood, initial_params, method='L-BFGS-B')
+        
+        #print('optimized length:', result.x[0])
+        self.kernel.length_scale = result.x[0]
+        K = self.kernel.compute(self.X_train_normalized, self.X_train_normalized)
+        self.L = np.linalg.cholesky(K + 1e-6 * np.eye(K.shape[0]))
+        
+    def predict(self, X_test: np.ndarray) -> np.ndarray:
+        # テストデータの正規化
+        X_test_normalized = (X_test - self.x_mean) / self.x_std
+        
+        K_star = self.kernel.compute(X_test_normalized, self.X_train)
+        v = np.linalg.solve(self.L, K_star.T)
+        mean = np.dot(v.T, np.linalg.solve(self.L, self.y_train))
+        return mean, None
     
-    model = KIM()
-    model.fit()
-

@@ -53,19 +53,19 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
     if changed:
         filename = new_filename
 
-    fig = plt.figure(figsize=(36, 30)) #12 10
+    fig = plt.figure(figsize=(12, 12)) #12 10
 
     # 圧縮後の散布図
     ax = fig.add_subplot(111)
-    sc = ax.scatter(compressed_data[:, 0], compressed_data[:, 1], cmap='tab10', c=sampled_blocks_label, marker='o', s=60, edgecolors='black')
-    plt.colorbar(sc, label='label')
-    ax.set_xlabel('Component 1')
-    ax.set_ylabel('Component 2')
+    sc = ax.scatter(compressed_data[:, 0], compressed_data[:, 1], cmap='tab10', c=sampled_blocks_label, marker='o', s=30, edgecolors='black')
+    #plt.colorbar(sc, label='label')
+    #ax.set_xlabel('Component 1')
+    #ax.set_ylabel('Component 2')
     ax.set_title('Embedded data '+"("+emb+")")
 
     # ランダムに一部の点にのみブロックの画像を表示
     num_samples = len(compressed_data)
-    num_blocks_to_display = min(200, num_samples)
+    num_blocks_to_display = min(50, num_samples)
     random_indices = random.sample(range(num_samples), num_blocks_to_display)
     #print(np.shape(sampled_blocks))
     if sampled_blocks.shape[1] == block_size * block_size:
@@ -73,8 +73,8 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
             x, y = compressed_data[i]
             img = sampled_blocks[i].reshape(block_size, block_size)# ブロック画像を5x5に変形
             img_rgb = np.zeros((block_size, block_size, 3))
-            #imgbox = OffsetImage(img_rgb, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
-            imgbox = OffsetImage(img, zoom=8, cmap='gray')
+            imgbox = OffsetImage(img, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
+            #imgbox = OffsetImage(img, zoom=8, cmap='gray')
             ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
             ax.add_artist(ab)
 
