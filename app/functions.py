@@ -8,7 +8,7 @@ import random
 
 def display_images(data, layer):
     data = data[0]
-    num_in_a_row = 4
+    num_in_a_row = 4 #default 4
     Channels = data.shape[0]
     Rows = math.ceil(Channels/5)
 
