@@ -13,6 +13,7 @@ from sklearn.manifold import SpectralEmbedding
 from lpproj import LocalityPreservingProjection
 from sklearn.manifold import TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from scipy import stats
 
 from skimage import util
@@ -21,6 +22,7 @@ from tqdm import tqdm
 from memory_profiler import profile
 
 np.random.seed(1)
+random.seed(1)
 
 class KIMLayer:
     def __init__(self, block_size : int, channels_next : int, stride : int, emb : str):
@@ -85,7 +87,6 @@ class KIMLayer:
 
         if self.GP is None:
             sampled_blocks, sampled_blocks_label = self.sample_block(n_train, train_X, train_Y)
-            print(sampled_blocks.shape)
             # 埋め込み
             if self.embedding == "PCA":
                 pca = PCA(n_components=self.C_next, svd_solver='auto')
@@ -115,11 +116,11 @@ class KIMLayer:
                 embedded_blocks = model.fit(epoch=100,epsilonX=0.05,epsilonSigma=0.0005,epsilonAlpha=0.00001)
             
             elif self.embedding == "TSNE":
-                tsne = TSNE(n_components=self.C_next, random_state = 0, method='exact', perplexity = 30, n_iter = 500)
+                tsne = TSNE(n_components=self.C_next, random_state = 0, method='exact',init='pca', perplexity = 30, n_iter = 500)
                 embedded_blocks = tsne.fit_transform(sampled_blocks)
                 
             elif self.embedding == 'LLE':
-                lle = LocallyLinearEmbedding(n_components=self.C_next)
+                lle = LocallyLinearEmbedding(n_components=self.C_next, n_neighbors=int(sampled_blocks.shape[0]/10))
                 embedded_blocks = lle.fit_transform(sampled_blocks)
             
             else:
@@ -127,8 +128,12 @@ class KIMLayer:
 
             
             # 埋め込みデータを可視化
-            principal_data = embedded_blocks[:,0:2]
-            visualize_emb(principal_data, sampled_blocks, sampled_blocks_label, self.embedding, self.b)
+            principal_data_12 = embedded_blocks[:,0:2]
+            principal_data_34 = embedded_blocks[:,2:4]
+            principal_data_56 = embedded_blocks[:,4:6]
+            visualize_emb(principal_data_12, sampled_blocks, sampled_blocks_label, self.embedding, self.b, 1, 2)
+            visualize_emb(principal_data_34, sampled_blocks, sampled_blocks_label, self.embedding, self.b, 3, 4)
+            visualize_emb(principal_data_56, sampled_blocks, sampled_blocks_label, self.embedding, self.b, 5, 6)
 
             #ガウス過程回帰で学習
             print('[KIM] Fitting samples...')
@@ -139,6 +144,15 @@ class KIMLayer:
             selected_indices = random.sample(range(sampled_blocks.shape[0]), select_num)
             sampled_blocks = sampled_blocks[selected_indices]
             embedded_blocks = embedded_blocks[selected_indices]
+            
+            #埋め込みデータを正規化,標準化
+            ms = MinMaxScaler()
+            ss = StandardScaler()
+            ms.fit(embedded_blocks)
+            print(ms.data_max_)
+            print(ms.data_min_)
+            embedded_blocks = ms.transform(embedded_blocks)
+            embedded_blocks = ss.fit_transform(embedded_blocks)
             
             print("embedded shape:", np.shape(embedded_blocks))
             
@@ -316,7 +330,6 @@ class LabelLearningLayer:
 
             # 訓練サンプルが10000超える場合は10000ずつに分けて学習
             pid = os.getpid()
-            process = psutil.Process(pid)
             if X.shape[0] > 10000:
                 self.OVER_10000 = True
                 self.GP = []
@@ -327,10 +340,10 @@ class LabelLearningLayer:
                     print('learning {}'.format(i+1))
                     X_sep = X[10000*i:10000*(i+1)]
                     Y_sep = Y[10000*i:10000*(i+1)]
-                    #print(process.memory_info().rss / (1024 ** 2))
                     self.GP.append(GPy.models.GPRegression(X_sep,Y_sep, kernel=kernel))
                     self.GP[-1].optimize()
             else:
+                print(X,Y)
                 kernel = GPy.kern.RBF(input_dim = input_dim)
                 self.GP = GPy.models.GPRegression(X, Y, kernel=kernel)
                 self.GP.optimize()
@@ -354,6 +367,7 @@ class LabelLearningLayer:
         else:
             Y_predicted, _ = self.GP.predict(X)
             Y_predicted = np.array(Y_predicted)
+            print(Y_predicted)
             output = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
         return output
 
@@ -372,6 +386,8 @@ class Model:
             X = layer.calculate(X, Y)
             if self.display:
                 display_images(X, n+1)
+                display_images(X[1:], n+9)
+                display_images(X[2:], n+13)
 
         self.shapes.append(np.shape(X)[1:])
         if not isinstance(self.layers[-1], LabelLearningLayer):
