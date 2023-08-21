@@ -38,8 +38,8 @@ if __name__ == '__main__':
 
     n = int(args[1])  #train
     #m = int(args[2])  #test
-    m = 10000
-    emb = args[2]
+    m = int(args[2])
+    emb = args[3]
 
     X_train = X_train[:n]
     Y_train = Y_train[:n]

@@ -2,7 +2,7 @@ import numpy as np
 import random, math
 import GPy
 import KernelizedImplicitMapping
-import psutil, os
+import psutil, os, sys
 from functions import calculate_similarity
 from functions import display_images
 from functions import binarize_images
@@ -10,9 +10,10 @@ from functions import visualize_emb
 
 import embedding
 from sklearn.manifold import SpectralEmbedding
-from lpproj import LocalityPreservingProjection
 from sklearn.manifold import TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
+from sklearn.preprocessing import StandardScaler
+from lpproj import LocalityPreservingProjection
 from scipy import stats
 
 from skimage import util
@@ -85,7 +86,7 @@ class KIMLayer:
 
         if self.GP is None:
             sampled_blocks, sampled_blocks_label = self.sample_block(n_train, train_X, train_Y)
-            print(sampled_blocks.shape)
+
             # 埋め込み
             if self.embedding == "PCA":
                 pca = PCA(n_components=self.C_next, svd_solver='auto')
@@ -98,14 +99,22 @@ class KIMLayer:
             elif self.embedding == "LE":
                 n_neighbors = int(sampled_blocks.shape[0]/10)
                 #n_neighbors=10
-                LE = embedding.LaplacianEigenmap(self.C_next, n_neighbors)
-                #LE = SpectralEmbedding(n_components=self.C_next)
+                #LE = embedding.LaplacianEigenmap(self.C_next, n_neighbors)
+                LE = SpectralEmbedding(n_components=self.C_next)
                 embedded_blocks = LE.fit_transform(sampled_blocks)
             
+            elif self.embedding == "TSNE":
+                tsne = TSNE(n_components=self.C_next, random_state = 0, method='exact', perplexity = 50, n_iter = 500, init='pca', learning_rate=500)
+                embedded_blocks = tsne.fit_transform(sampled_blocks)
+                
+            elif self.embedding == 'LLE':
+                lle = LocallyLinearEmbedding(n_components=self.C_next, n_neighbors= int(sampled_blocks.shape[0]/10))
+                embedded_blocks = lle.fit_transform(sampled_blocks)
+            
             elif self.embedding == "LPP":
-                LPP = embedding.LPP(n_components=self.C_next)
-                #LPP = LocalityPreservingProjection(n_components=self.C_next)
-                embedded_blocks = LPP.fit_transform(sampled_blocks)*100
+                #LPP = embedding.LPP(n_components=self.C_next)
+                LPP = LocalityPreservingProjection(n_components=self.C_next)
+                embedded_blocks = LPP.fit_transform(sampled_blocks)
                 
             elif self.embedding == "GPLVM":
                 sigma=3
@@ -114,16 +123,9 @@ class KIMLayer:
                 model = embedding.GPLVM(sampled_blocks,self.C_next, np.array([sigma**2,alpha/beta]))
                 embedded_blocks = model.fit(epoch=100,epsilonX=0.05,epsilonSigma=0.0005,epsilonAlpha=0.00001)
             
-            elif self.embedding == "TSNE":
-                tsne = TSNE(n_components=self.C_next, random_state = 0, method='exact', perplexity = 30, n_iter = 500)
-                embedded_blocks = tsne.fit_transform(sampled_blocks)
-                
-            elif self.embedding == 'LLE':
-                lle = LocallyLinearEmbedding(n_components=self.C_next)
-                embedded_blocks = lle.fit_transform(sampled_blocks)
-            
             else:
                 print('Error: No embedding selected.')
+                sys.exit()
 
             
             # 埋め込みデータを可視化
@@ -139,11 +141,16 @@ class KIMLayer:
             selected_indices = random.sample(range(sampled_blocks.shape[0]), select_num)
             sampled_blocks = sampled_blocks[selected_indices]
             embedded_blocks = embedded_blocks[selected_indices]
-            
+
+            print('sampled:')
+            print(sampled_blocks[:10])
+            print('embedded:')
+            print(embedded_blocks[:10])
+
             print("embedded shape:", np.shape(embedded_blocks))
             
             print('[KIM] Training KIM')
-            kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev)
+            kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev)
             self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
             self.GP.optimize()
             #kernel = KernelizedImplicitMapping.GaussianKernel(length_scale=1.0)
@@ -247,6 +254,8 @@ class KIMLayer:
         for i in tqdm(range(num_inputs)):
             self.convert__image(i)
         print('completed')
+
+        print(self.output_data[0])
 
         return self.output_data
 

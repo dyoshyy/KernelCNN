@@ -9,34 +9,6 @@ from tqdm import tqdm
 np.set_printoptions(threshold=np.inf)
 np.random.seed(2)
 
-def visualize_data(labels_3d, compressed_data, filename='compressed_data_visualization.png'):
-
-    # 圧縮前の散布図
-    fig = plt.figure(figsize=(6, 6))
-    '''
-    ax1 = fig.add_subplot(121, projection='3d')
-    ax1.scatter(data_3d[:, 0], data_3d[:, 1],
-                data_3d[:, 2], c=labels_3d, marker='o', s=50)
-    ax1.set_xlabel('Feature 1')
-    ax1.set_ylabel('Feature 2')
-    ax1.set_zlabel('Feature 3')
-    ax1.set_title('Original Data')
-    '''
-    # 圧縮後の散布図
-    ax2 = fig.add_subplot(111)
-    ax2.scatter(
-        compressed_data[:, 0], compressed_data[:, 1], c=labels_3d, marker='o', s=50)
-    ax2.set_xlabel('Component 1')
-    ax2.set_ylabel('Component 2')
-    ax2.set_title('Embedded Data')
-
-    plt.tight_layout()
-
-    # 画像として保存
-    plt.savefig(filename)
-    plt.show()
-
-
 def PCA(X, num_components):
     mean = np.mean(X, axis=0)
     centered_data = X - mean
