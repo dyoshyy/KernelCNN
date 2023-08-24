@@ -121,14 +121,6 @@ class KIMLayer:
                 model = embedding.GPLVM(sampled_blocks,self.C_next, np.array([sigma**2,alpha/beta]))
                 embedded_blocks = model.fit(epoch=100,epsilonX=0.05,epsilonSigma=0.0005,epsilonAlpha=0.00001)
             
-            elif self.embedding == "TSNE":
-                tsne = TSNE(n_components=self.C_next, random_state = 0, method='exact',init='pca', perplexity = 30, n_iter = 500)
-                embedded_blocks = tsne.fit_transform(sampled_blocks)
-                
-            elif self.embedding == 'LLE':
-                lle = LocallyLinearEmbedding(n_components=self.C_next, n_neighbors=int(sampled_blocks.shape[0]/10))
-                embedded_blocks = lle.fit_transform(sampled_blocks)
-            
             else:
                 print('Error: No embedding selected.')
                 sys.exit()
