@@ -213,7 +213,7 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
 
     # 圧縮後の散布図
     ax = fig.add_subplot(111)
-    sc = ax.scatter(compressed_data[:, 0], compressed_data[:, 1], cmap='tab10', c=sampled_blocks_label, marker='o', s=30, edgecolors='black')
+    sc = ax.scatter(compressed_data[:, 0], compressed_data[:, 1], cmap='tab10', c=sampled_blocks_label, marker='o', s=50, edgecolors='black')
     #plt.colorbar(sc, label='label')
     ax.set_title('Embedded data ' + 'Channel{}'.format(str(channel1)) + '&' + str(channel2) +" ("+emb+")")
 
