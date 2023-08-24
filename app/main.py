@@ -11,7 +11,7 @@ import layers
 from functions import binarize_images
 from functions import pad_images
 
-from keras.datasets import mnist
+from keras.datasets import mnist, cifar10
 from keras.utils import to_categorical
 
 
@@ -20,13 +20,14 @@ if __name__ == '__main__':
 
     #データセットのロード
     (X_train, Y_train), (X_test,Y_test) = mnist.load_data()
+    #(X_train, Y_train), (X_test,Y_test) = cifar10.load_data()
 
     X_train = pad_images(X_train)
     X_test = pad_images(X_test)
     
     image_rows = 32
     image_cols = 32
-    image_color = 1 #グレースケール
+    image_color = 1 
     input_shape = (image_rows, image_cols, image_color)
     out_size = 10
 
