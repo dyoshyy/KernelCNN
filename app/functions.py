@@ -6,6 +6,160 @@ import matplotlib.pyplot as plt
 import math
 import random
 
+block_img_set = np.array([
+   [[0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0]],
+   
+   [[1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0]],
+   
+   [[0, 1, 0, 0, 0],
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 0, 0]],
+   
+   [[0, 0, 1, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 1, 0, 0]],
+   
+   [[0, 0, 0, 1, 0],
+    [0, 0, 0, 1, 0],
+    [0, 0, 0, 1, 0],
+    [0, 0, 0, 1, 0],
+    [0, 0, 0, 1, 0]],
+
+   [[0, 0, 0, 0, 1],
+    [0, 0, 0, 0, 1],
+    [0, 0, 0, 0, 1],
+    [0, 0, 0, 0, 1],
+    [0, 0, 0, 0, 1]],
+   
+   [[1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0]],
+   
+   [[0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0]],
+    
+   [[0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0]],
+   
+   [[0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0]],
+   
+   [[0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1]],
+   
+   [[1, 1, 0, 0, 0],
+    [1, 1, 0, 0, 0],
+    [1, 1, 0, 0, 0],
+    [1, 1, 0, 0, 0],
+    [1, 1, 0, 0, 0]],
+   
+   [[0, 1, 1, 0, 0],
+    [0, 1, 1, 0, 0],
+    [0, 1, 1, 0, 0],
+    [0, 1, 1, 0, 0],
+    [0, 1, 1, 0, 0]],
+   
+   [[0, 0, 1, 1, 0],
+    [0, 0, 1, 1, 0],
+    [0, 0, 1, 1, 0],
+    [0, 0, 1, 1, 0],
+    [0, 0, 1, 1, 0]],
+   
+   [[0, 0, 0, 1, 1],
+    [0, 0, 0, 1, 1],
+    [0, 0, 0, 1, 1],
+    [0, 0, 0, 1, 1],
+    [0, 0, 0, 1, 1]],
+   
+   [[1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0]],
+   
+   [[0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0]],
+    
+   [[0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0]],
+   
+   [[0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1]],
+
+   [[1, 0, 0, 0, 0],
+    [0, 1, 0, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 1]],
+   
+   [[0, 0, 0, 0, 1],
+    [0, 0, 0, 1, 0],
+    [0, 0, 1, 0, 0],
+    [0, 1, 0, 0, 0],
+    [1, 0, 0, 0, 0]],
+    
+   [[1, 1, 0, 0, 0],
+    [1, 1, 1, 0, 0],
+    [0, 1, 1, 1, 0],
+    [0, 0, 1, 1, 1],
+    [0, 0, 0, 1, 1]],
+   
+   [[0, 0, 0, 1, 1],
+    [0, 0, 1, 1, 1],
+    [0, 1, 1, 1, 0],
+    [1, 1, 1, 0, 0],
+    [1, 1, 0, 0, 0]],
+   
+   [[1, 1, 1, 0, 0],
+    [1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 1],
+    [0, 0, 1, 1, 1]],
+   
+   [[0, 0, 1, 1, 1],
+    [0, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 0],
+    [1, 1, 1, 0, 0]]
+])
+
+block_img_set = block_img_set.reshape(block_img_set.shape[0], 25)
+
 def display_images(data, layer):
     data = data[0]
     num_in_a_row = 4 #default 4
@@ -32,7 +186,7 @@ def display_images(data, layer):
     plt.savefig("./results/layer_{}_result.png".format(layer))
     #plt.show()
 
-def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, block_size):
+def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, block_size, channel1, channel2):
     '''
     埋め込み後の点を可視化
         compressed_data : 次元削減後のデータの第1,2次元
@@ -41,6 +195,8 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
         emb : 埋め込み手法
         block_size : ブロックのサイズ
     '''
+    
+    #ファイル名の重複を防ぐ処理
     filename = 'emb_' + emb
     file_exists = os.path.exists("./emb_results/" + filename + ".png")
     counter = 1
@@ -59,9 +215,7 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
     ax = fig.add_subplot(111)
     sc = ax.scatter(compressed_data[:, 0], compressed_data[:, 1], cmap='tab10', c=sampled_blocks_label, marker='o', s=30, edgecolors='black')
     #plt.colorbar(sc, label='label')
-    #ax.set_xlabel('Component 1')
-    #ax.set_ylabel('Component 2')
-    ax.set_title('Embedded data '+"("+emb+")")
+    ax.set_title('Embedded data ' + 'Channel{}'.format(str(channel1)) + '&' + str(channel2) +" ("+emb+")")
 
     # ランダムに一部の点にのみブロックの画像を表示
     num_samples = len(compressed_data)
@@ -77,6 +231,19 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
             #imgbox = OffsetImage(img, zoom=8, cmap='gray')
             ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
             ax.add_artist(ab)
+
+        for i in range(len(sampled_blocks)):
+            for x in block_img_set:
+                if np.all(sampled_blocks[i].reshape(25)==x):
+                    img = sampled_blocks[i].reshape(block_size, block_size)
+                    x,y = compressed_data[i]
+                    img_rgb = np.zeros((block_size, block_size, 3))
+                    img_rgb[:, :, 1] = img
+                    img_rgb[:, :, 2] = img
+                    imgbox = OffsetImage(img_rgb, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
+                    ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
+                    ax.add_artist(ab)            
+                
 
     plt.tight_layout()
 

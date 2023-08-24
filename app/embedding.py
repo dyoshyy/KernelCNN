@@ -98,7 +98,7 @@ class LaplacianEigenmap:
         index = np.argsort(eig_val)
         eig_vec = eig_vec[index]
         phi = eig_vec[1:self.n_components + 1]
-        return phi.T * 1000
+        return phi.T
 
     def get_degree_matrix(self, W):
         return np.diag([sum(W[i]) for i in range(len(W))])
