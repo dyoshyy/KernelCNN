@@ -16,7 +16,7 @@ test_X = test_images.reshape(-1, 28, 28, 1)
 train_Y = to_categorical(train_labels, 10)
 test_Y = to_categorical(test_labels, 10)
 
-train_num = 10000
+train_num = 5000
 test_num = 10000
 
 train_X = binarize_mnist_data(train_X[:train_num])
@@ -33,6 +33,7 @@ model = models.Sequential([
     layers.AveragePooling2D(pool_size=(2, 2)),
     layers.Flatten(),
     layers.Dense(120, activation='tanh'),
+    layers.Dense(84, activation='tanh'),
     layers.Dense(10, activation='softmax')
 ])
 
@@ -52,8 +53,8 @@ model.compile(optimizer='sgd', loss='categorical_crossentropy',
               metrics=['accuracy'])
 
 # Train the model
-batch_size = 64
-epochs = 1000
+batch_size = 512
+epochs = 50
 es = EarlyStopping(monitor='val_loss', mode='auto', patience=3, verbose=0)
 model.fit(train_X, train_Y, batch_size=batch_size,epochs=epochs, callbacks=[es], validation_split=0.2)
 
