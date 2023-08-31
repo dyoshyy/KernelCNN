@@ -16,7 +16,7 @@ test_X = test_images.reshape(-1, 28, 28, 1)
 train_Y = to_categorical(train_labels, 10)
 test_Y = to_categorical(test_labels, 10)
 
-train_num = 5000
+train_num = 10000
 test_num = 10000
 
 train_X = binarize_mnist_data(train_X[:train_num])
@@ -54,7 +54,7 @@ model.compile(optimizer='sgd', loss='categorical_crossentropy',
 
 # Train the model
 batch_size = 512
-epochs = 50
+epochs = 500
 es = EarlyStopping(monitor='val_loss', mode='auto', patience=3, verbose=0)
 model.fit(train_X, train_Y, batch_size=batch_size,epochs=epochs, callbacks=[es], validation_split=0.2)
 
@@ -65,6 +65,10 @@ print(test_acc)
 
 # Get intermediate outputs for the convolutional layers and save them in the list
 block_outputs.append(get_intermediate_output(model, 'conv2d', train_X))
+weights = model.get_layer("conv2d").get_weights()[0]
+weights = weights.reshape(1, 6, 5, 5)
+display_images(weights, 100)
+display_images(block_outputs[0].transpose(0, 3, 1, 2), 9)
 
 # Print the shapes of the intermediate outputs
 for i, output in enumerate(block_outputs):
