@@ -126,6 +126,18 @@ block_img_set = np.array([
     [0, 0, 1, 0, 0],
     [0, 0, 0, 1, 0],
     [0, 0, 0, 0, 1]],
+
+   [[0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 1, 0, 0, 0],
+    [1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 0]],
+
+   [[0, 1, 1, 1, 1],
+    [0, 0, 1, 1, 1],
+    [0, 0, 0, 1, 1],
+    [0, 0, 0, 0, 1],
+    [0, 0, 0, 0, 0]],
    
    [[0, 0, 0, 0, 1],
     [0, 0, 0, 1, 0],
@@ -232,17 +244,18 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
             ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
             ax.add_artist(ab)
 
-        for i in range(len(sampled_blocks)):
-            for x in block_img_set:
-                if np.all(sampled_blocks[i].reshape(25)==x):
-                    img = sampled_blocks[i].reshape(block_size, block_size)
-                    x,y = compressed_data[i]
-                    img_rgb = np.zeros((block_size, block_size, 3))
-                    img_rgb[:, :, 1] = img
-                    img_rgb[:, :, 2] = img
-                    imgbox = OffsetImage(img_rgb, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
-                    ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
-                    ax.add_artist(ab)            
+        if block_size == 5:
+            for i in range(len(sampled_blocks)):
+                for x in block_img_set:
+                    if np.all(sampled_blocks[i].reshape(25)==x):
+                        img = sampled_blocks[i].reshape(block_size, block_size)
+                        x,y = compressed_data[i]
+                        img_rgb = np.zeros((block_size, block_size, 3))
+                        img_rgb[:, :, 1] = img
+                        img_rgb[:, :, 2] = img
+                        imgbox = OffsetImage(img_rgb, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
+                        ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
+                        ax.add_artist(ab)            
                 
 
     plt.tight_layout()

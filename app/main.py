@@ -52,10 +52,10 @@ if __name__ == '__main__':
 
     #モデル定義
     model = layers.Model(display=True)
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, emb=emb))
+    model.add_layer(layers.KIMLayer(block_size=7, channels_next = 6, stride = 1, emb=emb))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, emb=emb))
-    model.add_layer(layers.AvgPoolingLayer(pool_size=2))
+    model.add_layer(layers.KIMLayer(block_size=7, channels_next = 16, stride = 1, emb=emb))
+    #model.add_layer(layers.AvgPoolingLayer(pool_size=2))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
 
     start1 = time.time()

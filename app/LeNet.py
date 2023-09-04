@@ -54,7 +54,7 @@ model.compile(optimizer='sgd', loss='categorical_crossentropy',
 
 # Train the model
 batch_size = 512
-epochs = 500
+epochs = 1000
 es = EarlyStopping(monitor='val_loss', mode='auto', patience=3, verbose=0)
 model.fit(train_X, train_Y, batch_size=batch_size,epochs=epochs, callbacks=[es], validation_split=0.2)
 
@@ -65,9 +65,12 @@ print(test_acc)
 
 # Get intermediate outputs for the convolutional layers and save them in the list
 block_outputs.append(get_intermediate_output(model, 'conv2d', train_X))
-weights = model.get_layer("conv2d").get_weights()[0]
-weights = weights.reshape(1, 6, 5, 5)
-display_images(weights, 100)
+weights_1 = model.get_layer("conv2d").get_weights()[0]
+weights_1 = weights_1.transpose(2, 3, 0, 1)
+weights_3 = model.get_layer("conv2d_1").get_weights()[0]
+weights_3 = weights_3.transpose(2, 3, 0, 1)
+display_images(weights_1, 100)
+display_images(weights_3, 101)
 display_images(block_outputs[0].transpose(0, 3, 1, 2), 9)
 
 # Print the shapes of the intermediate outputs
