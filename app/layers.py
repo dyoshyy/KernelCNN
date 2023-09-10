@@ -138,11 +138,11 @@ class KIMLayer:
             print('[KIM] Fitting samples...')
             
             #３分の１だけ無作為に取り出す
-            select_num = max(1000, int(sampled_blocks.shape[0]/10))
-            #select_num = 3000
-            selected_indices = random.sample(range(sampled_blocks.shape[0]), select_num)
-            sampled_blocks = sampled_blocks[selected_indices]
-            embedded_blocks = embedded_blocks[selected_indices]
+            #select_num = min(1000, sampled_blocks.shape[0])
+            #select_num = 1000
+            #selected_indices = random.sample(range(sampled_blocks.shape[0]), select_num)
+            #sampled_blocks = sampled_blocks[selected_indices]
+            #embedded_blocks = embedded_blocks[selected_indices]
             
             #埋め込みデータを正規化,標準化
             ms = MinMaxScaler()

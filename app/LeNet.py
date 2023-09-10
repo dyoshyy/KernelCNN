@@ -29,8 +29,10 @@ test_Y = test_Y[:test_num]
 model = models.Sequential([
     layers.Conv2D(6, kernel_size=(5, 5), activation='tanh', padding='same', input_shape=(28, 28, 1)),
     layers.AveragePooling2D(pool_size=(2, 2)),
+    #layers.MaxPooling2D(pool_size=(2, 2)),
     layers.Conv2D(16, kernel_size=(5, 5), activation='tanh'),
     layers.AveragePooling2D(pool_size=(2, 2)),
+    #layers.MaxPooling2D(pool_size=(2, 2)),
     layers.Flatten(),
     layers.Dense(120, activation='tanh'),
     layers.Dense(84, activation='tanh'),
@@ -65,10 +67,18 @@ print(test_acc)
 
 # Get intermediate outputs for the convolutional layers and save them in the list
 block_outputs.append(get_intermediate_output(model, 'conv2d', train_X))
-weights = model.get_layer("conv2d").get_weights()[0]
-weights = weights.reshape(1, 6, 5, 5)
-display_images(weights, 100)
-display_images(block_outputs[0].transpose(0, 3, 1, 2), 9)
+block_outputs.append(get_intermediate_output(model, 'conv2d_1', train_X))
+weights1 = model.get_layer("conv2d").get_weights()[0]
+weights2 = model.get_layer("conv2d_1").get_weights()[0]
+weights1 = weights1.transpose(2, 3, 0, 1)
+weights2 = weights2.transpose(2, 3, 0, 1)
+
+display_images(block_outputs[0].transpose(0, 3, 1, 2), 99)
+display_images(block_outputs[1].transpose(0, 3, 1, 2), 100)
+display_images(weights1, 101)
+for i in range(weights2.shape[0]):
+    weight = weights2[i:]
+    display_images(weight, 102+i)
 
 # Print the shapes of the intermediate outputs
 for i, output in enumerate(block_outputs):
