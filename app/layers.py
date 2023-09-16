@@ -24,7 +24,7 @@ np.random.seed(1)
 random.seed(1)
 
 class KIMLayer:
-    def __init__(self, block_size : int, channels_next : int, stride : int, emb : str):
+    def __init__(self, block_size : int, channels_next : int, stride : int, emb : str, num_KIMlearn : int):
         self.b = block_size
         self.stride = stride
         self.C_next = channels_next
@@ -35,6 +35,7 @@ class KIMLayer:
         self.input_data = None
         self.embedding = emb
         self.GP = None
+        self.num_KIMlearn = num_KIMlearn
 
     def sample_block(self, n_train, train_X, train_Y):
         '''
@@ -138,11 +139,11 @@ class KIMLayer:
             print('[KIM] Fitting samples...')
             
             #３分の１だけ無作為に取り出す
-            #select_num = min(1000, sampled_blocks.shape[0])
-            #select_num = 1000
-            #selected_indices = random.sample(range(sampled_blocks.shape[0]), select_num)
-            #sampled_blocks = sampled_blocks[selected_indices]
-            #embedded_blocks = embedded_blocks[selected_indices]
+            select_num = min(100000, sampled_blocks.shape[0])
+            #select_num = 3000
+            selected_indices = random.sample(range(sampled_blocks.shape[0]), select_num)
+            sampled_blocks = sampled_blocks[selected_indices]
+            embedded_blocks = embedded_blocks[selected_indices]
             
             #埋め込みデータを正規化,標準化
             ms = MinMaxScaler()
@@ -246,7 +247,8 @@ class KIMLayer:
         self.output_data = np.zeros((num_inputs, self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
 
         #先頭からtrain_numの画像を埋め込みの学習に使う
-        train_num = 100
+        #train_num = 100
+        train_num = self.num_KIMlearn
         #if self.H == 5:
         #    train_num = 1000
         train_X = input_X[:train_num] 
@@ -399,7 +401,23 @@ class Model:
         Y_predicted = self.layers[-1].predict(test_X)
         Y_answer= [np.argmax(test_Y[n,:]) for n in range(test_Y.shape[0])]
 
-        print('Accuracy:', calculate_similarity(Y_predicted, Y_answer))
+        accuracy = calculate_similarity(Y_predicted, Y_answer)
+        print('Accuracy:', accuracy)
         print('Layers shape:',self.shapes)
+        
+        # パラメータと正解率をテキストファイルに保存
+        with open('model_parameters.txt', 'a') as param_file:
+            # モデルのパラメータを保存
+            for layer in self.layers:
+                if isinstance(layer, LabelLearningLayer):
+                    continue  # LabelLearningLayerのパラメータは保存しない
+                if isinstance(layer, KIMLayer):
+                    param_file.write(f'Embedding method: {layer.embedding}\n')
+                    param_file.write(f'Samples of KIM learning: {layer.num_KIMlearn}\n')
+
+            # 正解率を保存
+            param_file.write(f'Accuracy: {accuracy}\n')
+            param_file.write('-------------------------------\n')
+            
         return Y_predicted, Y_answer
 

@@ -1,6 +1,6 @@
 from main import main
 
-main(1000, 10000, 'PCA')
-main(1000, 10000, 'LLE')
-main(1000, 10000, 'LE')
-main(1000, 10000, 'TSNE')
+main(100, 10000, 'LE', 100)
+main(1000, 10000, 'LE', 100)
+main(10000, 10000, 'LE', 100)
+main(60000, 10000, 'LE', 100)

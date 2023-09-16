@@ -1,0 +1,137 @@
+Layer: KIMLayer
+GP Model 1 Parameters:
+0.14476112701622956
+GP Model 2 Parameters:
+2.6559102205067022
+GP Model 3 Parameters:
+0.3011392638893738
+GP Model 4 Parameters:
+0.053277849491542496
+GP Model 5 Parameters:
+0.0001489307674362131
+Layer: KIMLayer
+GP Model 1 Parameters:
+0.9959743596603646
+GP Model 2 Parameters:
+2.595168225751152
+GP Model 3 Parameters:
+4.129488856422373e-07
+GP Model 4 Parameters:
+0.048519154480448856
+GP Model 5 Parameters:
+8.311929762236072e-23
+Accuracy: 0.94
+Layer: KIMLayer
+GP Model 1 Parameters:
+2.2136371420793837e-16
+GP Model 2 Parameters:
+45.21594181995214
+GP Model 3 Parameters:
+1.0047500862863394
+GP Model 4 Parameters:
+0.06900678669737752
+GP Model 5 Parameters:
+1.3670300752725407e-27
+Layer: KIMLayer
+GP Model 1 Parameters:
+1.1168236636953e-19
+GP Model 2 Parameters:
+38.673881767151855
+GP Model 3 Parameters:
+0.24910210708805022
+GP Model 4 Parameters:
+0.21531701743432885
+GP Model 5 Parameters:
+2.411185506264233e-27
+Accuracy: 0.93
+-------------------------------
+Layer: KIMLayer
+GP Model 1 Parameters:
+0.14476112701622956
+GP Model 2 Parameters:
+2.6559102205067022
+GP Model 3 Parameters:
+0.3011392638893738
+GP Model 4 Parameters:
+0.053277849491542496
+GP Model 5 Parameters:
+0.0001489307674362131
+Layer: KIMLayer
+GP Model 1 Parameters:
+0.9959743596603646
+GP Model 2 Parameters:
+2.595168225751152
+GP Model 3 Parameters:
+4.129488856422373e-07
+GP Model 4 Parameters:
+0.048519154480448856
+GP Model 5 Parameters:
+8.311929762236072e-23
+Accuracy: 0.9351
+-------------------------------
+Layer: KIMLayer
+GP Model 1 Parameters:
+0.039783712615395934
+GP Model 2 Parameters:
+2.000565922353151
+GP Model 3 Parameters:
+1.0861647119783346
+GP Model 4 Parameters:
+0.07348631239146333
+GP Model 5 Parameters:
+0.0002060133956587689
+Layer: KIMLayer
+GP Model 1 Parameters:
+0.11397555279963432
+GP Model 2 Parameters:
+1.9449183080639085
+GP Model 3 Parameters:
+1.0350720276811896
+GP Model 4 Parameters:
+0.0662593090896798
+GP Model 5 Parameters:
+0.0006001063852820594
+Accuracy: 0.9284
+-------------------------------
+Embedding method: PCA
+Samples of KIM learning: 10
+Embedding method: PCA
+Samples of KIM learning: 10
+Accuracy: 0.93
+-------------------------------
+Embedding method: PCA
+Samples of KIM learning: 100
+Embedding method: PCA
+Samples of KIM learning: 100
+Accuracy: 0.9274
+-------------------------------
+Embedding method: PCA
+Samples of KIM learning: 500
+Embedding method: PCA
+Samples of KIM learning: 500
+Accuracy: 0.9327
+-------------------------------
+Embedding method: PCA
+Samples of KIM learning: 50
+Embedding method: PCA
+Samples of KIM learning: 50
+Accuracy: 0.9277
+-------------------------------
+Embedding method: PCA
+Samples of KIM learning: 100
+Embedding method: PCA
+Samples of KIM learning: 100
+Accuracy: 0.103
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 100
+Embedding method: LE
+Samples of KIM learning: 100
+Accuracy: 0.06
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 100
+Embedding method: LE
+Samples of KIM learning: 100
+Accuracy: 0.1
+-------------------------------

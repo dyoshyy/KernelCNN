@@ -29,7 +29,7 @@ if __name__ == '__main__':
     Y_train = to_categorical(Y_train,out_size)
     Y_test = to_categorical(Y_test,out_size)
 
-    n = 1000  #train
+    n = 100  #train
     #m = int(args[2])  #test
     m = 10000
 

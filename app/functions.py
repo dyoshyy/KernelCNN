@@ -226,7 +226,6 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
         for i in random_indices:
             x, y = compressed_data[i]
             img = sampled_blocks[i].reshape(block_size, block_size)# ブロック画像を5x5に変形
-            img_rgb = np.zeros((block_size, block_size, 3))
             imgbox = OffsetImage(img, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
             #imgbox = OffsetImage(img, zoom=8, cmap='gray')
             ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
