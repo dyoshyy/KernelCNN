@@ -231,7 +231,7 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
 
     # ランダムに一部の点にのみブロックの画像を表示
     num_samples = len(compressed_data)
-    num_blocks_to_display = min(50, num_samples)
+    num_blocks_to_display = min(100, num_samples)
     random_indices = random.sample(range(num_samples), num_blocks_to_display)
     #print(np.shape(sampled_blocks))
     if sampled_blocks.shape[1] == block_size * block_size:
@@ -243,8 +243,8 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
             #imgbox = OffsetImage(img, zoom=8, cmap='gray')
             ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
             ax.add_artist(ab)
-
-        if block_size == 5:
+        '''
+        if block_size==5:
             for i in range(len(sampled_blocks)):
                 for x in block_img_set:
                     if np.all(sampled_blocks[i].reshape(25)==x):
@@ -256,7 +256,7 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
                         imgbox = OffsetImage(img_rgb, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
                         ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
                         ax.add_artist(ab)            
-                
+        '''         
 
     plt.tight_layout()
 
