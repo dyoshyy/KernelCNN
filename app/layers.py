@@ -139,8 +139,8 @@ class KIMLayer:
             
             #３分の１だけ無作為に取り出す
             #select_num = min(1000, sampled_blocks.shape[0])
-            #select_num = sampled_blocks.shape[0]
-            select_num = 1000
+            select_num = sampled_blocks.shape[0]
+            #select_num = 3000
             selected_indices = random.sample(range(sampled_blocks.shape[0]), select_num)
             sampled_blocks = sampled_blocks[selected_indices]
             embedded_blocks = embedded_blocks[selected_indices]
