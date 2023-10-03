@@ -135,3 +135,105 @@ Embedding method: LE
 Samples of KIM learning: 100
 Accuracy: 0.1
 -------------------------------
+Embedding method: LE
+Samples of KIM learning: 100
+Embedding method: LE
+Samples of KIM learning: 100
+Accuracy: 0.756
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 100
+Embedding method: LE
+Samples of KIM learning: 100
+Accuracy: 0.9304
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 100
+Embedding method: LE
+Samples of KIM learning: 100
+Accuracy: 0.9689
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 100
+Embedding method: LE
+Samples of KIM learning: 100
+Accuracy: 0.9755
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 100
+Embedding method: LE
+Samples of KIM learning: 100
+Accuracy: 0.9347
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 100
+Embedding method: LE
+Samples of KIM learning: 100
+Accuracy: 0.9368
+-------------------------------
+Embedding method: PCA
+Samples of KIM learning: 100
+Embedding method: PCA
+Samples of KIM learning: 100
+Accuracy: 0.9275
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 10
+Embedding method: LE
+Samples of KIM learning: 10
+Accuracy: 0.1028
+-------------------------------
+Embedding method: LLE
+Samples of KIM learning: 100
+Embedding method: LLE
+Samples of KIM learning: 100
+Accuracy: 0.9377
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 50
+Embedding method: LE
+Samples of KIM learning: 50
+Accuracy: 0.9321
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 100
+Embedding method: LE
+Samples of KIM learning: 100
+Accuracy: 0.9348
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 100
+Embedding method: LE
+Samples of KIM learning: 100
+Accuracy: 0.9348
+-------------------------------
+Embedding method: TSNE
+Samples of KIM learning: 100
+Embedding method: TSNE
+Samples of KIM learning: 100
+Accuracy: 0.9312
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 300
+Embedding method: LE
+Samples of KIM learning: 300
+Accuracy: 0.9349
+-------------------------------
+Embedding method: LE
+Samples of KIM learning: 100
+Embedding method: LE
+Samples of KIM learning: 100
+Accuracy: 0.9669
+-------------------------------
+Embedding method: PCA
+Samples of KIM learning: 100
+Embedding method: PCA
+Samples of KIM learning: 100
+Accuracy: 0.14
+-------------------------------
+Embedding method: PCA
+Samples of KIM learning: 100
+Embedding method: PCA
+Samples of KIM learning: 100
+Accuracy: 0.14
+-------------------------------

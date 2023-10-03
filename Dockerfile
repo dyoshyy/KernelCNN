@@ -20,6 +20,7 @@ RUN pip install --upgrade pip
 RUN pip install --upgrade setuptools
 RUN pip install numpy
 RUN pip install GPy
+RUN pip install gpytorch
 RUN pip install tensorflow
 RUN pip install scikit-learn
 RUN pip install opencv-python

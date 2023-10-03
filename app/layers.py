@@ -1,7 +1,8 @@
+from gp import GaussianProcess, rbf_kernel
+import torch
+import gpytorch
 import numpy as np
 import random, math
-import GPy
-import KernelizedImplicitMapping
 import psutil, os, sys
 from functions import calculate_similarity
 from functions import display_images
@@ -18,13 +19,11 @@ from scipy import stats
 from skimage import util
 from tqdm import tqdm
 
-from memory_profiler import profile
-
 np.random.seed(1)
 random.seed(1)
 
 class KIMLayer:
-    def __init__(self, block_size : int, channels_next : int, stride : int, emb : str, num_KIMlearn : int):
+    def __init__(self, block_size : int, channels_next : int, stride : int, emb : str, num_blocks : int):
         self.b = block_size
         self.stride = stride
         self.C_next = channels_next
@@ -35,7 +34,7 @@ class KIMLayer:
         self.input_data = None
         self.embedding = emb
         self.GP = None
-        self.num_KIMlearn = num_KIMlearn
+        self.B = num_blocks
 
     def sample_block(self, n_train, train_X, train_Y):
         '''
@@ -65,14 +64,7 @@ class KIMLayer:
         #重複を削除
         sampled_blocks, indices, counts = np.unique(sampled_blocks, axis=0, return_index=True, return_counts=True) 
         sampled_blocks_label = np.array(sampled_blocks_label)[indices]
-        
-        '''
-        #重複回数の多い順にソート
-        sorted_indices = np.argsort(counts)[::-1]
-        sampled_blocks = sampled_blocks[sorted_indices]
-        
-        sampled_blocks_label = sampled_blocks_label[sorted_indices]
-        '''
+
         print('unique samples shape:',np.shape(sampled_blocks))
         
         return sampled_blocks, sampled_blocks_label
@@ -97,10 +89,10 @@ class KIMLayer:
                 embedded_blocks = kpca.fit_transform(sampled_blocks)
                 
             elif self.embedding == "LE":
-                n_neighbors = int(sampled_blocks.shape[0]/10)
+                #n_neighbors = int(sampled_blocks.shape[0]/10)
                 #n_neighbors=10
                 #LE = embedding.LaplacianEigenmap(self.C_next, n_neighbors)
-                LE = SpectralEmbedding(n_components=self.C_next)
+                LE = SpectralEmbedding(n_components=self.C_next, n_neighbors=self.C_next)
                 embedded_blocks = LE.fit_transform(sampled_blocks)
             
             elif self.embedding == "TSNE":
@@ -138,9 +130,9 @@ class KIMLayer:
             #ガウス過程回帰で学習
             print('[KIM] Fitting samples...')
             
-            #３分の１だけ無作為に取り出す
-            select_num = min(100000, sampled_blocks.shape[0])
-            #select_num = 3000
+            #Bだけランダムに取り出す
+            #select_num = min(100000, sampled_blocks.shape[0])
+            select_num = self.B
             selected_indices = random.sample(range(sampled_blocks.shape[0]), select_num)
             sampled_blocks = sampled_blocks[selected_indices]
             embedded_blocks = embedded_blocks[selected_indices]
@@ -156,12 +148,9 @@ class KIMLayer:
             print("embedded shape:", np.shape(embedded_blocks))
             
             print('[KIM] Training KIM')
-            kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev)
-            self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
-            self.GP.optimize()
-            #kernel = KernelizedImplicitMapping.GaussianKernel(length_scale=1.0)
-            #self.GP = KernelizedImplicitMapping.KIM(kernel)
-            #self.GP.fit(sampled_blocks, embedded_blocks)
+            self.GP = GaussianProcess(kernel_func=rbf_kernel)
+            self.GP.fit(sampled_blocks, embedded_blocks, optimize_params=True)
+            #self.GP.optimize()
             print('[KIM] Completed')
             
         else:
@@ -247,46 +236,17 @@ class KIMLayer:
         self.output_data = np.zeros((num_inputs, self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
 
         #先頭からtrain_numの画像を埋め込みの学習に使う
-        #train_num = 100
-        train_num = self.num_KIMlearn
-        #if self.H == 5:
-        #    train_num = 1000
+        train_num = 100
+
         train_X = input_X[:train_num] 
         train_Y = input_Y[:train_num]
         
         self.learn_embedding(train_X, train_Y) 
         
         print('[KIM] Converting the image...')
-        #self.convert_all_images_batch(500)
         for i in tqdm(range(num_inputs)):
             self.convert__image(i)
         print('completed')
-
-        return self.output_data
-
-class MaxPoolingLayer:
-    def __init__(self, pool_size):
-        self.pool_size = pool_size
-        self.output_data = None
-
-    def pooling(self, n, input_data, H_out, W_out, C):
-        print('[MaxPooling] Converting the image %d' % (n+1))
-        for c in range(C):
-            for i in range(H_out):
-                    for j in range(W_out):
-                        start_i = i * self.pool_size
-                        start_j = j * self.pool_size
-                        self.output_data[n, c, i, j] = np.max(np.abs(input_data[n, c, start_i:start_i + self.pool_size, start_j:start_j + self.pool_size]))
-
-    def calculate(self, input_data, Y):
-        N, C, H, W = input_data.shape
-        p = self.pool_size
-        H_out = H // p
-        W_out = W // p
-        self.output_data = np.zeros((N, C, H_out, W_out))
-        
-        for n in range(N):
-            self.pooling(n, input_data, H_out, W_out, C)
 
         return self.output_data
 
@@ -335,17 +295,17 @@ class LabelLearningLayer:
                 self.GP = []
                 #必要なGPの数
                 self.num_GP = int((X.shape[0]-1)/10000 + 1)
-                kernel = GPy.kern.RBF(input_dim = input_dim)
                 for i in range(self.num_GP):
                     print('learning {}'.format(i+1))
                     X_sep = X[10000*i:10000*(i+1)]
                     Y_sep = Y[10000*i:10000*(i+1)]
-                    self.GP.append(GPy.models.GPRegression(X_sep,Y_sep, kernel=kernel))
-                    self.GP[-1].optimize()
+                    self.GP.append(GaussianProcess(kernel_func=rbf_kernel))
+                    self.GP[-1].fit(X,Y, optimize_params = True)
+                    #self.GP[-1].optimize()
             else:
-                kernel = GPy.kern.RBF(input_dim = input_dim)
-                self.GP = GPy.models.GPRegression(X, Y, kernel=kernel)
-                self.GP.optimize()
+                self.GP = GaussianProcess(kernel_func=rbf_kernel)
+                self.GP.fit(X,Y, optimize_params=True)
+                #self.GP.optimize()
                 print('Completed')
         else:
             print('GPmodel found')
