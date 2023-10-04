@@ -143,7 +143,7 @@ class KIMLayer:
             embedded_blocks = ms.transform(embedded_blocks)
             embedded_blocks = ss.fit_transform(embedded_blocks)
             
-            print("embedded shape:", np.shape(embedded_blocks))
+            print("Training sample shape:", np.shape(embedded_blocks))
             
             print('[KIM] Training KIM')
             kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev)
