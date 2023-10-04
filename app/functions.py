@@ -11,7 +11,7 @@ random.seed(0)
 def display_images(data, layer):
     data = data[0]
     num_in_a_row = 4 #default 4
-    Channels = data.shape[0]
+    Channels = data.shape[2]
     Rows = math.ceil(Channels/5)
 
     fig, axes = plt.subplots(Rows, num_in_a_row, figsize=(15, 3*Rows))
@@ -26,7 +26,7 @@ def display_images(data, layer):
             ax.axis('off')
             index = r * num_in_a_row + c
             if(index < Channels):
-                image = data[index,:,:]
+                image = data[:,:, index]
                 ax.imshow(image, cmap='gray')
                 ax.set_title('Channel {}'.format(index+1))
 
@@ -51,7 +51,7 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
     changed = False
     while file_exists:
         new_filename = filename + f"({counter})"
-        file_exists = os.path.exists("./emb_results/"+new_filename+".png")
+        file_exists = os.path.exists("./emb_results/" + new_filename + ".png")
         counter += 1
         changed = True
     if changed:
@@ -77,21 +77,7 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
             imgbox = OffsetImage(img, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
             #imgbox = OffsetImage(img, zoom=8, cmap='gray')
             ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
-            ax.add_artist(ab)
-        '''
-        if block_size==5:
-            for i in range(len(sampled_blocks)):
-                for x in block_img_set:
-                    if np.all(sampled_blocks[i].reshape(25)==x):
-                        img = sampled_blocks[i].reshape(block_size, block_size)
-                        x,y = compressed_data[i]
-                        img_rgb = np.zeros((block_size, block_size, 3))
-                        img_rgb[:, :, 1] = img
-                        img_rgb[:, :, 2] = img
-                        imgbox = OffsetImage(img_rgb, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
-                        ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
-                        ax.add_artist(ab)            
-        '''         
+            ax.add_artist(ab) 
 
     plt.tight_layout()
 
@@ -120,34 +106,12 @@ def binarize_images(images):
     binarized_images = np.zeros_like(images)  # 二値化された画像を格納する配列を作成
 
     for i in range(images.shape[0]):
-        image = images[i, 0]  # 画像を取得（shape: (1, 28, 28)）
-        _, binary_image = cv2.threshold(image, 0, 1, cv2.THRESH_BINARY + cv2.THRESH_OTSU)  # 二値化
-
-        binarized_images[i, 0] = binary_image  # 二値化した画像を保存
+        image = images[i, :, :, :]  # 画像を取得（shape: (28, 28, 1)）
+        _, binary_image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)  # 二値化
+        binary_image = binary_image[:, :, np.newaxis]
+        binarized_images[i, :, :] = binary_image  # 二値化した画像を保存
 
     return binarized_images
-
-def binarize_mnist_data(data):
-    """
-    MNISTデータを最大値と最小値から閾値を求めて二値化します。
-
-    Parameters:
-        data (ndarray): MNISTデータの配列 (サンプル数, 高さ, 幅)
-
-    Returns:
-        ndarray: 二値化されたMNISTデータの配列 (サンプル数, 高さ, 幅)
-    """
-    # データの最大値と最小値を取得
-    max_value = np.max(data)
-    min_value = np.min(data)
-
-    # 閾値を求める（最大値と最小値の中間値）
-    threshold = (max_value + min_value) / 2
-
-    # 閾値を使ってデータを二値化する
-    binarized_data = (data > threshold).astype(np.uint8)
-
-    return binarized_data
 
 def pad_images(images):
     # 元の画像サイズ (MNISTは28x28)

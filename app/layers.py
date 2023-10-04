@@ -40,26 +40,32 @@ class KIMLayer:
             train_X : 学習する画像データ
             train_Y : 画像のラベル(NOT One-hot vector)
         '''
-        sampled_blocks = []
+        sampled_blocks = np.empty((n_train*(self.H-self.b+1)**2, self.b, self.b, self.C_prev))
         sampled_blocks_label = []
         train_Y = np.argmax(train_Y, axis=1)
         for n in range(n_train):
             # 一枚持ってくる
             data = train_X[n,:,:,:]
             # すべてのブロックをサンプリング
+            '''
             for i in range(self.H - self.b + 1):
                 for j in range(self.W - self.b + 1):
                     block = data[:, i:i+self.b, j:j+self.b]
                     sampled_blocks.append(block)
                     sampled_blocks_label.append(train_Y[n])      
-
+            '''
+            blocks = util.view_as_windows(data, (self.b, self.b, self.C_prev), self.stride).reshape((self.H-self.b+1)**2, self.b, self.b, self.C_prev)
+            sampled_blocks[(n)*(self.H-self.b+1)**2 : (n+1)*(self.H-self.b+1)**2 ] = blocks
+            sampled_blocks_label.extend([train_Y[n]] * blocks.shape[0])
+        sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
+            
         #画像を二値化
         sampled_blocks = binarize_images(sampled_blocks)
-        sampled_blocks = np.array(sampled_blocks).reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)
+        sampled_blocks = sampled_blocks.reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)
         print('samples shape:',np.shape(sampled_blocks))
         
         #重複を削除
-        sampled_blocks, indices, counts = np.unique(sampled_blocks, axis=0, return_index=True, return_counts=True) 
+        sampled_blocks, indices= np.unique(sampled_blocks, axis=0, return_index=True) 
         sampled_blocks_label = np.array(sampled_blocks_label)[indices]
 
         print('unique samples shape:',np.shape(sampled_blocks))
@@ -151,18 +157,18 @@ class KIMLayer:
             print('[KIM] GPmodel found')
     
     
-    def convert__image(self, n):
+    def convert_image(self, n):
         '''
         学習済みのKIMで元の画像を変換
         '''
-        output_tmp = np.zeros((self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
+        output_tmp = np.zeros((int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next ))
 
         blocks = []
         for i in range(self.b_radius, self.H-self.b_radius, self.stride):
             i_output = int((i - self.b_radius)/self.stride)
             for j in range(self.b_radius, self.W-self.b_radius, self.stride):
                 j_output = int((j - self.b_radius)/self.stride)
-                input_cropped = self.input_data[n, :, (i-self.b_radius):(i+self.b_radius+1), (j-self.b_radius):(j+self.b_radius+1)].reshape(1, self.b * self.b * self.C_prev)
+                input_cropped = self.input_data[n,(i-self.b_radius):(i+self.b_radius+1), (j-self.b_radius):(j+self.b_radius+1), :].reshape(1, self.b * self.b * self.C_prev)
                 blocks.append(input_cropped)
             
         blocks = np.concatenate(blocks, axis=0)
@@ -173,65 +179,55 @@ class KIMLayer:
             i_output = int((i - self.b_radius)/self.stride)
             for j in range(self.b_radius, self.W-self.b_radius, self.stride):
                 j_output = int((j - self.b_radius)/self.stride)
-                output_tmp[:, i_output, j_output] = predictions[idx]
+                output_tmp[i_output, j_output, :] = predictions[idx]
                 idx += 1
             
         self.output_data[n] = output_tmp
-
-    def convert_all_images_batch(self, batch_size=10):
+        
+    def convert_image_batch(self, batch_size=10):
         '''
-        学習済みのKIMで元画像全体を変換
+        学習済みのKIMで元の画像を変換
         '''
         num_images = self.input_data.shape[0]
-        self.b_radius = int((self.b - 1) / 2)
-        i_range = np.arange(self.b_radius, self.H - self.b_radius, self.stride)
-        j_range = np.arange(self.b_radius, self.W - self.b_radius, self.stride)
+        num_batches = num_batches = math.ceil(num_images / batch_size)
+        output_tmp = np.zeros((self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
+        blocks = []
         
-        # Calculate starting indices for slices
-        i_indices = np.arange(len(i_range))[:, np.newaxis, np.newaxis, np.newaxis] 
-        j_indices = np.arange(len(j_range))[np.newaxis, :, np.newaxis, np.newaxis] 
-
-        # Calculate slices using broadcasting
-        slices = (i_indices + np.arange(self.b)[np.newaxis, np.newaxis, :, np.newaxis],
-                  j_indices + np.arange(self.b)[np.newaxis, np.newaxis, np.newaxis, :])
-        
-        num_batches = math.ceil(num_images / batch_size)
-        
-        for batch_idx in tqdm(range(num_batches)):
-            start_idx = batch_idx * batch_size
-            end_idx = min((batch_idx + 1) * batch_size, num_images)
-            batch_blocks = self.input_data[start_idx : end_idx, :, slices[0], slices[1]]
-            batch_blocks = batch_blocks.reshape(-1, self.b * self.b * self.C_prev)
-            batch_predictions, _ = self.GP.predict(batch_blocks) # batch_brediction shape: (batch_size * H_next * W_next, C_prev * block_size * block_size)
-            batch_predictions = batch_predictions.reshape(batch_size, (self.H-self.b+1)*(self.W-self.b+1), -1)
-            
-            output_tmp = np.zeros((self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
-
+        for batch_idx in range(num_batches):
+            for i in range(self.b_radius, self.H-self.b_radius, self.stride):
+                i_output = int((i - self.b_radius)/self.stride)
+                for j in range(self.b_radius, self.W-self.b_radius, self.stride):
+                    j_output = int((j - self.b_radius)/self.stride)
+                    input_cropped = self.input_data[n, :, (i-self.b_radius):(i+self.b_radius+1), (j-self.b_radius):(j+self.b_radius+1)].reshape(1, self.b * self.b * self.C_prev)
+                    blocks.append(input_cropped)
+                
+            blocks = np.concatenate(blocks, axis=0)
+            predictions, _ = self.GP.predict(blocks)
             #再配置
-            for n in range(batch_size):
-                idx = 0
-                out_idx = start_idx + n
-                for i in range(0, self.H-self.b+1, self.stride):
-                    for j in range(0, self.W - self.b+1, self.stride):
-                        output_tmp[:, i, j] = batch_predictions[n, idx]
-                        idx += 1
-                self.output_data[out_idx] = output_tmp
+            idx = 0
+            for i in range(self.b_radius, self.H-self.b_radius, self.stride):
+                i_output = int((i - self.b_radius)/self.stride)
+                for j in range(self.b_radius, self.W-self.b_radius, self.stride):
+                    j_output = int((j - self.b_radius)/self.stride)
+                    output_tmp[:, i_output, j_output] = predictions[idx]
+                    idx += 1
+            
+        self.output_data[n] = output_tmp
     
     #@profile
     def calculate(self, input_X, input_Y):
         
         num_inputs = input_X.shape[0]
-        self.C_prev = input_X.shape[1]
-        self.H = input_X.shape[2]
-        self.W = input_X.shape[3]
-        
+        self.H = input_X.shape[1]
+        self.W = input_X.shape[2]
+        self.C_prev = input_X.shape[3]
         self.input_data = input_X
-        self.output_data = np.zeros((num_inputs, self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
-        self.b_radius = int((self.b - 1) / 2)
-
+        print(input_X.shape)
+        print(num_inputs, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next)
+        self.output_data = np.zeros((num_inputs, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next))
+        
         #先頭からtrain_numの画像を埋め込みの学習に使う
         train_num = 100
-
         train_X = input_X[:train_num] 
         train_Y = input_Y[:train_num]
         
@@ -239,7 +235,7 @@ class KIMLayer:
         
         print('[KIM] Converting the image...')
         for i in tqdm(range(num_inputs)):
-            self.convert__image(i)
+            self.convert_image(i)
         print('completed')
 
         return self.output_data
@@ -250,7 +246,7 @@ class AvgPoolingLayer:
 
     def calculate(self, input_data, Y):
         print('[AVG] Converting')
-        N, C, H, W = input_data.shape
+        N, H, W, C = input_data.shape
         p = self.pool_size
         H_out = H // p
         W_out = W // p
@@ -264,7 +260,7 @@ class AvgPoolingLayer:
                   j_indices + np.arange(p)[np.newaxis, np.newaxis, np.newaxis, :])
 
         # Perform average pooling using broadcasting and sum reduction
-        output_data = np.mean(input_data[:, :, slices[0], slices[1]], axis=(-1, -2))
+        output_data = np.mean(input_data[:, slices[0], slices[1], :], axis=(2, 3))
         print('[AVG] Completed')
         return output_data
 
@@ -283,7 +279,6 @@ class LabelLearningLayer:
             print('Learning labels')
 
             # 訓練サンプルが10000超える場合は10000ずつに分けて学習
-            pid = os.getpid()
             if X.shape[0] > 10000:
                 self.OVER_10000 = True
                 self.GP = []

@@ -26,8 +26,8 @@ def main(num_train, num_test, emb, num_KIMlearn = 100):
     out_size = 10
 
     #データ整形
-    X_train = X_train.reshape(-1, image_color, image_rows, image_cols) 
-    X_test = X_test.reshape(-1, image_color, image_rows, image_cols, ) 
+    X_train = X_train.reshape(-1,image_rows, image_cols, image_color,) 
+    X_test = X_test.reshape(-1,  image_rows, image_cols, image_color,) 
     Y_train = to_categorical(Y_train,out_size)
     Y_test = to_categorical(Y_test,out_size)
 
@@ -39,9 +39,6 @@ def main(num_train, num_test, emb, num_KIMlearn = 100):
     Y_train = Y_train[:n]
     X_test = X_test[:m]
     Y_test = Y_test[:m]
-
-    X_train = binarize_images(X_train)
-    X_test = binarize_images(X_test)
 
     #モデル定義
     model = layers.Model(display=True)
@@ -73,8 +70,8 @@ if __name__ == '__main__':
     out_size = 10
 
     #データ整形
-    X_train = X_train.reshape(-1, image_color, image_rows, image_cols) 
-    X_test = X_test.reshape(-1, image_color, image_rows, image_cols, ) 
+    X_train = X_train.reshape(-1,  image_rows, image_cols, image_color) 
+    X_test = X_test.reshape(-1,  image_rows, image_cols, image_color) 
     Y_train = to_categorical(Y_train,out_size)
     Y_test = to_categorical(Y_test,out_size)
 
@@ -93,9 +90,9 @@ if __name__ == '__main__':
 
     #モデル定義
     model = layers.Model(display=True)
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, emb=emb, num_blocks=2000))
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, emb=emb, num_blocks=1000))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, emb=emb, num_blocks=2000))
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, emb=emb, num_blocks=1000))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
 
