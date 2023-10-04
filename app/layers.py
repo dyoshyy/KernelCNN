@@ -2,16 +2,13 @@ from gp import GaussianProcess, rbf_kernel
 import torch
 import GPy
 import numpy as np
-import random, math
-import psutil, os, sys
-from functions import calculate_similarity
-from functions import display_images
-from functions import binarize_images
-from functions import visualize_emb
+import math
+import os, sys, time
 
+from functions import calculate_similarity, display_images, binarize_images, visualize_emb
 import embedding
-from sklearn.manifold import SpectralEmbedding
-from sklearn.manifold import TSNE, LocallyLinearEmbedding
+
+from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler
 from scipy import stats
@@ -20,11 +17,11 @@ from skimage import util
 from tqdm import tqdm
 
 np.random.seed(1)
-random.seed(1)
 
 class KIMLayer:
     def __init__(self, block_size : int, channels_next : int, stride : int, emb : str, num_blocks : int):
         self.b = block_size
+        self.b_radius = int((self.b - 1) / 2)
         self.stride = stride
         self.C_next = channels_next
         self.C_prev = None
@@ -130,8 +127,7 @@ class KIMLayer:
             print('[KIM] Fitting samples...')
             
             #B個のブロックだけランダムに取り出す
-            select_num = self.B
-            selected_indices = random.sample(range(sampled_blocks.shape[0]), select_num)
+            selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
             sampled_blocks = sampled_blocks[selected_indices]
             embedded_blocks = embedded_blocks[selected_indices]
             
@@ -159,25 +155,24 @@ class KIMLayer:
         '''
         学習済みのKIMで元の画像を変換
         '''
-        b_radius = int((self.b-1)/2)
         output_tmp = np.zeros((self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
 
         blocks = []
-        for i in range(b_radius, self.H-b_radius, self.stride):
-            i_output = int((i - b_radius)/self.stride)
-            for j in range(b_radius, self.W-b_radius, self.stride):
-                j_output = int((j - b_radius)/self.stride)
-                input_cropped = self.input_data[n, :, (i-b_radius):(i+b_radius+1), (j-b_radius):(j+b_radius+1)].reshape(1, self.b * self.b * self.C_prev)
+        for i in range(self.b_radius, self.H-self.b_radius, self.stride):
+            i_output = int((i - self.b_radius)/self.stride)
+            for j in range(self.b_radius, self.W-self.b_radius, self.stride):
+                j_output = int((j - self.b_radius)/self.stride)
+                input_cropped = self.input_data[n, :, (i-self.b_radius):(i+self.b_radius+1), (j-self.b_radius):(j+self.b_radius+1)].reshape(1, self.b * self.b * self.C_prev)
                 blocks.append(input_cropped)
             
         blocks = np.concatenate(blocks, axis=0)
         predictions, _ = self.GP.predict(blocks)
         #再配置
         idx = 0
-        for i in range(b_radius, self.H-b_radius, self.stride):
-            i_output = int((i - b_radius)/self.stride)
-            for j in range(b_radius, self.W-b_radius, self.stride):
-                j_output = int((j - b_radius)/self.stride)
+        for i in range(self.b_radius, self.H-self.b_radius, self.stride):
+            i_output = int((i - self.b_radius)/self.stride)
+            for j in range(self.b_radius, self.W-self.b_radius, self.stride):
+                j_output = int((j - self.b_radius)/self.stride)
                 output_tmp[:, i_output, j_output] = predictions[idx]
                 idx += 1
             
@@ -188,9 +183,9 @@ class KIMLayer:
         学習済みのKIMで元画像全体を変換
         '''
         num_images = self.input_data.shape[0]
-        b_radius = int((self.b - 1) / 2)
-        i_range = np.arange(b_radius, self.H - b_radius, self.stride)
-        j_range = np.arange(b_radius, self.W - b_radius, self.stride)
+        self.b_radius = int((self.b - 1) / 2)
+        i_range = np.arange(self.b_radius, self.H - self.b_radius, self.stride)
+        j_range = np.arange(self.b_radius, self.W - self.b_radius, self.stride)
         
         # Calculate starting indices for slices
         i_indices = np.arange(len(i_range))[:, np.newaxis, np.newaxis, np.newaxis] 
@@ -232,6 +227,7 @@ class KIMLayer:
         
         self.input_data = input_X
         self.output_data = np.zeros((num_inputs, self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
+        self.b_radius = int((self.b - 1) / 2)
 
         #先頭からtrain_numの画像を埋め込みの学習に使う
         train_num = 100
@@ -332,11 +328,17 @@ class Model:
         self.layers = []
         self.display = display
         self.shapes = []
-
+        self.time_fitting = 0
+        self.time_predicting = 0
+    
     def add_layer(self, layer):
         self.layers.append(layer)
 
     def fit(self, X, Y):
+        start_time = time.time()
+        self.num_train = X.shape[0]
+        self.num_test = Y.shape[0]
+        
         for n, layer in enumerate(self.layers):
             self.shapes.append(np.shape(X)[1:])
             X = layer.calculate(X, Y)
@@ -347,8 +349,10 @@ class Model:
         if not isinstance(self.layers[-1], LabelLearningLayer):
             self.layers.append(LabelLearningLayer())
         self.layers[-1].fit(X, Y)
+        self.time_fitting = time.time() - start_time
 
     def predict(self, test_X, test_Y):
+        start_time = time.time()
         for n,layer in enumerate(self.layers):
             if isinstance(layer, LabelLearningLayer):
                 break
@@ -359,13 +363,17 @@ class Model:
         Y_predicted = self.layers[-1].predict(test_X)
         Y_answer= [np.argmax(test_Y[n,:]) for n in range(test_Y.shape[0])]
 
-        accuracy = calculate_similarity(Y_predicted, Y_answer)
-        print('Accuracy:', accuracy)
-        print('Layers shape:',self.shapes)
+        self.time_predicting = time.time() - start_time
         
-        # パラメータと正解率をテキストファイルに保存
+        accuracy = calculate_similarity(Y_predicted, Y_answer)
+        
+        print('Layers shape:',self.shapes)
+        print('Fitting time:', self.time_fitting)
+        print('Predicting time:', self.time_predicting)
+        print('Accuracy:', accuracy)
+        
+        # パラメータをテキストファイルに保存
         with open('model_parameters.txt', 'a') as param_file:
-            # モデルのパラメータを保存
             for i, layer in enumerate(self.layers):
                 if isinstance(layer, LabelLearningLayer):
                     continue  
@@ -375,12 +383,16 @@ class Model:
                     param_file.write(f'block size: {layer.b}\n')
                     param_file.write(f'stride: {layer.stride}\n')
                     param_file.write(f'B: {layer.B}\n')
-                    param_file.write('---------------------\n')
+                    param_file.write('-------------------------------\n')
 
             # 正解率を保存
+            param_file.write(f'Train samples: {self.num_train}\n')
+            param_file.write(f'Test samples: {self.num_test}\n')
             param_file.write(f'Layer shape: {self.shapes}\n')
+            param_file.write(f'Fitting time: {self.time_fitting}\n')
+            param_file.write(f'Predicting time: {self.time_predicting}\n')
             param_file.write(f'Accuracy: {accuracy}\n')
-            param_file.write('==========================================================\n')
+            param_file.write('================================================================================\n')
             
         return Y_predicted, Y_answer
 
