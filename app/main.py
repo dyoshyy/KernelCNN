@@ -52,9 +52,9 @@ if __name__ == '__main__':
 
     #モデル定義
     model = layers.Model(display=True)
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, emb=emb))
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, emb=emb, num_blocks=1000))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, emb=emb))
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, emb=emb, num_blocks=1000))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     #print(output[0])
     #print(output[1])
     
-def main(num_train, num_test, emb):
+def main(num_train, num_test, emb, num_KIMlearn = 100):
     #データセットのロード
     (X_train, Y_train), (X_test,Y_test) = mnist.load_data()
     #(X_train, Y_train), (X_test,Y_test) = cifar10.load_data()
@@ -101,9 +101,9 @@ def main(num_train, num_test, emb):
 
     #モデル定義
     model = layers.Model(display=True)
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, emb=emb))
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, emb=emb, num_KIMlearn=num_KIMlearn))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, emb=emb))
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, emb=emb, num_KIMlearn=num_KIMlearn))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
 

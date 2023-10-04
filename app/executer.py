@@ -1,6 +1,16 @@
 from main import main
+#import LeNet
+'''
+main(1000, 10000, 'PCA', 100)
+main(1000, 10000, 'LLE', 100)
+main(1000, 10000, 'LE', 100)
+main(1000, 10000, 'TSNE', 100)
+'''
+main(1000, 10000, 'LE', 30)
 
-main(1000, 10000, 'PCA')
-main(1000, 10000, 'LLE')
-main(1000, 10000, 'LE')
-main(1000, 10000, 'TSNE')
+'''
+LeNet.main(100, 10000, 3000)
+LeNet.main(1000, 10000, 3000)
+LeNet.main(10000, 10000, 3000)
+LeNet.main(60000, 10000, 3000)
+'''
