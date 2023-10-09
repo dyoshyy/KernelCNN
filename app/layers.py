@@ -3,7 +3,7 @@ import torch
 import gpytorch
 import numpy as np
 import random, math
-import psutil, os, sys
+import os, sys
 from functions import calculate_similarity
 from functions import display_images
 from functions import binarize_images
