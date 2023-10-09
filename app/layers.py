@@ -214,7 +214,6 @@ class KIMLayer:
             
         self.output_data[n] = output_tmp
     
-    #@profile
     def calculate(self, input_X, input_Y):
         
         num_inputs = input_X.shape[0]
@@ -222,8 +221,6 @@ class KIMLayer:
         self.W = input_X.shape[2]
         self.C_prev = input_X.shape[3]
         self.input_data = input_X
-        print(input_X.shape)
-        print(num_inputs, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next)
         self.output_data = np.zeros((num_inputs, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next))
         
         #先頭からtrain_numの画像を埋め込みの学習に使う
@@ -251,16 +248,17 @@ class AvgPoolingLayer:
         H_out = H // p
         W_out = W // p
 
-        # Calculate starting indices for slices
-        i_indices = np.arange(H_out)[:, np.newaxis, np.newaxis, np.newaxis] * p
-        j_indices = np.arange(W_out)[np.newaxis, :, np.newaxis, np.newaxis] * p
+        # Initialize output data
+        output_data = np.zeros((N, H_out, W_out, C))
 
-        # Calculate slices using broadcasting
-        slices = (i_indices + np.arange(p)[np.newaxis, np.newaxis, :, np.newaxis],
-                  j_indices + np.arange(p)[np.newaxis, np.newaxis, np.newaxis, :])
-
-        # Perform average pooling using broadcasting and sum reduction
-        output_data = np.mean(input_data[:, slices[0], slices[1], :], axis=(2, 3))
+        # Perform average pooling
+        for i in range(H_out):
+            for j in range(W_out):
+                # Extract pooling window
+                window = input_data[:, i*p:(i+1)*p, j*p:(j+1)*p, :]
+                # Calculate mean value
+                output_data[:, i, j, :] = np.mean(window, axis=(1, 2))
+        
         print('[AVG] Completed')
         return output_data
 
@@ -343,6 +341,7 @@ class Model:
         self.shapes.append(np.shape(X)[1:])
         if not isinstance(self.layers[-1], LabelLearningLayer):
             self.layers.append(LabelLearningLayer())
+            
         self.layers[-1].fit(X, Y)
         self.time_fitting = time.time() - start_time
 

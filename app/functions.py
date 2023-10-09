@@ -67,7 +67,7 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
 
     # ランダムに一部の点にのみブロックの画像を表示
     num_samples = len(compressed_data)
-    num_blocks_to_display = min(100, num_samples)
+    num_blocks_to_display = min(50, num_samples)
     random_indices = random.sample(range(num_samples), num_blocks_to_display)
     #print(np.shape(sampled_blocks))
     if sampled_blocks.shape[1] == block_size * block_size:
@@ -97,19 +97,19 @@ def calculate_similarity(array1, array2):
     return similarity
 
 def binarize_images(images):
-
-    min = np.min(images)
-    max = np.max(images)
-    images = ((images - min) / (max - min)) * 255
+    min_val = np.min(images)
+    max_val = np.max(images)
+    images = ((images - min_val) / (max_val - min_val)) * 255
     images = np.uint8(images)
 
     binarized_images = np.zeros_like(images)  # 二値化された画像を格納する配列を作成
 
     for i in range(images.shape[0]):
-        image = images[i, :, :, :]  # 画像を取得（shape: (28, 28, 1)）
-        _, binary_image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)  # 二値化
-        binary_image = binary_image[:, :, np.newaxis]
-        binarized_images[i, :, :] = binary_image  # 二値化した画像を保存
+        for c in range(images.shape[-1]):  # Loop through each channel
+            image = images[i, :, :, c]
+            
+            _, binary_image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)  # 二値化
+            binarized_images[i, :, :, c] = binary_image  # 二値化した画像を保存
 
     return binarized_images
 
