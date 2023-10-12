@@ -1,239 +1,66 @@
-Layer: KIMLayer
-GP Model 1 Parameters:
-0.14476112701622956
-GP Model 2 Parameters:
-2.6559102205067022
-GP Model 3 Parameters:
-0.3011392638893738
-GP Model 4 Parameters:
-0.053277849491542496
-GP Model 5 Parameters:
-0.0001489307674362131
-Layer: KIMLayer
-GP Model 1 Parameters:
-0.9959743596603646
-GP Model 2 Parameters:
-2.595168225751152
-GP Model 3 Parameters:
-4.129488856422373e-07
-GP Model 4 Parameters:
-0.048519154480448856
-GP Model 5 Parameters:
-8.311929762236072e-23
-Accuracy: 0.94
-Layer: KIMLayer
-GP Model 1 Parameters:
-2.2136371420793837e-16
-GP Model 2 Parameters:
-45.21594181995214
-GP Model 3 Parameters:
-1.0047500862863394
-GP Model 4 Parameters:
-0.06900678669737752
-GP Model 5 Parameters:
-1.3670300752725407e-27
-Layer: KIMLayer
-GP Model 1 Parameters:
-1.1168236636953e-19
-GP Model 2 Parameters:
-38.673881767151855
-GP Model 3 Parameters:
-0.24910210708805022
-GP Model 4 Parameters:
-0.21531701743432885
-GP Model 5 Parameters:
-2.411185506264233e-27
-Accuracy: 0.93
--------------------------------
-Layer: KIMLayer
-GP Model 1 Parameters:
-0.14476112701622956
-GP Model 2 Parameters:
-2.6559102205067022
-GP Model 3 Parameters:
-0.3011392638893738
-GP Model 4 Parameters:
-0.053277849491542496
-GP Model 5 Parameters:
-0.0001489307674362131
-Layer: KIMLayer
-GP Model 1 Parameters:
-0.9959743596603646
-GP Model 2 Parameters:
-2.595168225751152
-GP Model 3 Parameters:
-4.129488856422373e-07
-GP Model 4 Parameters:
-0.048519154480448856
-GP Model 5 Parameters:
-8.311929762236072e-23
-Accuracy: 0.9351
--------------------------------
-Layer: KIMLayer
-GP Model 1 Parameters:
-0.039783712615395934
-GP Model 2 Parameters:
-2.000565922353151
-GP Model 3 Parameters:
-1.0861647119783346
-GP Model 4 Parameters:
-0.07348631239146333
-GP Model 5 Parameters:
-0.0002060133956587689
-Layer: KIMLayer
-GP Model 1 Parameters:
-0.11397555279963432
-GP Model 2 Parameters:
-1.9449183080639085
-GP Model 3 Parameters:
-1.0350720276811896
-GP Model 4 Parameters:
-0.0662593090896798
-GP Model 5 Parameters:
-0.0006001063852820594
-Accuracy: 0.9284
--------------------------------
+Layer 2
 Embedding method: PCA
-Samples of KIM learning: 10
+block size: 5
+stride: 1
+B: 1000
+---------------------
+Layer 4
 Embedding method: PCA
-Samples of KIM learning: 10
-Accuracy: 0.93
--------------------------------
+block size: 5
+stride: 1
+B: 1000
+---------------------
+Layer shape: [(1, 32, 32), (6, 28, 28), (6, 14, 14), (16, 10, 10), (16, 5, 5)]
+Accuracy: 0.67
+==========================================================
+Layer 2
 Embedding method: PCA
-Samples of KIM learning: 100
+block size: 5
+stride: 1
+B: 1000
+---------------------
+Layer 4
 Embedding method: PCA
-Samples of KIM learning: 100
-Accuracy: 0.9274
--------------------------------
+block size: 5
+stride: 1
+B: 1000
+---------------------
+Layer shape: [(1, 32, 32), (6, 28, 28), (6, 14, 14), (16, 10, 10), (16, 5, 5)]
+Fitting time: 26.414730072021484
+Predicting time: 11.509479522705078
+Accuracy: 0.67
+==========================================================
+Layer 2
 Embedding method: PCA
-Samples of KIM learning: 500
+block size: 5
+stride: 1
+B: 2000
+-------------------------------
+Layer 4
 Embedding method: PCA
-Samples of KIM learning: 500
-Accuracy: 0.9327
+block size: 5
+stride: 1
+B: 2000
 -------------------------------
+Layer shape: [(1, 32, 32), (6, 28, 28), (6, 14, 14), (16, 10, 10), (16, 5, 5)]
+Fitting time: 65.83778595924377
+Predicting time: 21.62424612045288
+Accuracy: 0.67
+================================================================================
+Layer 2
 Embedding method: PCA
-Samples of KIM learning: 50
+block size: 5
+stride: 1
+B: 2000
+-------------------------------
+Layer 4
 Embedding method: PCA
-Samples of KIM learning: 50
-Accuracy: 0.9277
+block size: 5
+stride: 1
+B: 2000
 -------------------------------
-Embedding method: PCA
-Samples of KIM learning: 100
-Embedding method: PCA
-Samples of KIM learning: 100
-Accuracy: 0.103
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 100
-Embedding method: LE
-Samples of KIM learning: 100
-Accuracy: 0.06
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 100
-Embedding method: LE
-Samples of KIM learning: 100
-Accuracy: 0.1
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 100
-Embedding method: LE
-Samples of KIM learning: 100
-Accuracy: 0.756
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 100
-Embedding method: LE
-Samples of KIM learning: 100
-Accuracy: 0.9304
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 100
-Embedding method: LE
-Samples of KIM learning: 100
-Accuracy: 0.9689
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 100
-Embedding method: LE
-Samples of KIM learning: 100
-Accuracy: 0.9755
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 100
-Embedding method: LE
-Samples of KIM learning: 100
-Accuracy: 0.9347
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 100
-Embedding method: LE
-Samples of KIM learning: 100
-Accuracy: 0.9368
--------------------------------
-Embedding method: PCA
-Samples of KIM learning: 100
-Embedding method: PCA
-Samples of KIM learning: 100
-Accuracy: 0.9275
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 10
-Embedding method: LE
-Samples of KIM learning: 10
-Accuracy: 0.1028
--------------------------------
-Embedding method: LLE
-Samples of KIM learning: 100
-Embedding method: LLE
-Samples of KIM learning: 100
-Accuracy: 0.9377
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 50
-Embedding method: LE
-Samples of KIM learning: 50
-Accuracy: 0.9321
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 100
-Embedding method: LE
-Samples of KIM learning: 100
-Accuracy: 0.9348
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 100
-Embedding method: LE
-Samples of KIM learning: 100
-Accuracy: 0.9348
--------------------------------
-Embedding method: TSNE
-Samples of KIM learning: 100
-Embedding method: TSNE
-Samples of KIM learning: 100
-Accuracy: 0.9312
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 300
-Embedding method: LE
-Samples of KIM learning: 300
-Accuracy: 0.9349
--------------------------------
-Embedding method: LE
-Samples of KIM learning: 100
-Embedding method: LE
-Samples of KIM learning: 100
-Accuracy: 0.9669
--------------------------------
-Embedding method: PCA
-Samples of KIM learning: 100
-Embedding method: PCA
-Samples of KIM learning: 100
-Accuracy: 0.14
--------------------------------
-Embedding method: PCA
-Samples of KIM learning: 100
-Embedding method: PCA
-Samples of KIM learning: 100
-Accuracy: 0.14
--------------------------------
+Layer shape: [(1, 32, 32), (6, 28, 28), (6, 14, 14), (16, 10, 10), (16, 5, 5)]
+Fitting time: 57.8644917011261
+Predicting time: 189.34252762794495
+Accuracy: 0.669
+================================================================================
