@@ -85,9 +85,6 @@ if __name__ == '__main__':
     X_test = X_test[:m]
     Y_test = Y_test[:m]
 
-    X_train = binarize_images(X_train)
-    X_test = binarize_images(X_test)
-
     #モデル定義
     model = layers.Model(display=True)
     model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, emb=emb, num_blocks=1000))
