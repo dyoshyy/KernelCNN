@@ -3,11 +3,8 @@ import numpy as np
 import math
 import os, sys, time
 
-from functions import calculate_similarity, display_images, binarize_images, visualize_emb
-import embedding
+from functions import calculate_similarity, display_images, binarize_images, binarize_2d_array, visualize_emb, select_embedding_method
 
-from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
-from sklearn.decomposition import PCA, KernelPCA
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler
 from scipy import stats
 
@@ -15,6 +12,7 @@ from skimage import util
 from tqdm import tqdm
 
 np.random.seed(1)
+np.set_printoptions(precision=3, threshold=10000, linewidth=200, edgeitems=10)
 
 class KIMLayer:
     def __init__(self, block_size : int, channels_next : int, stride : int, emb : str, num_blocks : int):
@@ -73,54 +71,15 @@ class KIMLayer:
 
         if self.GP is None:
             sampled_blocks, sampled_blocks_label = self.sample_block(n_train, train_X, train_Y)
-            # 埋め込み
-            if self.embedding == "PCA":
-                pca = PCA(n_components=self.C_next, svd_solver='auto')
-                embedded_blocks = pca.fit_transform(sampled_blocks)
-            
-            elif self.embedding == "KPCA":
-                kpca = KernelPCA(n_components=self.C_next, kernel="rbf")
-                embedded_blocks = kpca.fit_transform(sampled_blocks)
-                
-            elif self.embedding == "LE":
-                LE = SpectralEmbedding(n_components=self.C_next, n_neighbors=self.C_next)
-                embedded_blocks = LE.fit_transform(sampled_blocks)
-            
-            elif self.embedding == "TSNE":
-                tsne = TSNE(n_components=self.C_next, random_state = 0, method='exact', perplexity = 30, n_iter = 1000, init='pca', learning_rate='auto')
-                embedded_blocks = tsne.fit_transform(sampled_blocks)
-                
-            elif self.embedding == 'LLE':
-                lle = LocallyLinearEmbedding(n_components=self.C_next, n_neighbors= int(sampled_blocks.shape[0]/10))
-                embedded_blocks = lle.fit_transform(sampled_blocks)
-            
-            elif self.embedding == "LPP":
-                LPP = embedding.LPP(n_components=self.C_next)
-                embedded_blocks = LPP.fit_transform(sampled_blocks)
-                
-            elif self.embedding == "GPLVM":
-                sigma=3
-                alpha=0.05
-                beta=0.08
-                model = embedding.GPLVM(sampled_blocks,self.C_next, np.array([sigma**2,alpha/beta]))
-                embedded_blocks = model.fit(epoch=100,epsilonX=0.05,epsilonSigma=0.0005,epsilonAlpha=0.00001)
-            
-            else:
-                print('Error: No embedding selected.')
-                sys.exit()
+            embedded_blocks = select_embedding_method(self.embedding, self.C_next, sampled_blocks)
 
-            # 埋め込みデータを可視化
-            principal_data_12 = embedded_blocks[:,0:2]
-            visualize_emb(principal_data_12, sampled_blocks, sampled_blocks_label, self.embedding, self.b, 1, 2)
-
-            #ガウス過程回帰で学習
-            print('[KIM] Fitting samples...')
-            
             #B個のブロックだけランダムに取り出す
             selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
             sampled_blocks = sampled_blocks[selected_indices]
             embedded_blocks = embedded_blocks[selected_indices]
-            
+
+            #ガウス過程回帰で学習
+            print('[KIM] Fitting samples...')
             #埋め込みデータを正規化,標準化
             ms = MinMaxScaler()
             ss = StandardScaler()
@@ -129,44 +88,20 @@ class KIMLayer:
             embedded_blocks = ms.transform(embedded_blocks)
             embedded_blocks = ss.fit_transform(embedded_blocks)
             
+            # 埋め込みデータを可視化
+            principal_data_12 = embedded_blocks[:,0:2]
+            visualize_emb(principal_data_12, sampled_blocks, sampled_blocks_label[selected_indices], self.embedding, self.b, 1, 2)
+
             print("Training sample shape:", np.shape(embedded_blocks))
             
             print('[KIM] Training KIM')
-            kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev) 
+            kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev)
             self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
             self.GP.optimize()
             print('[KIM] Completed')
             
         else:
             print('[KIM] GPmodel found')
-    
-    
-    def convert_image(self, n):
-        '''
-        学習済みのKIMで元の画像を変換
-        '''
-        output_tmp = np.zeros((int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next ))
-
-        blocks = []
-        for i in range(self.b_radius, self.H-self.b_radius, self.stride):
-            i_output = int((i - self.b_radius)/self.stride)
-            for j in range(self.b_radius, self.W-self.b_radius, self.stride):
-                j_output = int((j - self.b_radius)/self.stride)
-                input_cropped = self.input_data[n,(i-self.b_radius):(i+self.b_radius+1), (j-self.b_radius):(j+self.b_radius+1), :].reshape(1, self.b * self.b * self.C_prev)
-                blocks.append(input_cropped)
-            
-        blocks = np.concatenate(blocks, axis=0)
-        predictions, _ = self.GP.predict(blocks)
-        #再配置
-        idx = 0
-        for i in range(self.b_radius, self.H-self.b_radius, self.stride):
-            i_output = int((i - self.b_radius)/self.stride)
-            for j in range(self.b_radius, self.W-self.b_radius, self.stride):
-                j_output = int((j - self.b_radius)/self.stride)
-                output_tmp[i_output, j_output, :] = predictions[idx]
-                idx += 1
-            
-        self.output_data[n] = output_tmp
         
     def convert_image_batch(self, batch_size=10):
         '''
@@ -180,7 +115,6 @@ class KIMLayer:
             blocks_to_convert = blocks_to_convert.reshape(batch_size * (self.H-self.b+1)**2, self.b * self.b * self.C_prev) # ex) (10*784, 5*5*1)        
             predictions, _ = self.GP.predict(blocks_to_convert) # shape: (10*784, 6)
             predictions = predictions.reshape(batch_size, self.H-self.b+1, self.H-self.b+1, self.C_next)
-            print("predictions:", predictions)
             self.output_data[batch_size * batch_index : batch_size * (batch_index + 1)] = predictions
 
     def calculate(self, input_X, input_Y):
@@ -200,9 +134,7 @@ class KIMLayer:
         self.learn_embedding(train_X, train_Y) 
         
         print('[KIM] Converting the image...')
-        self.convert_image_batch(batch_size=1)
-        #for i in tqdm(range(num_inputs)):
-        #    self.convert_image(i)
+        self.convert_image_batch(batch_size=100)
         print('completed')
 
         return self.output_data
@@ -232,7 +164,6 @@ class AvgPoolingLayer:
         print('[AVG] Completed')
         return output_data
 
-
 class LabelLearningLayer:
     def __init__(self):
         self.GP = None
@@ -252,7 +183,7 @@ class LabelLearningLayer:
                 self.GP = []
                 #必要なGPの数
                 self.num_GP = int((X.shape[0]-1)/10000 + 1)
-                kernel = GPy.kern.RBF(input_dim = input_dim)
+                kernel = GPy.kern.RBF(input_dim = input_dim) + GPy.kern.Bias(input_dim = input_dim) + GPy.kern.Linear(input_dim = input_dim)
                 for i in range(self.num_GP):
                     print('learning {}'.format(i+1))
                     X_sep = X[10000*i:10000*(i+1)]
@@ -260,7 +191,7 @@ class LabelLearningLayer:
                     self.GP.append(GPy.models.GPRegression(X_sep,Y_sep, kernel=kernel))
                     self.GP[-1].optimize()
             else:
-                kernel = GPy.kern.RBF(input_dim = input_dim)
+                kernel = GPy.kern.RBF(input_dim = input_dim) + GPy.kern.Bias(input_dim = input_dim) + GPy.kern.Linear(input_dim = input_dim)
                 self.GP = GPy.models.GPRegression(X, Y, kernel=kernel)
                 self.GP.optimize()
                 print('Completed')
