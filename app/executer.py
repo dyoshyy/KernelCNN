@@ -1,4 +1,4 @@
-from main import main
+from prml.app.main_MNIST import main
 #import LeNet
 '''
 main(1000, 10000, 'PCA', 100)

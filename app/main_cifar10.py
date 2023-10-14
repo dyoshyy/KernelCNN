@@ -85,9 +85,10 @@ if __name__ == '__main__':
 
     #モデル定義
     model = layers.Model(display=True)
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 12, stride = 1, emb=emb, num_blocks=3000))
+    model.data_set_name = "CIFAR-10"
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, emb=emb, num_blocks=10000))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 32, stride = 1, emb=emb, num_blocks=3000))
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, emb=emb, num_blocks=10000))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
 

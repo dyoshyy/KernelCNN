@@ -127,7 +127,7 @@ class KIMLayer:
         self.output_data = np.zeros((num_inputs, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next))
         
         #先頭からtrain_numの画像を埋め込みの学習に使う
-        train_num = 100
+        train_num = 50
         train_X = input_X[:train_num] 
         train_Y = input_Y[:train_num]
         
@@ -224,6 +224,7 @@ class Model:
         self.shapes = []
         self.time_fitting = 0
         self.time_predicting = 0
+        self.data_set_name = ""
     
     def add_layer(self, layer):
         self.layers.append(layer)
@@ -231,7 +232,6 @@ class Model:
     def fit(self, X, Y):
         start_time = time.time()
         self.num_train = X.shape[0]
-        self.num_test = Y.shape[0]
         
         for n, layer in enumerate(self.layers):
             self.shapes.append(np.shape(X)[1:])
@@ -248,6 +248,7 @@ class Model:
 
     def predict(self, test_X, test_Y):
         start_time = time.time()
+        self.num_test = test_X.shape[0]
         for n,layer in enumerate(self.layers):
             if isinstance(layer, LabelLearningLayer):
                 break
@@ -269,6 +270,8 @@ class Model:
         
         # パラメータをテキストファイルに保存
         with open('model_parameters.txt', 'a') as param_file:
+            param_file.write(f'Datasets: {self.data_set_name}\n')
+            param_file.write('================================================================================\n')
             for i, layer in enumerate(self.layers):
                 if isinstance(layer, LabelLearningLayer):
                     continue  
