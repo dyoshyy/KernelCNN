@@ -5,6 +5,8 @@ from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import matplotlib.pyplot as plt
 import math
 import random
+from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
+from sklearn.decomposition import PCA, KernelPCA
 
 random.seed(0)
 
@@ -34,12 +36,12 @@ def display_images(data, layer):
     plt.savefig("./results/layer_{}_result.png".format(layer))
     #plt.show()
 
-def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, block_size, channel1, channel2):
+def visualize_emb(compressed_data, data_to_embed, data_to_embed_label, emb, block_size, channel1, channel2):
     '''
     埋め込み後の点を可視化
         compressed_data : 次元削減後のデータの第1,2次元
-        sampled_blocks : サンプルしたブロック
-        sampled_blocks_label : ブロックのラベル
+        data_to_embed : サンプルしたブロック
+        data_to_embed_label : ブロックのラベル
         emb : 埋め込み手法
         block_size : ブロックのサイズ
     '''
@@ -57,24 +59,24 @@ def visualize_emb(compressed_data, sampled_blocks, sampled_blocks_label, emb, bl
     if changed:
         filename = new_filename
 
-    fig = plt.figure(figsize=(12, 12)) #12 10
+    fig = plt.figure(figsize=(10, 10)) #12 10
 
     # 圧縮後の散布図
     ax = fig.add_subplot(111)
-    sc = ax.scatter(compressed_data[:, 0], compressed_data[:, 1], cmap='tab10', c=sampled_blocks_label, marker='o', s=60, edgecolors='black')
+    sc = ax.scatter(compressed_data[:, 0], compressed_data[:, 1], cmap='tab10', c=data_to_embed_label, marker='o', s=60, edgecolors='black')
     #plt.colorbar(sc, label='label')
     ax.set_title('Embedded data ' + 'Channel{}'.format(str(channel1)) + '&' + str(channel2) +" ("+emb+")")
 
     # ランダムに一部の点にのみブロックの画像を表示
     num_samples = len(compressed_data)
-    num_blocks_to_display = min(100, num_samples)
+    num_blocks_to_display = min(30, num_samples)
     random_indices = random.sample(range(num_samples), num_blocks_to_display)
-    #print(np.shape(sampled_blocks))
-    if sampled_blocks.shape[1] == block_size * block_size:
+    #print(np.shape(data_to_embed))
+    if data_to_embed.shape[1] == block_size * block_size:
         for i in random_indices:
             x, y = compressed_data[i]
-            img = sampled_blocks[i].reshape(block_size, block_size)# ブロック画像を5x5に変形
-            imgbox = OffsetImage(img, zoom=17-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
+            img = data_to_embed[i].reshape(block_size, block_size)# ブロック画像を5x5に変形
+            imgbox = OffsetImage(img, zoom=15-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
             #imgbox = OffsetImage(img, zoom=8, cmap='gray')
             ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
             ax.add_artist(ab) 
@@ -97,21 +99,42 @@ def calculate_similarity(array1, array2):
     return similarity
 
 def binarize_images(images):
-
-    min = np.min(images)
-    max = np.max(images)
-    images = ((images - min) / (max - min)) * 255
+    min_val = np.min(images)
+    max_val = np.max(images)
+    images = ((images - min_val) / (max_val - min_val)) * 255
     images = np.uint8(images)
 
     binarized_images = np.zeros_like(images)  # 二値化された画像を格納する配列を作成
 
     for i in range(images.shape[0]):
-        image = images[i, :, :, :]  # 画像を取得（shape: (28, 28, 1)）
-        _, binary_image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)  # 二値化
-        binary_image = binary_image[:, :, np.newaxis]
-        binarized_images[i, :, :] = binary_image  # 二値化した画像を保存
+        for c in range(images.shape[-1]):  # Loop through each channel
+            image = images[i, :, :, c]
+            
+            _, binary_image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)  # 二値化
+            binarized_images[i, :, :, c] = binary_image  # 二値化した画像を保存
 
     return binarized_images
+
+def binarize_2d_array(array_2d):
+    """
+    Binarize a 2D array (n_samples, n_features) using Otsu's method for each feature.
+    
+    Parameters:
+        array_2d: np.ndarray
+            The 2D array to binarize, shape (n_samples, n_features).
+            
+    Returns:
+        binarized_array: np.ndarray
+            The binarized array.
+    """
+    # 結果を格納する配列を初期化
+    binarized_array = np.zeros_like(array_2d, dtype=np.uint8)
+    
+    # 各特徴量に対してOtsuの二値化を適用
+    for i in range(array_2d.shape[0]):
+        _, tmp = cv2.threshold(array_2d[i].astype(np.uint8), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        binarized_array[i] = tmp.reshape(tmp.shape[0])
+    return binarized_array
 
 def pad_images(images):
     # 元の画像サイズ (MNISTは28x28)
@@ -130,3 +153,28 @@ def pad_images(images):
     padded_images[:, pad_width:pad_width + original_size, pad_width:pad_width + original_size] = images
     
     return padded_images
+
+def select_embedding_method(embedding_method : str, Channels_next : int, data_to_embed):
+        if embedding_method == "PCA":
+            pca = PCA(n_components=Channels_next, svd_solver='auto')
+            embedded_blocks = pca.fit_transform(data_to_embed)
+            
+        elif embedding_method == "KPCA":
+            kpca = KernelPCA(n_components=Channels_next, kernel="rbf")
+            embedded_blocks = kpca.fit_transform(data_to_embed)
+                
+        elif embedding_method == "LE":
+            LE = SpectralEmbedding(n_components=Channels_next, n_neighbors=int(data_to_embed.shape[0]/10))
+            embedded_blocks = LE.fit_transform(data_to_embed)
+            
+        elif embedding_method == "TSNE":
+            tsne = TSNE(n_components=Channels_next, random_state = 0, method='exact', perplexity = 30, n_iter = 1000, init='pca', learning_rate='auto')
+            embedded_blocks = tsne.fit_transform(data_to_embed)
+                
+        elif embedding_method == 'LLE':
+            lle = LocallyLinearEmbedding(n_components=Channels_next, n_neighbors= int(data_to_embed.shape[0]/10))
+            embedded_blocks = lle.fit_transform(data_to_embed)
+        else:
+            print('Error: No embedding selected.')
+        
+        return embedded_blocks

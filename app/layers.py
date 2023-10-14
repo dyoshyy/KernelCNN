@@ -1,15 +1,10 @@
-from gp import GaussianProcess, rbf_kernel
-import torch
 import GPy
 import numpy as np
 import math
 import os, sys, time
 
-from functions import calculate_similarity, display_images, binarize_images, visualize_emb
-import embedding
+from functions import calculate_similarity, display_images, binarize_images, binarize_2d_array, visualize_emb, select_embedding_method
 
-from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
-from sklearn.decomposition import PCA, KernelPCA
 from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler
 from scipy import stats
 
@@ -17,6 +12,7 @@ from skimage import util
 from tqdm import tqdm
 
 np.random.seed(1)
+np.set_printoptions(precision=3, threshold=10000, linewidth=200, edgeitems=10)
 
 class KIMLayer:
     def __init__(self, block_size : int, channels_next : int, stride : int, emb : str, num_blocks : int):
@@ -47,13 +43,6 @@ class KIMLayer:
             # 一枚持ってくる
             data = train_X[n,:,:,:]
             # すべてのブロックをサンプリング
-            '''
-            for i in range(self.H - self.b + 1):
-                for j in range(self.W - self.b + 1):
-                    block = data[:, i:i+self.b, j:j+self.b]
-                    sampled_blocks.append(block)
-                    sampled_blocks_label.append(train_Y[n])      
-            '''
             blocks = util.view_as_windows(data, (self.b, self.b, self.C_prev), self.stride).reshape((self.H-self.b+1)**2, self.b, self.b, self.C_prev)
             sampled_blocks[(n)*(self.H-self.b+1)**2 : (n+1)*(self.H-self.b+1)**2 ] = blocks
             sampled_blocks_label.extend([train_Y[n]] * blocks.shape[0])
@@ -82,61 +71,15 @@ class KIMLayer:
 
         if self.GP is None:
             sampled_blocks, sampled_blocks_label = self.sample_block(n_train, train_X, train_Y)
-            # 埋め込み
-            if self.embedding == "PCA":
-                pca = PCA(n_components=self.C_next, svd_solver='auto')
-                embedded_blocks = pca.fit_transform(sampled_blocks)
-            
-            elif self.embedding == "KPCA":
-                kpca = KernelPCA(n_components=self.C_next, kernel="rbf")
-                embedded_blocks = kpca.fit_transform(sampled_blocks)
-                
-            elif self.embedding == "LE":
-                #n_neighbors = int(sampled_blocks.shape[0]/10)
-                #n_neighbors=10
-                #LE = embedding.LaplacianEigenmap(self.C_next, n_neighbors)
-                LE = SpectralEmbedding(n_components=self.C_next, n_neighbors=self.C_next)
-                embedded_blocks = LE.fit_transform(sampled_blocks)
-            
-            elif self.embedding == "TSNE":
-                tsne = TSNE(n_components=self.C_next, random_state = 0, method='exact', perplexity = 30, n_iter = 1000, init='pca', learning_rate='auto')
-                embedded_blocks = tsne.fit_transform(sampled_blocks)
-                
-            elif self.embedding == 'LLE':
-                lle = LocallyLinearEmbedding(n_components=self.C_next, n_neighbors= int(sampled_blocks.shape[0]/10))
-                embedded_blocks = lle.fit_transform(sampled_blocks)
-            
-            elif self.embedding == "LPP":
-                LPP = embedding.LPP(n_components=self.C_next)
-                embedded_blocks = LPP.fit_transform(sampled_blocks)
-                
-            elif self.embedding == "GPLVM":
-                sigma=3
-                alpha=0.05
-                beta=0.08
-                model = embedding.GPLVM(sampled_blocks,self.C_next, np.array([sigma**2,alpha/beta]))
-                embedded_blocks = model.fit(epoch=100,epsilonX=0.05,epsilonSigma=0.0005,epsilonAlpha=0.00001)
-            
-            else:
-                print('Error: No embedding selected.')
-                sys.exit()
+            embedded_blocks = select_embedding_method(self.embedding, self.C_next, sampled_blocks)
 
-            # 埋め込みデータを可視化
-            principal_data_12 = embedded_blocks[:,0:2]
-            #principal_data_34 = embedded_blocks[:,2:4]
-            #principal_data_56 = embedded_blocks[:,4:6]
-            visualize_emb(principal_data_12, sampled_blocks, sampled_blocks_label, self.embedding, self.b, 1, 2)
-            #visualize_emb(principal_data_34, sampled_blocks, sampled_blocks_label, self.embedding, self.b, 3, 4)
-            #visualize_emb(principal_data_56, sampled_blocks, sampled_blocks_label, self.embedding, self.b, 5, 6)
-
-            #ガウス過程回帰で学習
-            print('[KIM] Fitting samples...')
-            
             #B個のブロックだけランダムに取り出す
             selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
             sampled_blocks = sampled_blocks[selected_indices]
             embedded_blocks = embedded_blocks[selected_indices]
-            
+
+            #ガウス過程回帰で学習
+            print('[KIM] Fitting samples...')
             #埋め込みデータを正規化,標準化
             ms = MinMaxScaler()
             ss = StandardScaler()
@@ -145,6 +88,10 @@ class KIMLayer:
             embedded_blocks = ms.transform(embedded_blocks)
             embedded_blocks = ss.fit_transform(embedded_blocks)
             
+            # 埋め込みデータを可視化
+            principal_data_12 = embedded_blocks[:,0:2]
+            visualize_emb(principal_data_12, sampled_blocks, sampled_blocks_label[selected_indices], self.embedding, self.b, 1, 2)
+
             print("Training sample shape:", np.shape(embedded_blocks))
             
             print('[KIM] Training KIM')
@@ -155,66 +102,21 @@ class KIMLayer:
             
         else:
             print('[KIM] GPmodel found')
-    
-    
-    def convert_image(self, n):
-        '''
-        学習済みのKIMで元の画像を変換
-        '''
-        output_tmp = np.zeros((int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next ))
-
-        blocks = []
-        for i in range(self.b_radius, self.H-self.b_radius, self.stride):
-            i_output = int((i - self.b_radius)/self.stride)
-            for j in range(self.b_radius, self.W-self.b_radius, self.stride):
-                j_output = int((j - self.b_radius)/self.stride)
-                input_cropped = self.input_data[n,(i-self.b_radius):(i+self.b_radius+1), (j-self.b_radius):(j+self.b_radius+1), :].reshape(1, self.b * self.b * self.C_prev)
-                blocks.append(input_cropped)
-            
-        blocks = np.concatenate(blocks, axis=0)
-        predictions, _ = self.GP.predict(blocks)
-        #再配置
-        idx = 0
-        for i in range(self.b_radius, self.H-self.b_radius, self.stride):
-            i_output = int((i - self.b_radius)/self.stride)
-            for j in range(self.b_radius, self.W-self.b_radius, self.stride):
-                j_output = int((j - self.b_radius)/self.stride)
-                output_tmp[i_output, j_output, :] = predictions[idx]
-                idx += 1
-            
-        self.output_data[n] = output_tmp
         
     def convert_image_batch(self, batch_size=10):
         '''
         学習済みのKIMで元の画像を変換
         '''
-        num_images = self.input_data.shape[0]
-        num_batches = num_batches = math.ceil(num_images / batch_size)
-        output_tmp = np.zeros((self.C_next, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride)))
-        blocks = []
-        
-        for batch_idx in range(num_batches):
-            for i in range(self.b_radius, self.H-self.b_radius, self.stride):
-                i_output = int((i - self.b_radius)/self.stride)
-                for j in range(self.b_radius, self.W-self.b_radius, self.stride):
-                    j_output = int((j - self.b_radius)/self.stride)
-                    input_cropped = self.input_data[n, :, (i-self.b_radius):(i+self.b_radius+1), (j-self.b_radius):(j+self.b_radius+1)].reshape(1, self.b * self.b * self.C_prev)
-                    blocks.append(input_cropped)
-                
-            blocks = np.concatenate(blocks, axis=0)
-            predictions, _ = self.GP.predict(blocks)
-            #再配置
-            idx = 0
-            for i in range(self.b_radius, self.H-self.b_radius, self.stride):
-                i_output = int((i - self.b_radius)/self.stride)
-                for j in range(self.b_radius, self.W-self.b_radius, self.stride):
-                    j_output = int((j - self.b_radius)/self.stride)
-                    output_tmp[:, i_output, j_output] = predictions[idx]
-                    idx += 1
-            
-        self.output_data[n] = output_tmp
-    
-    #@profile
+        num_batches = math.ceil(self.input_data.shape[0]/batch_size)
+
+        for batch_index in tqdm(range(num_batches)):
+            batch_images = self.input_data[batch_size * batch_index : batch_size * (batch_index + 1)]
+            blocks_to_convert = util.view_as_windows(batch_images, (1, self.b, self.b, self.C_prev), self.stride)
+            blocks_to_convert = blocks_to_convert.reshape(batch_size * (self.H-self.b+1)**2, self.b * self.b * self.C_prev) # ex) (10*784, 5*5*1)        
+            predictions, _ = self.GP.predict(blocks_to_convert) # shape: (10*784, 6)
+            predictions = predictions.reshape(batch_size, self.H-self.b+1, self.H-self.b+1, self.C_next)
+            self.output_data[batch_size * batch_index : batch_size * (batch_index + 1)] = predictions
+
     def calculate(self, input_X, input_Y):
         
         num_inputs = input_X.shape[0]
@@ -222,8 +124,6 @@ class KIMLayer:
         self.W = input_X.shape[2]
         self.C_prev = input_X.shape[3]
         self.input_data = input_X
-        print(input_X.shape)
-        print(num_inputs, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next)
         self.output_data = np.zeros((num_inputs, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next))
         
         #先頭からtrain_numの画像を埋め込みの学習に使う
@@ -234,8 +134,7 @@ class KIMLayer:
         self.learn_embedding(train_X, train_Y) 
         
         print('[KIM] Converting the image...')
-        for i in tqdm(range(num_inputs)):
-            self.convert_image(i)
+        self.convert_image_batch(batch_size=100)
         print('completed')
 
         return self.output_data
@@ -251,19 +150,19 @@ class AvgPoolingLayer:
         H_out = H // p
         W_out = W // p
 
-        # Calculate starting indices for slices
-        i_indices = np.arange(H_out)[:, np.newaxis, np.newaxis, np.newaxis] * p
-        j_indices = np.arange(W_out)[np.newaxis, :, np.newaxis, np.newaxis] * p
+        # Initialize output data
+        output_data = np.zeros((N, H_out, W_out, C))
 
-        # Calculate slices using broadcasting
-        slices = (i_indices + np.arange(p)[np.newaxis, np.newaxis, :, np.newaxis],
-                  j_indices + np.arange(p)[np.newaxis, np.newaxis, np.newaxis, :])
-
-        # Perform average pooling using broadcasting and sum reduction
-        output_data = np.mean(input_data[:, slices[0], slices[1], :], axis=(2, 3))
+        # Perform average pooling
+        for i in range(H_out):
+            for j in range(W_out):
+                # Extract pooling window
+                window = input_data[:, i*p:(i+1)*p, j*p:(j+1)*p, :]
+                # Calculate mean value
+                output_data[:, i, j, :] = np.mean(window, axis=(1, 2))
+        
         print('[AVG] Completed')
         return output_data
-
 
 class LabelLearningLayer:
     def __init__(self):
@@ -284,7 +183,7 @@ class LabelLearningLayer:
                 self.GP = []
                 #必要なGPの数
                 self.num_GP = int((X.shape[0]-1)/10000 + 1)
-                kernel = GPy.kern.RBF(input_dim = input_dim)
+                kernel = GPy.kern.RBF(input_dim = input_dim) + GPy.kern.Bias(input_dim = input_dim) + GPy.kern.Linear(input_dim = input_dim)
                 for i in range(self.num_GP):
                     print('learning {}'.format(i+1))
                     X_sep = X[10000*i:10000*(i+1)]
@@ -292,7 +191,7 @@ class LabelLearningLayer:
                     self.GP.append(GPy.models.GPRegression(X_sep,Y_sep, kernel=kernel))
                     self.GP[-1].optimize()
             else:
-                kernel = GPy.kern.RBF(input_dim = input_dim)
+                kernel = GPy.kern.RBF(input_dim = input_dim) + GPy.kern.Bias(input_dim = input_dim) + GPy.kern.Linear(input_dim = input_dim)
                 self.GP = GPy.models.GPRegression(X, Y, kernel=kernel)
                 self.GP.optimize()
                 print('Completed')
@@ -343,6 +242,7 @@ class Model:
         self.shapes.append(np.shape(X)[1:])
         if not isinstance(self.layers[-1], LabelLearningLayer):
             self.layers.append(LabelLearningLayer())
+            
         self.layers[-1].fit(X, Y)
         self.time_fitting = time.time() - start_time
 
