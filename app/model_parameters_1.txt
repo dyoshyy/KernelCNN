@@ -1,0 +1,147 @@
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 546.4408755302429
+Predicting time: 11.887707233428955
+Accuracy: 0.73
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LLE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LLE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 77.71784210205078
+Predicting time: 12.102736949920654
+Accuracy: 0.69
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LLE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LLE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 80.88266921043396
+Predicting time: 12.276069402694702
+Accuracy: 0.69
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: TSNE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: TSNE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 548.940646648407
+Predicting time: 12.082518815994263
+Accuracy: 0.73
+================================================================================
+Datasets: CIFAR-10
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 10000
+Layer shape: [(32, 32, 3), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 71.29977536201477
+Predicting time: 858.1366190910339
+Accuracy: 0.1
+================================================================================
+Datasets: CIFAR-10
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 1000
+Test samples: 10000
+Layer shape: [(32, 32, 3), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 172.08128952980042
+Predicting time: 860.8133063316345
+Accuracy: 0.3099
+================================================================================
+Datasets: CIFAR-10
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 10000
+Test samples: 10000
+Layer shape: [(32, 32, 3), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 1734.9851093292236
+Predicting time: 866.344034910202
+Accuracy: 0.4044
+================================================================================

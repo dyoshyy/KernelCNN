@@ -10,31 +10,32 @@ from sklearn.decomposition import PCA, KernelPCA
 
 random.seed(0)
 
-def display_images(data, layer):
-    data = data[0]
-    num_in_a_row = 4 #default 4
-    Channels = data.shape[2]
-    Rows = math.ceil(Channels/5)
+def display_images(data, layer_number, embedding_method : str):
+    for n in range(5):
+        data_to_display = data[n]
+        num_in_a_row = 4 #default 4
+        Channels = data_to_display.shape[2]
+        Rows = math.ceil(Channels/5)
 
-    fig, axes = plt.subplots(Rows, num_in_a_row, figsize=(15, 3*Rows))
-    fig.subplots_adjust(hspace=0.4)
+        fig, axes = plt.subplots(Rows, num_in_a_row, figsize=(15, 3*Rows))
+        fig.subplots_adjust(hspace=0.4)
 
-    for r in range(Rows):
-        for c in range(num_in_a_row):
-            if Channels == 1:
-                ax = axes[r]
-            else:
-                ax = axes[r, c]
-            ax.axis('off')
-            index = r * num_in_a_row + c
-            if(index < Channels):
-                image = data[:,:, index]
-                ax.imshow(image, cmap='gray')
-                ax.set_title('Channel {}'.format(index+1))
+        for r in range(Rows):
+            for c in range(num_in_a_row):
+                if Channels == 1:
+                    ax = axes[r]
+                else:
+                    ax = axes[r, c]
+                ax.axis('off')
+                index = r * num_in_a_row + c
+                if(index < Channels):
+                    image = data_to_display[:,:, index]
+                    ax.imshow(image, cmap='gray')
+                    ax.set_title('Channel {}'.format(index+1))
 
-    plt.tight_layout()
-    plt.savefig("./results/layer_{}_result.png".format(layer))
-    #plt.show()
+        plt.tight_layout()
+        plt.savefig(f"./results/layer_{embedding_method}_{layer_number}_{n+1}_.png")
+        #plt.show()
 
 def visualize_emb(compressed_data, data_to_embed, data_to_embed_label, emb, block_size, channel1, channel2):
     '''
@@ -164,7 +165,10 @@ def select_embedding_method(embedding_method : str, Channels_next : int, data_to
             embedded_blocks = kpca.fit_transform(data_to_embed)
                 
         elif embedding_method == "LE":
-            LE = SpectralEmbedding(n_components=Channels_next, n_neighbors=int(data_to_embed.shape[0]/10))
+            n = int(data_to_embed.shape[0]/Channels_next)
+            
+            print(f"k for knn:{n}")
+            LE = SpectralEmbedding(n_components=Channels_next, n_neighbors=n)
             embedded_blocks = LE.fit_transform(data_to_embed)
             
         elif embedding_method == "TSNE":
@@ -172,9 +176,9 @@ def select_embedding_method(embedding_method : str, Channels_next : int, data_to
             embedded_blocks = tsne.fit_transform(data_to_embed)
                 
         elif embedding_method == 'LLE':
-            lle = LocallyLinearEmbedding(n_components=Channels_next, n_neighbors= int(data_to_embed.shape[0]/10))
+            lle = LocallyLinearEmbedding(n_components=Channels_next, n_neighbors= int(data_to_embed.shape[0]/Channels_next))
             embedded_blocks = lle.fit_transform(data_to_embed)
         else:
             print('Error: No embedding selected.')
         
-        return embedded_blocks
+        return embedded_blocks.astype(np.float32)

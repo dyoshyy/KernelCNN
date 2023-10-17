@@ -5,7 +5,7 @@ import os, sys, time
 
 from functions import calculate_similarity, display_images, binarize_images, binarize_2d_array, visualize_emb, select_embedding_method
 
-from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from scipy import stats
 
 from skimage import util
@@ -39,6 +39,7 @@ class KIMLayer:
         sampled_blocks = np.empty((n_train*(self.H-self.b+1)**2, self.b, self.b, self.C_prev))
         sampled_blocks_label = []
         train_Y = np.argmax(train_Y, axis=1)
+    
         for n in range(n_train):
             # 一枚持ってくる
             data = train_X[n,:,:,:]
@@ -46,6 +47,7 @@ class KIMLayer:
             blocks = util.view_as_windows(data, (self.b, self.b, self.C_prev), self.stride).reshape((self.H-self.b+1)**2, self.b, self.b, self.C_prev)
             sampled_blocks[(n)*(self.H-self.b+1)**2 : (n+1)*(self.H-self.b+1)**2 ] = blocks
             sampled_blocks_label.extend([train_Y[n]] * blocks.shape[0])
+        
         sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
             
         #画像を二値化
@@ -58,6 +60,11 @@ class KIMLayer:
         sampled_blocks_label = np.array(sampled_blocks_label)[indices]
 
         print('unique samples shape:',np.shape(sampled_blocks))
+        
+        #B個だけランダムに取り出す
+        selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
+        sampled_blocks = sampled_blocks[selected_indices]
+        sampled_blocks_label = sampled_blocks_label[selected_indices]
         
         return sampled_blocks, sampled_blocks_label
 
@@ -73,24 +80,18 @@ class KIMLayer:
             sampled_blocks, sampled_blocks_label = self.sample_block(n_train, train_X, train_Y)
             embedded_blocks = select_embedding_method(self.embedding, self.C_next, sampled_blocks)
 
-            #B個のブロックだけランダムに取り出す
-            selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
-            sampled_blocks = sampled_blocks[selected_indices]
-            embedded_blocks = embedded_blocks[selected_indices]
-
             #ガウス過程回帰で学習
             print('[KIM] Fitting samples...')
+            
             #埋め込みデータを正規化,標準化
             ms = MinMaxScaler()
             ss = StandardScaler()
-            rs = RobustScaler()
-            ms.fit(embedded_blocks)
-            embedded_blocks = ms.transform(embedded_blocks)
+            embedded_blocks = ms.fit_transform(embedded_blocks)
             embedded_blocks = ss.fit_transform(embedded_blocks)
             
             # 埋め込みデータを可視化
             principal_data_12 = embedded_blocks[:,0:2]
-            visualize_emb(principal_data_12, sampled_blocks, sampled_blocks_label[selected_indices], self.embedding, self.b, 1, 2)
+            visualize_emb(principal_data_12, sampled_blocks, sampled_blocks_label, self.embedding, self.b, 1, 2)
 
             print("Training sample shape:", np.shape(embedded_blocks))
             
@@ -118,7 +119,10 @@ class KIMLayer:
             self.output_data[batch_size * batch_index : batch_size * (batch_index + 1)] = predictions
 
     def calculate(self, input_X, input_Y):
-        
+        '''
+        KIM層の全体の計算
+        '''
+        #インスタンス変数に格納
         num_inputs = input_X.shape[0]
         self.H = input_X.shape[1]
         self.W = input_X.shape[2]
@@ -126,12 +130,7 @@ class KIMLayer:
         self.input_data = input_X
         self.output_data = np.zeros((num_inputs, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next))
         
-        #先頭からtrain_numの画像を埋め込みの学習に使う
-        train_num = 50
-        train_X = input_X[:train_num] 
-        train_Y = input_Y[:train_num]
-        
-        self.learn_embedding(train_X, train_Y) 
+        self.learn_embedding(input_X, input_Y) 
         
         print('[KIM] Converting the image...')
         self.convert_image_batch(batch_size=100)
@@ -237,7 +236,8 @@ class Model:
             self.shapes.append(np.shape(X)[1:])
             X = layer.calculate(X, Y)
             if self.display:
-                display_images(X, n+1)
+                if isinstance(layer, KIMLayer):
+                    display_images(X, n+2, layer.embedding)
 
         self.shapes.append(np.shape(X)[1:])
         if not isinstance(self.layers[-1], LabelLearningLayer):
@@ -254,7 +254,8 @@ class Model:
                 break
             test_X = layer.calculate(test_X, test_Y)
             if self.display:
-                display_images(test_X, n+5)
+                if isinstance(layer, KIMLayer):
+                    display_images(test_X, n+5, layer.embedding)
 
         Y_predicted = self.layers[-1].predict(test_X)
         Y_answer= [np.argmax(test_Y[n,:]) for n in range(test_Y.shape[0])]

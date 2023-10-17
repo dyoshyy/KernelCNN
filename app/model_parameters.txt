@@ -752,3 +752,318 @@ Fitting time: 509.3463099002838
 Predicting time: 85.65382552146912
 Accuracy: 0.693
 ================================================================================
+Datasets: MNIST
+================================================================================
+Layer 2
+Embedding method: PCA
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: PCA
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 50.6721248626709
+Predicting time: 12.08773684501648
+Accuracy: 0.73
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: PCA
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: PCA
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 53.071269273757935
+Predicting time: 12.059010982513428
+Accuracy: 0.72
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 176.49909043312073
+Predicting time: 11.894067764282227
+Accuracy: 0.73
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 572.569239616394
+Predicting time: 12.126677989959717
+Accuracy: 0.72
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 530.1257975101471
+Predicting time: 11.830236673355103
+Accuracy: 0.71
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 562.585236787796
+Predicting time: 12.014688491821289
+Accuracy: 0.73
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 585.2071697711945
+Predicting time: 12.103551626205444
+Accuracy: 0.71
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 569.6008861064911
+Predicting time: 12.150168418884277
+Accuracy: 0.71
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 544.9542319774628
+Predicting time: 12.04357099533081
+Accuracy: 0.73
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 10000
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 325.80802178382874
+Predicting time: 1201.8358116149902
+Accuracy: 0.7652
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 1000
+Test samples: 10000
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 537.7902133464813
+Predicting time: 1206.8493897914886
+Accuracy: 0.9352
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 10000
+Test samples: 10000
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 1899.0183506011963
+Predicting time: 842.10937333107
+Accuracy: 0.9733
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 100
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 974.8866121768951
+Predicting time: 18.27185583114624
+Accuracy: 0.73
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 30000
+Test samples: 10000
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 5331.138572692871
+Predicting time: 848.3216547966003
+Accuracy: 0.9783
+================================================================================
+Datasets: Fashion-MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 3000
+-------------------------------
+Train samples: 60000
+Test samples: 10000
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 8475.760648012161
+Predicting time: 857.5164394378662
+Accuracy: 0.9779
+================================================================================

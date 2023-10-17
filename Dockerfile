@@ -21,7 +21,7 @@ RUN pip install --upgrade setuptools
 RUN pip install numpy==1.24.0
 RUN pip install GPy
 RUN pip install gpytorch
-RUN pip install tensorflow
+RUN pip install tensorflow[and-cuda]
 RUN pip install scikit-learn
 RUN pip install opencv-python
 RUN pip install matplotlib
