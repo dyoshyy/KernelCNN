@@ -10,7 +10,7 @@ from sklearn.decomposition import PCA, KernelPCA
 
 random.seed(0)
 
-def display_images(data, layer_number, embedding_method : str):
+def display_images(data, layer_number, embedding_method : str, dataset_name : str):
     for n in range(5):
         data_to_display = data[n]
         num_in_a_row = 4 #default 4
@@ -34,10 +34,10 @@ def display_images(data, layer_number, embedding_method : str):
                     ax.set_title('Channel {}'.format(index+1))
 
         plt.tight_layout()
-        plt.savefig(f"./results/layer_{embedding_method}_{layer_number}_{n+1}_.png")
+        plt.savefig(f"./results/{dataset_name}_{embedding_method}_{layer_number}_{n+1}_.png")
         #plt.show()
 
-def visualize_emb(compressed_data, data_to_embed, data_to_embed_label, emb, block_size, channel1, channel2):
+def visualize_emb(compressed_data, data_to_embed, data_to_embed_label, emb, block_size, channel1, channel2, dataset_name: str):
     '''
     埋め込み後の点を可視化
         compressed_data : 次元削減後のデータの第1,2次元
@@ -48,7 +48,7 @@ def visualize_emb(compressed_data, data_to_embed, data_to_embed_label, emb, bloc
     '''
     
     #ファイル名の重複を防ぐ処理
-    filename = 'emb_' + emb
+    filename = f'{dataset_name}_emb_{emb}' 
     file_exists = os.path.exists("./emb_results/" + filename + ".png")
     counter = 1
     changed = False
