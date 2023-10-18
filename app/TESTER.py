@@ -1,4 +1,4 @@
-import embedding_analysis
+
 import numpy as np
 import GPy
 from functions import binarize_images
@@ -13,6 +13,7 @@ from functions import calculate_similarity
 
 def main_GP(num_train, num_test, datasets:str):
     
+    print('Number of training samples:', num_train)
     if (datasets == 'MNIST') or (datasets == 'FMNIST'):
         if datasets == 'MNIST':
             (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
@@ -22,10 +23,12 @@ def main_GP(num_train, num_test, datasets:str):
         X_test = pad_images(X_test)
         X_train = X_train.reshape(-1, 32, 32, 1) 
         X_test = X_test.reshape(-1, 32, 32, 1)
+        input_dim = 32*32
     elif datasets == 'CIFAR10':
         (X_train, Y_train), (X_test, Y_test) = cifar10.load_data()
         X_train = X_train.reshape(-1, 32, 32, 3) 
         X_test = X_test.reshape(-1, 32, 32, 3)
+        input_dim = 32*32*3
         
     #データ整形
     Y_train = to_categorical(Y_train,10)
@@ -44,7 +47,7 @@ def main_GP(num_train, num_test, datasets:str):
     if n > 10000:
         GP = []
         num_GP = int((n-1)/10000 + 1)
-        kernel = GPy.kern.RBF(input_dim = 32*32) + GPy.kern.Bias(input_dim = 32*32) + GPy.kern.Linear(input_dim = 32*32)
+        kernel = GPy.kern.RBF(input_dim = input_dim) + GPy.kern.Bias(input_dim = input_dim) + GPy.kern.Linear(input_dim = input_dim)
         for i in range(num_GP):
             print('learning {}'.format(i+1))
             X_sep = X_train[10000*i:10000*(i+1)]
@@ -52,7 +55,7 @@ def main_GP(num_train, num_test, datasets:str):
             GP.append(GPy.models.GPRegression(X_sep,Y_sep, kernel=kernel))
             GP[-1].optimize()
     else:
-        kernel = GPy.kern.RBF(input_dim = 32*32) + GPy.kern.Bias(input_dim = 32*32) + GPy.kern.Linear(input_dim = 32*32)
+        kernel = GPy.kern.RBF(input_dim = input_dim) + GPy.kern.Bias(input_dim = input_dim) + GPy.kern.Linear(input_dim = input_dim)
         GP = GPy.models.GPRegression(X_train, Y_train, kernel=kernel)
         GP.optimize()
         
@@ -61,7 +64,7 @@ def main_GP(num_train, num_test, datasets:str):
         for i in range(num_GP):
             Y_predicted, _ = GP[i].predict(X_test)
             Y_predicted = np.array(Y_predicted)
-            predict = [np.argmax(Y_predicted[n,:]) for n in range(m)]
+            predict = [np.argmax(Y_predicted[n,:]) for n in range(num_test)]
             predictions.append(predict)
         ensemble_predictions = np.vstack(predictions)
         Y_predict = stats.mode(ensemble_predictions, axis=0).mode.ravel()
@@ -69,7 +72,7 @@ def main_GP(num_train, num_test, datasets:str):
     else:
         Y_predicted, _ = GP.predict(X_test)
         Y_predicted = np.array(Y_predicted)
-        Y_predict = [np.argmax(Y_predicted[n,:]) for n in range(m)]
+        Y_predict = [np.argmax(Y_predicted[n,:]) for n in range(num_test)]
     
     Y_test= [np.argmax(Y_test[n,:]) for n in range(Y_test.shape[0])]
     print(calculate_similarity(Y_predict, Y_test))
