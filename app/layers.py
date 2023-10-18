@@ -28,6 +28,7 @@ class KIMLayer:
         self.embedding = emb
         self.GP = None
         self.B = num_blocks
+        self.dataset_name = None
 
     def sample_block(self, n_train, train_X, train_Y):
         '''
@@ -91,7 +92,7 @@ class KIMLayer:
             
             # 埋め込みデータを可視化
             principal_data_12 = embedded_blocks[:,0:2]
-            visualize_emb(principal_data_12, sampled_blocks, sampled_blocks_label, self.embedding, self.b, 1, 2)
+            visualize_emb(principal_data_12, sampled_blocks, sampled_blocks_label, self.embedding, self.b, 1, 2, self.dataset_name)
 
             print("Training sample shape:", np.shape(embedded_blocks))
             
@@ -234,10 +235,11 @@ class Model:
         
         for n, layer in enumerate(self.layers):
             self.shapes.append(np.shape(X)[1:])
+            layer.dataset_name = self.data_set_name
             X = layer.calculate(X, Y)
             if self.display:
                 if isinstance(layer, KIMLayer):
-                    display_images(X, n+2, layer.embedding)
+                    display_images(X, n+2, layer.embedding, self.data_set_name)
 
         self.shapes.append(np.shape(X)[1:])
         if not isinstance(self.layers[-1], LabelLearningLayer):
@@ -255,7 +257,7 @@ class Model:
             test_X = layer.calculate(test_X, test_Y)
             if self.display:
                 if isinstance(layer, KIMLayer):
-                    display_images(test_X, n+5, layer.embedding)
+                    display_images(test_X, n+5, layer.embedding, self.data_set_name)
 
         Y_predicted = self.layers[-1].predict(test_X)
         Y_answer= [np.argmax(test_Y[n,:]) for n in range(test_Y.shape[0])]
