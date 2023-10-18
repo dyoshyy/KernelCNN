@@ -4,40 +4,39 @@ import GPy
 from functions import binarize_images
 from functions import pad_images
 from scipy import stats
+import sys
 
-from keras.datasets import mnist
+from keras.datasets import mnist, fashion_mnist, cifar10
 from keras.utils import to_categorical
 
 from functions import calculate_similarity
 
-if __name__ == '__main__':
+def main_GP(num_train, num_test, datasets:str):
     
-    #データセットのロード
-    (X_train, Y_train), (X_test,Y_test) = mnist.load_data()
-
-    X_train = pad_images(X_train)
-    X_test = pad_images(X_test)
-    
-    image_rows = 32
-    image_cols = 32
-    image_color = 1 #グレースケール
-    input_shape = (image_rows, image_cols, image_color)
-    out_size = 10
-
+    if (datasets == 'MNIST') or (datasets == 'FMNIST'):
+        if datasets == 'MNIST':
+            (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
+        if datasets == 'FMNIST':
+            (X_train, Y_train), (X_test, Y_test) = fashion_mnist.load_data()
+        X_train = pad_images(X_train)
+        X_test = pad_images(X_test)
+        X_train = X_train.reshape(-1, 32, 32, 1) 
+        X_test = X_test.reshape(-1, 32, 32, 1)
+    elif datasets == 'CIFAR10':
+        (X_train, Y_train), (X_test, Y_test) = cifar10.load_data()
+        X_train = X_train.reshape(-1, 32, 32, 3) 
+        X_test = X_test.reshape(-1, 32, 32, 3)
+        
     #データ整形
-    X_train = X_train.reshape(-1, image_color, image_rows, image_cols) 
-    X_test = X_test.reshape(-1, image_color, image_rows, image_cols, ) 
-    Y_train = to_categorical(Y_train,out_size)
-    Y_test = to_categorical(Y_test,out_size)
+    Y_train = to_categorical(Y_train,10)
+    Y_test = to_categorical(Y_test,10)
 
-    n = 60000  #train
-    #m = int(args[2])  #test
-    m = 10000
-
-    X_train = X_train[:n]
-    Y_train = Y_train[:n]
-    X_test = X_test[:m]
-    Y_test = Y_test[:m]
+    X_train = X_train[:num_train]
+    Y_train = Y_train[:num_train]
+    X_test = X_test[:num_test]
+    Y_test = Y_test[:num_test]
+    
+    n = X_train.shape[0]
 
     X_train = binarize_images(X_train).reshape(X_train.shape[0], -1)
     X_test = binarize_images(X_test).reshape(X_test.shape[0], -1)
@@ -45,7 +44,7 @@ if __name__ == '__main__':
     if n > 10000:
         GP = []
         num_GP = int((n-1)/10000 + 1)
-        kernel = GPy.kern.RBF(input_dim = 32*32)
+        kernel = GPy.kern.RBF(input_dim = 32*32) + GPy.kern.Bias(input_dim = 32*32) + GPy.kern.Linear(input_dim = 32*32)
         for i in range(num_GP):
             print('learning {}'.format(i+1))
             X_sep = X_train[10000*i:10000*(i+1)]
@@ -53,7 +52,7 @@ if __name__ == '__main__':
             GP.append(GPy.models.GPRegression(X_sep,Y_sep, kernel=kernel))
             GP[-1].optimize()
     else:
-        kernel = GPy.kern.RBF(input_dim = 32*32)
+        kernel = GPy.kern.RBF(input_dim = 32*32) + GPy.kern.Bias(input_dim = 32*32) + GPy.kern.Linear(input_dim = 32*32)
         GP = GPy.models.GPRegression(X_train, Y_train, kernel=kernel)
         GP.optimize()
         
@@ -74,3 +73,10 @@ if __name__ == '__main__':
     
     Y_test= [np.argmax(Y_test[n,:]) for n in range(Y_test.shape[0])]
     print(calculate_similarity(Y_predict, Y_test))
+    
+if __name__ == '__main__':
+    args = sys.argv
+    num_train = int(args[1])  #train
+    num_test = int(args[2])  #test
+    dataset = args[3]
+    main_GP(num_train, num_test, dataset)
