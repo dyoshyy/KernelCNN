@@ -22,9 +22,15 @@ main(50000, 10000, 'FMNIST')
 main(60000, 10000, 'FMNIST')
 '''
 
+'''
 print('Dataset: CIFAR10')
 main(100, 10000, 'CIFAR10')
 main(1000, 10000, 'CIFAR10')
 main(10000, 10000, 'CIFAR10')
 main(30000, 10000, 'CIFAR10')
 main(50000, 10000, 'CIFAR10')
+'''
+
+main(10000, 10000, 'MNIST')
+#main(10000, 10000, 'FMNIST')
+#main(10000, 10000, 'CIFAR10')

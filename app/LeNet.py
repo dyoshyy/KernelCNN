@@ -68,9 +68,9 @@ def main(train_num: int, test_num : int, datasets : str):
     batch_size = 256
     epochs = 1000
     es = EarlyStopping(monitor='val_loss', mode='auto', patience=5, verbose=0)
-    checkpoint = ModelCheckpoint("./weights/model_weights_epoch_{epoch:02d}.h5", save_weights_only=True, save_freq=10)
+    cp = ModelCheckpoint("./weights/model_weights_epoch_{epoch:02d}.h5", save_weights_only=True, save_freq=10)
     
-    history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[es], validation_split=0.1)
+    history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[es, cp], validation_split=0.1)
 
     # predict test samples
     test_loss, test_acc = model.evaluate(test_X, test_Y)
@@ -78,26 +78,26 @@ def main(train_num: int, test_num : int, datasets : str):
     print('Accuracy:',test_acc)
 
     #epochs_to_check = [10, 50, 100, 500, 1000]
-    epochs_to_check = [1000]
+    completed_epoch = len(history.epoch)
+    epochs_to_check = [completed_epoch]
 
     # Get intermediate outputs for the convolutional layers and save them in the list
-    if False:
+    if True:
         for epoch in epochs_to_check:
             block_outputs=[]
-            #model.load_weights(f"./weights/model_weights_epoch_{epoch:02d}.h5")
-            block_outputs.append(get_intermediate_output(model, 'conv2d', train_X))
-            block_outputs.append(get_intermediate_output(model, 'conv2d_1', train_X))
+            model.load_weights(f"./weights/model_weights_epoch_{epoch:02d}.h5")
+            block_outputs.append(get_intermediate_output(model, 'conv2d', test_X))
+            block_outputs.append(get_intermediate_output(model, 'conv2d_1', test_X))
             weights1 = model.get_layer("conv2d").get_weights()[0]
             weights2 = model.get_layer("conv2d_1").get_weights()[0]
-            weights1 = weights1.transpose(2, 3, 0, 1)
-            weights2 = weights2.transpose(2, 3, 0, 1)
 
-            display_images(block_outputs[0].transpose(0, 3, 1, 2), 99)
-            display_images(block_outputs[1].transpose(0, 3, 1, 2), 100)
-            display_images(weights1, 101)
-            for i in range(weights2.shape[0]):
-                weight = weights2[i:]
-                display_images(weight, 102+i)
+            display_images(block_outputs[0], 99, 'LeNet', datasets)
+            display_images(block_outputs[1], 100, 'LeNet', datasets)
+            #display_images(weights1, 101)
+            
+            #for i in range(weights2.shape[0]):
+            #    weight = weights2[i:]
+            #    display_images(weight, 102+i)
 
             # Print the shapes of the intermediate outputs
             for i, output in enumerate(block_outputs):
@@ -113,7 +113,7 @@ def main(train_num: int, test_num : int, datasets : str):
                     for j in range(train_X.shape[2] - (kernel_size - 1)):
                         block = train_X[n, i:i+kernel_size, j:j+kernel_size].reshape(kernel_size, kernel_size)
                         sampled_blocks.append(block)
-                        block_labels.append(train_labels[n])
+                        block_labels.append(np.argmax(train_Y[n]))
 
             sampled_blocks = np.array(sampled_blocks)
             print("sampled_blocks shape:", np.shape(sampled_blocks))
@@ -134,10 +134,10 @@ def main(train_num: int, test_num : int, datasets : str):
             block_labels = np.array(block_labels)[selected_indices]
 
             sampled_blocks = sampled_blocks.reshape(sampled_blocks.shape[0], 25)
-
-            visualize_emb(compressed_blocks[:, 0:2], sampled_blocks, block_labels, f"LeNet_epoch{epoch}", 5, 1, 2)
-            visualize_emb(compressed_blocks[:, 2:4], sampled_blocks, block_labels, f"LeNet_epoch{epoch}", 5, 3, 4)
-            visualize_emb(compressed_blocks[:, 4:6], sampled_blocks, block_labels, f"LeNet_epoch{epoch}", 5, 1, 2)
+            print(compressed_blocks.shape)
+            visualize_emb(compressed_blocks[:, 0:2], sampled_blocks, block_labels, f"LeNet_epoch{epoch}", 5, 1, 2, datasets)
+            visualize_emb(compressed_blocks[:, 2:4], sampled_blocks, block_labels, f"LeNet_epoch{epoch}", 5, 1, 2, datasets)
+            visualize_emb(compressed_blocks[:, 4:6], sampled_blocks, block_labels, f"LeNet_epoch{epoch}", 5, 1, 2, datasets)
 
 if __name__ == '__main__':
 

@@ -80,6 +80,13 @@ def visualize_emb(compressed_data, data_to_embed, data_to_embed_label, emb, bloc
             imgbox = OffsetImage(img, zoom=15-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
             #imgbox = OffsetImage(img, zoom=8, cmap='gray')
             ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
+            ax.add_artist(ab)
+    elif data_to_embed.shape[1] == block_size * block_size * 3:
+        for i in random_indices:
+            x, y = compressed_data[i]
+            img = data_to_embed[i].reshape(block_size, block_size, 3) # ブロック画像を5x5に変形
+            imgbox = OffsetImage(img, zoom=15-block_size)  # 解像度を上げるためにzoomパラメータを調整
+            ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
             ax.add_artist(ab) 
 
     plt.tight_layout()
