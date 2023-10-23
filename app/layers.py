@@ -30,7 +30,7 @@ class KIMLayer:
         self.B = num_blocks
         self.dataset_name = None
 
-    def sample_block(self, n_train, train_X, train_Y):
+    def sample_block(self, n_train, train_X):
         '''
         画像データからブロックをサンプリング
             n_train : 画像の枚数
@@ -38,8 +38,6 @@ class KIMLayer:
             train_Y : 画像のラベル(NOT One-hot vector)
         '''
         sampled_blocks = np.empty((n_train*(self.H-self.b+1)**2, self.b, self.b, self.C_prev))
-        sampled_blocks_label = []
-        train_Y = np.argmax(train_Y, axis=1)
     
         for n in range(n_train):
             # 一枚持ってくる
@@ -47,7 +45,6 @@ class KIMLayer:
             # すべてのブロックをサンプリング
             blocks = util.view_as_windows(data, (self.b, self.b, self.C_prev), self.stride).reshape((self.H-self.b+1)**2, self.b, self.b, self.C_prev)
             sampled_blocks[(n)*(self.H-self.b+1)**2 : (n+1)*(self.H-self.b+1)**2 ] = blocks
-            sampled_blocks_label.extend([train_Y[n]] * blocks.shape[0])
         
         sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
             
@@ -58,18 +55,16 @@ class KIMLayer:
         
         #重複を削除
         sampled_blocks, indices= np.unique(sampled_blocks, axis=0, return_index=True) 
-        sampled_blocks_label = np.array(sampled_blocks_label)[indices]
 
         print('unique samples shape:',np.shape(sampled_blocks))
         
         #B個だけランダムに取り出す
         selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
         sampled_blocks = sampled_blocks[selected_indices]
-        sampled_blocks_label = sampled_blocks_label[selected_indices]
         
-        return sampled_blocks, sampled_blocks_label
+        return sampled_blocks
 
-    def learn_embedding(self, train_X, train_Y): 
+    def learn_embedding(self, train_X): 
         '''
         埋め込みをKIMで学習
             train_X: 学習に使うX
@@ -78,7 +73,7 @@ class KIMLayer:
         n_train = train_X.shape[0]
 
         if self.GP is None:
-            sampled_blocks, sampled_blocks_label = self.sample_block(n_train, train_X, train_Y)
+            sampled_blocks= self.sample_block(n_train, train_X)
             embedded_blocks = select_embedding_method(self.embedding, self.C_next, sampled_blocks)
 
             #ガウス過程回帰で学習
@@ -89,13 +84,8 @@ class KIMLayer:
             ss = StandardScaler()
             embedded_blocks = ms.fit_transform(embedded_blocks)
             embedded_blocks = ss.fit_transform(embedded_blocks)
-            
-            # 埋め込みデータを可視化
-            principal_data_12 = embedded_blocks[:,0:2]
-            visualize_emb(principal_data_12, sampled_blocks, sampled_blocks_label, self.embedding, self.b, 1, 2, self.dataset_name)
 
             print("Training sample shape:", np.shape(embedded_blocks))
-            
             print('[KIM] Training KIM')
             kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev)
             self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
@@ -119,7 +109,7 @@ class KIMLayer:
             predictions = predictions.reshape(batch_size, self.H-self.b+1, self.H-self.b+1, self.C_next)
             self.output_data[batch_size * batch_index : batch_size * (batch_index + 1)] = predictions
 
-    def calculate(self, input_X, input_Y):
+    def calculate(self, input_X):
         '''
         KIM層の全体の計算
         '''
@@ -131,7 +121,7 @@ class KIMLayer:
         self.input_data = input_X
         self.output_data = np.zeros((num_inputs, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next))
         
-        self.learn_embedding(input_X, input_Y) 
+        self.learn_embedding(input_X) 
         
         print('[KIM] Converting the image...')
         self.convert_image_batch(batch_size=100)
@@ -143,7 +133,7 @@ class AvgPoolingLayer:
     def __init__(self, pool_size):
         self.pool_size = pool_size
 
-    def calculate(self, input_data, Y):
+    def calculate(self, input_data):
         print('[AVG] Converting')
         N, H, W, C = input_data.shape
         p = self.pool_size
@@ -236,9 +226,11 @@ class Model:
         for n, layer in enumerate(self.layers):
             self.shapes.append(np.shape(X)[1:])
             layer.dataset_name = self.data_set_name
-            X = layer.calculate(X, Y)
+            X_temp = X
+            X = layer.calculate(X)
             if self.display:
                 if isinstance(layer, KIMLayer):
+                    visualize_emb(X_temp, Y, X, layer.b, layer.stride, layer.B, layer.embedding, self.data_set_name)
                     display_images(X, n+2, layer.embedding, self.data_set_name)
 
         self.shapes.append(np.shape(X)[1:])
@@ -254,7 +246,7 @@ class Model:
         for n,layer in enumerate(self.layers):
             if isinstance(layer, LabelLearningLayer):
                 break
-            test_X = layer.calculate(test_X, test_Y)
+            test_X = layer.calculate(test_X)
             if self.display:
                 if isinstance(layer, KIMLayer):
                     display_images(test_X, n+5, layer.embedding, self.data_set_name)

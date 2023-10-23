@@ -5,6 +5,7 @@ from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import matplotlib.pyplot as plt
 import math
 import random
+from skimage import util
 from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
 
@@ -35,65 +36,79 @@ def display_images(data, layer_number, embedding_method : str, dataset_name : st
 
         plt.tight_layout()
         plt.savefig(f"./results/{dataset_name}_{embedding_method}_{layer_number}_{n+1}_.png")
+        plt.close()
         #plt.show()
 
-def visualize_emb(compressed_data, data_to_embed, data_to_embed_label, emb, block_size, channel1, channel2, dataset_name: str):
+def visualize_emb(input_data, input_data_label, convolved_data, block_size: int, stride: int, B: int, embedding_method: str, dataset_name: str):
     '''
     埋め込み後の点を可視化
-        compressed_data : 次元削減後のデータの第1,2次元
-        data_to_embed : サンプルしたブロック
-        data_to_embed_label : ブロックのラベル
-        emb : 埋め込み手法
+        input_data : 層の入力画像 (データ数, 高さ, 幅, 入力チャンネル数)
+        input_data_label : ブロックのラベル (データ数, 高さ, 幅, 出力チャンネル数)
+        convolved_data : 次元削減後のデータの第1,2次元
         block_size : ブロックのサイズ
+        stride : ストライド
+        embedding_method : 埋め込み手法
+        dataset_name : データセットの名前
     '''
-    
     #ファイル名の重複を防ぐ処理
-    filename = f'{dataset_name}_emb_{emb}' 
-    file_exists = os.path.exists("./emb_results/" + filename + ".png")
+    filename = f'{dataset_name}_emb_{embedding_method}' 
+    file_exists = os.path.exists("./emb_results/" + filename + "_1-2.png")
     counter = 1
     changed = False
     while file_exists:
         new_filename = filename + f"({counter})"
-        file_exists = os.path.exists("./emb_results/" + new_filename + ".png")
+        file_exists = os.path.exists("./emb_results/" + new_filename + "_1-2.png")
         counter += 1
         changed = True
     if changed:
         filename = new_filename
 
-    fig = plt.figure(figsize=(10, 10)) #12 10
+    #画像データからブロックに変換
+    input_data = util.view_as_windows(input_data, (1, block_size, block_size, input_data.shape[3]), stride)
+    input_data = input_data.reshape(-1, block_size, block_size, input_data.shape[-1])
+    input_data_label = np.repeat(np.argmax(input_data_label, axis=1), convolved_data.shape[1]*convolved_data.shape[2])
+    convolved_data  = convolved_data.reshape(-1, convolved_data.shape[3])
+    
+    select_indices = np.random.choice(input_data.shape[0], 10000, replace=False)
+    input_data = input_data[select_indices]
+    input_data_label = input_data_label[select_indices]
+    convolved_data = convolved_data[select_indices]
+    
+    for c in range(3):
+        convolved_data_sep = convolved_data[:, (2*c):(2*(c+1))]
+        # 写像先の散布図の作成
+        fig = plt.figure(figsize=(10, 10)) 
+        ax = fig.add_subplot(111)
+        sc = ax.scatter(convolved_data_sep[:, 0], convolved_data_sep[:, 1], cmap='tab10', c=input_data_label, marker='o', s=50, edgecolors='black')
+        #plt.colorbar(sc, label='label')
+        ax.set_title(f'Embedded data Channel {2*c+1}-{2*(c+1)} ({dataset_name}, Embedding:{embedding_method}, B={B})')
 
-    # 圧縮後の散布図
-    ax = fig.add_subplot(111)
-    sc = ax.scatter(compressed_data[:, 0], compressed_data[:, 1], cmap='tab10', c=data_to_embed_label, marker='o', s=60, edgecolors='black')
-    #plt.colorbar(sc, label='label')
-    ax.set_title('Embedded data ' + 'Channel{}'.format(str(channel1)) + '&' + str(channel2) +" ("+emb+")")
+        # ランダムに一部の点にのみブロックの画像を表示
+        num_samples = len(convolved_data)
+        num_blocks_to_display = min(100, num_samples)
+        random_indices = random.sample(range(num_samples), num_blocks_to_display)
+        #print(np.shape(data_to_embed))
+        if input_data.shape[3] == 1:
+            for i in random_indices:
+                x, y = convolved_data_sep[i]
+                img = input_data[i]
+                imgbox = OffsetImage(img, zoom=12-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
+                #imgbox = OffsetImage(img, zoom=8, cmap='gray')
+                ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
+                ax.add_artist(ab)
+        elif input_data.shape[3] == 3:
+            for i in random_indices:
+                x, y = convolved_data_sep[i]
+                img = input_data[i]
+                imgbox = OffsetImage(img, zoom=12-block_size)  # 解像度を上げるためにzoomパラメータを調整
+                ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
+                ax.add_artist(ab) 
 
-    # ランダムに一部の点にのみブロックの画像を表示
-    num_samples = len(compressed_data)
-    num_blocks_to_display = min(30, num_samples)
-    random_indices = random.sample(range(num_samples), num_blocks_to_display)
-    #print(np.shape(data_to_embed))
-    if data_to_embed.shape[1] == block_size * block_size:
-        for i in random_indices:
-            x, y = compressed_data[i]
-            img = data_to_embed[i].reshape(block_size, block_size)# ブロック画像を5x5に変形
-            imgbox = OffsetImage(img, zoom=15-block_size, cmap='gray')  # 解像度を上げるためにzoomパラメータを調整
-            #imgbox = OffsetImage(img, zoom=8, cmap='gray')
-            ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
-            ax.add_artist(ab)
-    elif data_to_embed.shape[1] == block_size * block_size * 3:
-        for i in random_indices:
-            x, y = compressed_data[i]
-            img = data_to_embed[i].reshape(block_size, block_size, 3) # ブロック画像を5x5に変形
-            imgbox = OffsetImage(img, zoom=15-block_size)  # 解像度を上げるためにzoomパラメータを調整
-            ab = AnnotationBbox(imgbox, (x, y), frameon=True, xycoords='data', boxcoords="offset points", pad=0.0)
-            ax.add_artist(ab) 
-
-    plt.tight_layout()
-
-    # 画像として保存
-    plt.savefig("./emb_results/"+filename+'.png')
-    #plt.show()
+        plt.tight_layout()
+        # 画像として保存
+        plt.savefig(f"./emb_results/{filename}_{2*c+1}-{2*(c+1)}.png")
+        plt.close()
+        #plt.show()
 
 def calculate_similarity(array1, array2):
     count = 0
@@ -173,7 +188,7 @@ def select_embedding_method(embedding_method : str, Channels_next : int, data_to
                 
         elif embedding_method == "LE":
             n = int(data_to_embed.shape[0]/Channels_next)
-            
+            #n = k_for_knn
             print(f"k for knn:{n}")
             LE = SpectralEmbedding(n_components=Channels_next, n_neighbors=n)
             embedded_blocks = LE.fit_transform(data_to_embed)

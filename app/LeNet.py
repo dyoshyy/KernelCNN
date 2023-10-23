@@ -93,7 +93,7 @@ def main(train_num: int, test_num : int, datasets : str):
 
             display_images(block_outputs[0], 99, 'LeNet', datasets)
             display_images(block_outputs[1], 100, 'LeNet', datasets)
-            #display_images(weights1, 101)
+            display_images(weights1, 101, 'LeNet Weights', datasets)
             
             #for i in range(weights2.shape[0]):
             #    weight = weights2[i:]
@@ -106,38 +106,9 @@ def main(train_num: int, test_num : int, datasets : str):
             # 畳み込み第1層を可視化
             sampled_blocks = []
             block_labels = []
-            kernel_size = 5
+            block_size = 5
 
-            for n in range(train_X.shape[0]):
-                for i in range(train_X.shape[1] - (kernel_size - 1)):
-                    for j in range(train_X.shape[2] - (kernel_size - 1)):
-                        block = train_X[n, i:i+kernel_size, j:j+kernel_size].reshape(kernel_size, kernel_size)
-                        sampled_blocks.append(block)
-                        block_labels.append(np.argmax(train_Y[n]))
-
-            sampled_blocks = np.array(sampled_blocks)
-            print("sampled_blocks shape:", np.shape(sampled_blocks))
-
-            compressed_blocks = []
-            conv_outputs = block_outputs[0]
-
-            for n in range(conv_outputs.shape[0]):   
-                for i in range(conv_outputs.shape[1]):
-                    for j in range(conv_outputs.shape[2]):
-                        compressed_blocks.append(conv_outputs[n, i, j])
-
-            #selected_indices = np.random.choice(sampled_blocks.shape[0], 5000, replace=False)
-
-            sampled_blocks, selected_indices = np.unique(np.array(sampled_blocks), axis=0, return_index=True)
-            print("unique blocks shape:", np.shape(sampled_blocks))
-            compressed_blocks = np.array(compressed_blocks)[selected_indices]
-            block_labels = np.array(block_labels)[selected_indices]
-
-            sampled_blocks = sampled_blocks.reshape(sampled_blocks.shape[0], 25)
-            print(compressed_blocks.shape)
-            visualize_emb(compressed_blocks[:, 0:2], sampled_blocks, block_labels, f"LeNet_epoch{epoch}", 5, 1, 2, datasets)
-            visualize_emb(compressed_blocks[:, 2:4], sampled_blocks, block_labels, f"LeNet_epoch{epoch}", 5, 1, 2, datasets)
-            visualize_emb(compressed_blocks[:, 4:6], sampled_blocks, block_labels, f"LeNet_epoch{epoch}", 5, 1, 2, datasets)
+            visualize_emb(train_X, train_Y, block_outputs[0], block_size, 1, 0, 'LeNet', datasets)
 
 if __name__ == '__main__':
 

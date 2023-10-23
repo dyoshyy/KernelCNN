@@ -32,23 +32,24 @@ main_cifar10(50000, 10000, 'LE', 3000)
 '''
 
 #手法ごとの比較
+
+main_mnist(1000, 100, 'PCA', 3000)
+main_mnist(1000, 100, 'LLE', 3000)
+main_mnist(1000, 100, 'LE', 3000)
+main_mnist(1000, 100, 'TSNE', 3000)
+
+main_fmnist(1000, 100, 'PCA', 3000)
+main_fmnist(1000, 100, 'LLE', 3000)
+main_fmnist(1000, 100, 'LE', 3000)
+main_fmnist(1000, 100, 'TSNE', 3000)
+
+main_cifar10(1000, 100, 'PCA', 3000)
+main_cifar10(1000, 100, 'LLE', 3000)
+main_cifar10(1000, 100, 'LE', 3000)
+main_cifar10(1000, 100, 'TSNE', 3000)
+
+
 '''
-main_mnist(1000, 10000, 'PCA', 3000)
-main_mnist(1000, 10000, 'LLE', 3000)
-main_mnist(1000, 10000, 'LE', 3000)
-main_mnist(1000, 10000, 'TSNE', 3000)
-
-main_fmnist(1000, 10000, 'PCA', 3000)
-main_fmnist(1000, 10000, 'LLE', 3000)
-main_fmnist(1000, 10000, 'LE', 3000)
-main_fmnist(1000, 10000, 'TSNE', 3000)
-
-main_cifar10(1000, 10000, 'PCA', 3000)
-main_cifar10(1000, 10000, 'LLE', 3000)
-#main_cifar10(1000, 10000, 'LE', 3000)
-main_cifar10(1000, 10000, 'TSNE', 3000)
-'''
-
 main_GP(100, 10000, 'MNIST')
 main_GP(1000, 10000, 'MNIST')
 main_GP(10000, 10000, 'MNIST')
@@ -68,3 +69,4 @@ main_GP(1000, 10000, 'CIFAR10')
 main_GP(10000, 10000, 'CIFAR10')
 main_GP(30000, 10000, 'CIFAR10')
 main_GP(50000, 10000, 'CIFAR10')
+'''
