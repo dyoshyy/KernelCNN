@@ -8,7 +8,7 @@ from tensorflow.keras.utils import to_categorical
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 
 from functions import visualize_emb
-from functions import display_images
+from functions import display_images, display_weights
 from functions import pad_images
 
 import sys
@@ -22,6 +22,8 @@ def get_intermediate_output(model, layer_name, data):
 
 def main(train_num: int, test_num : int, datasets : str):
     print('Number of training samples:', train_num)
+    block_size = 5
+    stride = 1
     
     if (datasets == 'MNIST') or (datasets == 'FMNIST'):
         if datasets == 'MNIST':
@@ -49,9 +51,9 @@ def main(train_num: int, test_num : int, datasets : str):
 
     # LeNet-5 model definition
     model = models.Sequential([
-        layers.Conv2D(6, kernel_size=(5, 5), activation='relu', input_shape=(32, 32, channel)),
+        layers.Conv2D(6, kernel_size=(block_size, block_size), activation='relu', strides= stride, input_shape=(32, 32, channel)),
         layers.AveragePooling2D(pool_size=(2, 2)),
-        layers.Conv2D(16, kernel_size=(5, 5), activation='relu'),
+        layers.Conv2D(16, kernel_size=(block_size, block_size),activation='relu', strides= stride),
         layers.AveragePooling2D(pool_size=(2, 2)),
         layers.Flatten(),
         layers.Dense(120, activation='relu'),
@@ -59,7 +61,7 @@ def main(train_num: int, test_num : int, datasets : str):
         layers.Dense(10, activation='softmax')
     ])
 
-    #model.summary()
+    model.summary()
     # Compile the model
     model.compile(optimizer='adagrad', loss='categorical_crossentropy',
                 metrics=['accuracy'])
@@ -68,32 +70,45 @@ def main(train_num: int, test_num : int, datasets : str):
     batch_size = 256
     epochs = 1000
     es = EarlyStopping(monitor='val_loss', mode='auto', patience=5, verbose=0)
-    cp = ModelCheckpoint("./weights/model_weights_epoch_{epoch:02d}.h5", save_weights_only=True, save_freq=10)
+    cp = ModelCheckpoint("./weights/model_weights_epoch_{epoch:02d}.h5", save_weights_only=True, save_freq='epoch', period = 10)
     
-    history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[es, cp], validation_split=0.1)
+    history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=1, epochs=epochs, callbacks=[es, cp], validation_split=0.1)
 
     # predict test samples
     test_loss, test_acc = model.evaluate(test_X, test_Y)
 
     print('Accuracy:',test_acc)
 
-    #epochs_to_check = [10, 50, 100, 500, 1000]
-    completed_epoch = len(history.epoch)
-    epochs_to_check = [completed_epoch]
-
-    # Get intermediate outputs for the convolutional layers and save them in the list
-    if True:
+    #学習後のモデルの出力
+    block_outputs = []
+    block_outputs.append(get_intermediate_output(model, 'conv2d', train_X))
+    block_outputs.append(get_intermediate_output(model, 'average_pooling2d', train_X))
+    block_outputs.append(get_intermediate_output(model, 'conv2d_1', train_X))
+    for i, output in enumerate(block_outputs):
+        print(f"Block {i+1} output shape:", output.shape)
+    weights1 = model.get_layer("conv2d").get_weights()[0]
+    weights2 = model.get_layer("conv2d_1").get_weights()[0]
+    visualize_emb(train_X, train_Y, block_outputs[0], block_size=block_size, stride=stride, B=None, embedding_method='LeNet', dataset_name=datasets)
+    visualize_emb(block_outputs[1], train_Y, block_outputs[2], block_size=block_size, stride=stride, B=None, embedding_method='LeNet', dataset_name=datasets)
+    display_images(block_outputs[0], 2, 'LeNet', datasets)
+    display_images(block_outputs[1], 4, 'LeNet', datasets)
+    display_weights(weights1, datasets, layer_idx=2)
+    display_weights(weights2, datasets, layer_idx=4)
+    
+    epochs_to_check = [10, 50, 100]
+    # 学習途中のモデルの出力
+    if False:
         for epoch in epochs_to_check:
             block_outputs=[]
             model.load_weights(f"./weights/model_weights_epoch_{epoch:02d}.h5")
-            block_outputs.append(get_intermediate_output(model, 'conv2d', test_X))
-            block_outputs.append(get_intermediate_output(model, 'conv2d_1', test_X))
+            block_outputs.append(get_intermediate_output(model, 'conv2d', train_X))
+            block_outputs.append(get_intermediate_output(model, 'conv2d_1', train_X))
             weights1 = model.get_layer("conv2d").get_weights()[0]
             weights2 = model.get_layer("conv2d_1").get_weights()[0]
 
             display_images(block_outputs[0], 99, 'LeNet', datasets)
             display_images(block_outputs[1], 100, 'LeNet', datasets)
-            display_images(weights1, 101, 'LeNet Weights', datasets)
+            display_weights(weights1, datasets)
             
             #for i in range(weights2.shape[0]):
             #    weight = weights2[i:]
@@ -104,11 +119,8 @@ def main(train_num: int, test_num : int, datasets : str):
                 print(f"Block {i+1} output shape:", output.shape)
 
             # 畳み込み第1層を可視化
-            sampled_blocks = []
-            block_labels = []
-            block_size = 5
 
-            visualize_emb(train_X, train_Y, block_outputs[0], block_size, 1, 0, 'LeNet', datasets)
+            visualize_emb(train_X, train_Y, block_outputs[0], block_size=block_size, stride=stride, B=None, embedding_method='LeNet', dataset_name=datasets)
 
 if __name__ == '__main__':
 
