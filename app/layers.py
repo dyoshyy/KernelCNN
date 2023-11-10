@@ -1,9 +1,9 @@
-import GPy
+import gpflow
 import numpy as np
 import math
 import time
 
-from functions import calculate_similarity, display_images, binarize_images, visualize_emb, visualize_emb_dots, select_embedding_method, pad_images
+from functions import calculate_similarity, display_images, binarize_images, visualize_emb, select_embedding_method, pad_images
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from scipy import stats
@@ -13,6 +13,8 @@ from tqdm import tqdm
 
 np.random.seed(1)
 np.set_printoptions(precision=3, threshold=10000, linewidth=200, edgeitems=10)
+kernel = gpflow.kernels.RBF() + gpflow.kernels.Linear() + gpflow.kernels.Constant()
+opt = gpflow.optimizers.Scipy()
 
 class KIMLayer:
     def __init__(self, block_size : int, channels_next : int, stride : int, padding : bool, emb : str, num_blocks : int):
@@ -64,7 +66,7 @@ class KIMLayer:
         selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
         sampled_blocks = sampled_blocks[selected_indices]
         
-        return sampled_blocks
+        return sampled_blocks.astype(np.float64)
 
     def learn_embedding(self, train_X): 
         '''
@@ -89,9 +91,8 @@ class KIMLayer:
 
             print("Training sample shape:", np.shape(embedded_blocks))
             print('[KIM] Training KIM')
-            kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev)
-            self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
-            self.GP.optimize()
+            self.GP = gpflow.models.GPR((sampled_blocks,embedded_blocks), kernel=kernel)
+            opt.minimize(self.GP.training_loss, self.GP.trainable_variables)
             print('[KIM] Completed')
             
         else:
@@ -107,8 +108,8 @@ class KIMLayer:
             batch_images = self.input_data[batch_size * batch_index : batch_size * (batch_index + 1)]
             blocks_to_convert = util.view_as_windows(batch_images, (1, self.b, self.b, self.C_prev), self.stride)
             blocks_to_convert = blocks_to_convert.reshape(batch_size * (self.H-self.b+1)**2, self.b * self.b * self.C_prev) # ex) (10*784, 5*5*1)        
-            predictions, _ = self.GP.predict(blocks_to_convert) # shape: (10*784, 6)
-            predictions = predictions.reshape(batch_size, self.H-self.b+1, self.H-self.b+1, self.C_next)
+            predictions, _ = self.GP.predict_y(blocks_to_convert) # shape: (10*784, 6)
+            predictions = predictions.numpy().reshape(batch_size, self.H-self.b+1, self.H-self.b+1, self.C_next)
             self.output_data[batch_size * batch_index : batch_size * (batch_index + 1)] = predictions
 
     def calculate(self, input_X):
@@ -198,7 +199,8 @@ class LabelLearningLayer:
     def fit(self, X, Y):
         input_dim = X.shape[1] * X.shape[2] * X.shape[3]
         #ベクトル化し学習
-        X = X.reshape(X.shape[0], input_dim)
+        X = X.reshape(X.shape[0], input_dim).astype(np.float64)
+        Y = Y.astype(np.float64)
         if self.GP is None:
             print('Learning labels')
 
@@ -208,17 +210,15 @@ class LabelLearningLayer:
                 self.GP = []
                 #必要なGPの数
                 self.num_GP = int((X.shape[0]-1)/10000 + 1)
-                kernel = GPy.kern.RBF(input_dim = input_dim) + GPy.kern.Bias(input_dim = input_dim) + GPy.kern.Linear(input_dim = input_dim)
                 for i in range(self.num_GP):
                     print('learning {}'.format(i+1))
                     X_sep = X[10000*i:10000*(i+1)]
                     Y_sep = Y[10000*i:10000*(i+1)]
-                    self.GP.append(GPy.models.GPRegression(X_sep,Y_sep, kernel=kernel))
-                    self.GP[-1].optimize()
+                    self.GP.append(gpflow.models.GPR((X_sep,Y_sep), kernel=kernel))
+                    opt.minimize(self.GP[-1].training_loss, self.GP[-1].trainable_variables)
             else:
-                kernel = GPy.kern.RBF(input_dim = input_dim) + GPy.kern.Bias(input_dim = input_dim) + GPy.kern.Linear(input_dim = input_dim)
-                self.GP = GPy.models.GPRegression(X, Y, kernel=kernel)
-                self.GP.optimize()
+                self.GP = gpflow.models.GPR((X, Y), kernel=kernel)
+                opt.minimize(self.GP.training_loss, self.GP.trainable_variables)
                 print('Completed')
         else:
             print('GPmodel found')
@@ -229,7 +229,7 @@ class LabelLearningLayer:
         if self.OVER_10000:
             predictions = []
             for i in range(self.num_GP):
-                Y_predicted, _ = self.GP[i].predict(X)
+                Y_predicted, _ = self.GP[i].predict_y(X)
                 Y_predicted = np.array(Y_predicted)
                 predict = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
                 predictions.append(predict)
@@ -237,7 +237,7 @@ class LabelLearningLayer:
             output = stats.mode(ensemble_predictions, axis=0).mode.ravel()
             
         else:
-            Y_predicted, _ = self.GP.predict(X)
+            Y_predicted, _ = self.GP.predict_y(X)
             Y_predicted = np.array(Y_predicted)
             output = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
         return output

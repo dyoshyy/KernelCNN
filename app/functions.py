@@ -321,4 +321,4 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
     else:
         print("Error: No embedding selected.")
 
-    return embedded_blocks.astype(np.float32)
+    return embedded_blocks.astype(np.float64)
