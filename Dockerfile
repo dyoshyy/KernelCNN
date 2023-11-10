@@ -19,8 +19,8 @@ RUN apt-get install -y vim less
 RUN pip install --upgrade pip
 RUN pip install --upgrade setuptools
 RUN pip install numpy==1.24.0
-RUN pip install gpflow==2.9.0
-RUN pip install tensorflow-gpu
+RUN pip install gpytorch
+RUN pip install tensorflow
 RUN pip install scikit-learn
 RUN pip install opencv-python
 RUN pip install matplotlib

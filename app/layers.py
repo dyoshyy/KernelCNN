@@ -1,4 +1,5 @@
-import gpflow
+import gpytorch_models
+import gpytorch, torch
 import numpy as np
 import math
 import time
@@ -13,8 +14,6 @@ from tqdm import tqdm
 
 np.random.seed(1)
 np.set_printoptions(precision=3, threshold=10000, linewidth=200, edgeitems=10)
-kernel = gpflow.kernels.RBF() + gpflow.kernels.Linear() + gpflow.kernels.Constant()
-opt = gpflow.optimizers.Scipy()
 
 class KIMLayer:
     def __init__(self, block_size : int, channels_next : int, stride : int, padding : bool, emb : str, num_blocks : int):
@@ -29,6 +28,7 @@ class KIMLayer:
         self.input_data = None
         self.embedding = emb
         self.GP = None
+        self.likelihood = None
         self.B = num_blocks
         self.dataset_name = None
         self.padding = padding
@@ -66,7 +66,7 @@ class KIMLayer:
         selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
         sampled_blocks = sampled_blocks[selected_indices]
         
-        return sampled_blocks.astype(np.float64)
+        return torch.from_numpy(sampled_blocks.astype(np.float32)).clone()
 
     def learn_embedding(self, train_X): 
         '''
@@ -91,8 +91,25 @@ class KIMLayer:
 
             print("Training sample shape:", np.shape(embedded_blocks))
             print('[KIM] Training KIM')
-            self.GP = gpflow.models.GPR((sampled_blocks,embedded_blocks), kernel=kernel)
-            opt.minimize(self.GP.training_loss, self.GP.trainable_variables)
+            embedded_blocks = torch.from_numpy(embedded_blocks.astype(np.float32)).clone()
+            self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
+            self.GP = gpytorch_models.ExactGPModel(sampled_blocks, embedded_blocks, self.likelihood)
+            self.GP.train()
+            self.likelihood.train()
+            optimizer= torch.optim.Adam(self.GP.parameters(), lr=0.1)
+            mll = gpytorch.mlls.ExactMarginalLogLikelihood(self.likelihood, self.GP)
+            for i in range(50):
+                optimizer.zero_grad()
+                output = self.GP(sampled_blocks)
+                print(embedded_blocks.shape)
+                loss = -mll(output, embedded_blocks)
+                loss.backward()
+                print('Iter %d/%d - Loss: %.3f   lengthscale: %.3f   noise: %.3f' % (
+                    i + 1, 50, loss.item(),
+                    self.GP.covar_module.base_kernel.lengthscale.item(),
+                    self.GP.likelihood.noise.item()
+                ))
+                optimizer.step()
             print('[KIM] Completed')
             
         else:
@@ -108,7 +125,7 @@ class KIMLayer:
             batch_images = self.input_data[batch_size * batch_index : batch_size * (batch_index + 1)]
             blocks_to_convert = util.view_as_windows(batch_images, (1, self.b, self.b, self.C_prev), self.stride)
             blocks_to_convert = blocks_to_convert.reshape(batch_size * (self.H-self.b+1)**2, self.b * self.b * self.C_prev) # ex) (10*784, 5*5*1)        
-            predictions, _ = self.GP.predict_y(blocks_to_convert) # shape: (10*784, 6)
+            predictions = self.likelihood(self.GP(blocks_to_convert))
             predictions = predictions.numpy().reshape(batch_size, self.H-self.b+1, self.H-self.b+1, self.C_next)
             self.output_data[batch_size * batch_index : batch_size * (batch_index + 1)] = predictions
 
@@ -199,8 +216,7 @@ class LabelLearningLayer:
     def fit(self, X, Y):
         input_dim = X.shape[1] * X.shape[2] * X.shape[3]
         #ベクトル化し学習
-        X = X.reshape(X.shape[0], input_dim).astype(np.float64)
-        Y = Y.astype(np.float64)
+        X = X.reshape(X.shape[0], input_dim)
         if self.GP is None:
             print('Learning labels')
 

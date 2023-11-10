@@ -1,11 +1,9 @@
 import cv2
 import numpy as np
+import torch
 import os
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d.art3d import pathpatch_2d_to_3d
-from matplotlib.patches import PathPatch
-from matplotlib.path import Path
 import math
 import random
 from skimage import util
@@ -321,4 +319,4 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
     else:
         print("Error: No embedding selected.")
 
-    return embedded_blocks.astype(np.float64)
+    return embedded_blocks
