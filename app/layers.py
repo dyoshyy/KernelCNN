@@ -1,9 +1,9 @@
 import GPy
 import numpy as np
 import math
-import os, sys, time
+import time
 
-from functions import calculate_similarity, display_images, binarize_images, binarize_2d_array, visualize_emb, select_embedding_method
+from functions import calculate_similarity, display_images, binarize_images, visualize_emb, visualize_emb_dots, select_embedding_method, pad_images
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from scipy import stats
@@ -15,7 +15,7 @@ np.random.seed(1)
 np.set_printoptions(precision=3, threshold=10000, linewidth=200, edgeitems=10)
 
 class KIMLayer:
-    def __init__(self, block_size : int, channels_next : int, stride : int, emb : str, num_blocks : int):
+    def __init__(self, block_size : int, channels_next : int, stride : int, padding : bool, emb : str, num_blocks : int):
         self.b = block_size
         self.b_radius = int((self.b - 1) / 2)
         self.stride = stride
@@ -29,6 +29,7 @@ class KIMLayer:
         self.GP = None
         self.B = num_blocks
         self.dataset_name = None
+        self.padding = padding
 
     def sample_block(self, n_train, train_X):
         '''
@@ -54,11 +55,12 @@ class KIMLayer:
         print('samples shape:',np.shape(sampled_blocks))
         
         #重複を削除
-        sampled_blocks, indices= np.unique(sampled_blocks, axis=0, return_index=True) 
+        sampled_blocks= np.unique(sampled_blocks, axis=0) 
 
-        print('unique samples shape:',np.shape(sampled_blocks))
+        print('unique samples shape:', np.shape(sampled_blocks))
         
         #B個だけランダムに取り出す
+        self.B = min(sampled_blocks.shape[0], self.B)  #Bより少ないサンプル数の場合はそのまま
         selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
         sampled_blocks = sampled_blocks[selected_indices]
         
@@ -113,6 +115,11 @@ class KIMLayer:
         '''
         KIM層の全体の計算
         '''
+        #パディング
+        if self.padding:
+            out_size = input_X.shape[1] + self.b - 1 # 28 + 5 - 1
+            input_X = pad_images(input_X, out_size)
+        
         #インスタンス変数に格納
         num_inputs = input_X.shape[0]
         self.H = input_X.shape[1]
@@ -121,8 +128,10 @@ class KIMLayer:
         self.input_data = input_X
         self.output_data = np.zeros((num_inputs, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next))
         
+        #KIMで埋め込みを学習
         self.learn_embedding(input_X) 
         
+        #学習したKIMで変換
         print('[KIM] Converting the image...')
         self.convert_image_batch(batch_size=100)
         print('completed')
@@ -153,6 +162,32 @@ class AvgPoolingLayer:
         
         print('[AVG] Completed')
         return output_data
+
+class MaxPoolingLayer:
+    def __init__(self, pool_size):
+        self.pool_size = pool_size
+
+    def calculate(self, input_data):
+        print('[MAX] Converting')
+        N, H, W, C = input_data.shape
+        p = self.pool_size
+        H_out = H // p
+        W_out = W // p
+
+        # Initialize output data
+        output_data = np.zeros((N, H_out, W_out, C))
+
+        # Perform max pooling
+        for i in range(H_out):
+            for j in range(W_out):
+                # Extract pooling window
+                window = input_data[:, i*p:(i+1)*p, j*p:(j+1)*p, :]
+                # Calculate max value
+                output_data[:, i, j, :] = np.max(window, axis=(1, 2))
+        
+        print('[MAX] Completed')
+        return output_data
+
 
 class LabelLearningLayer:
     def __init__(self):
@@ -231,7 +266,7 @@ class Model:
             if self.display:
                 if isinstance(layer, KIMLayer):
                     visualize_emb(X_temp, Y, X, layer.b, layer.stride, layer.B, layer.embedding, self.data_set_name)
-                    display_images(X, n+2, layer.embedding, self.data_set_name)
+                    display_images(X, n+2, layer.embedding, self.data_set_name, f'KernelCNN train output Layer{n+2} (B={layer.B}, Embedding:{layer.embedding})')
 
         self.shapes.append(np.shape(X)[1:])
         if not isinstance(self.layers[-1], LabelLearningLayer):
@@ -249,7 +284,7 @@ class Model:
             test_X = layer.calculate(test_X)
             if self.display:
                 if isinstance(layer, KIMLayer):
-                    display_images(test_X, n+5, layer.embedding, self.data_set_name)
+                    display_images(test_X, n+7, layer.embedding, self.data_set_name, f'KernelCNN test output Layer{n+2} (B={layer.B}, Embedding:{layer.embedding})')
 
         Y_predicted = self.layers[-1].predict(test_X)
         Y_answer= [np.argmax(test_Y[n,:]) for n in range(test_Y.shape[0])]

@@ -28,3 +28,4 @@ RUN pip install matplotlib
 #RUN pip install line_profiler
 RUN pip install tqdm
 RUN pip install scikit-image
+RUN pip install torchvision

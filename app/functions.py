@@ -14,14 +14,13 @@ from sklearn.decomposition import PCA, KernelPCA
 
 random.seed(0)
 
-
 def normalize_output(img):
     img_min, img_max = np.min(img, axis=(0, 1)), np.max(img, axis=(0, 1))
     return (img - img_min) / (img_max - img_min)
 
 
-def display_images(data, layer_number, embedding_method: str, dataset_name: str):
-    for n in range(5):
+def display_images(data, layer_number, embedding_method: str, dataset_name: str, suptitle : str):
+    for n in range(3):
         data_to_display = data[n]
         num_in_a_row = 4  # default 4
         Channels = data_to_display.shape[2]
@@ -43,6 +42,7 @@ def display_images(data, layer_number, embedding_method: str, dataset_name: str)
                     ax.imshow(image, cmap="gray")
                     ax.set_title("Channel {}".format(index + 1))
 
+        fig.suptitle(suptitle)
         plt.tight_layout()
         plt.savefig(
             f"./results/{dataset_name}_{embedding_method}_{layer_number}_{n+1}_.png"
@@ -70,10 +70,10 @@ def display_weights(weights, dataset_name, layer_idx):
     # 横の余白を小さくし、縦の余白を大きくする
     plt.subplots_adjust(wspace=0.6, hspace=1.5)
     plt.tight_layout()
-    plt.savefig(f"./results/{dataset_name}_LeNet_weights_layer{layer_idx}.png")
+    plt.savefig(f"./emb_results/{dataset_name}_LeNet_weights_layer{layer_idx}.png")
     plt.close()
 
-def visualize_emb(input_data,input_data_label,convolved_data,block_size: int,stride: int,B: int,embedding_method: str,dataset_name: str):
+def visualize_emb(input_data,input_data_label,convolved_data,block_size: int,stride: int,B: int,embedding_method: str,dataset_name: str, output_dots=True):
     """
     埋め込み後の点を可視化
         input_data : 層の入力画像 (データ数, 高さ, 幅, 入力チャンネル数)
@@ -86,12 +86,12 @@ def visualize_emb(input_data,input_data_label,convolved_data,block_size: int,str
     """
     # ファイル名の重複を防ぐ処理
     filename = f"{dataset_name}_emb_{embedding_method}"
-    file_exists = os.path.exists("./emb_results/" + filename + "_1-2.png")
+    file_exists = os.path.exists("./emb_results/" + filename + '.png')
     counter = 1
     changed = False
     while file_exists:
         new_filename = filename + f"({counter})"
-        file_exists = os.path.exists("./emb_results/" + new_filename + "_1-2.png")
+        file_exists = os.path.exists("./emb_results/" + new_filename + '.png')
         counter += 1
         changed = True
     if changed:
@@ -100,57 +100,62 @@ def visualize_emb(input_data,input_data_label,convolved_data,block_size: int,str
     # 画像データからブロックに変換
     input_data = util.view_as_windows(input_data, (1, block_size, block_size, input_data.shape[3]), stride)
     input_data = input_data.reshape(-1, block_size, block_size, input_data.shape[-1])
-    input_data_label = np.repeat(np.argmax(input_data_label, axis=1),convolved_data.shape[1] * convolved_data.shape[2],)
+    input_data_label = np.repeat(np.argmax(input_data_label, axis=1),convolved_data.shape[1] * convolved_data.shape[2],) #１枚の画像のラベルをブロックの個数分繰り返す　（例：３のラベルを２８ｘ２８繰り返す）
     convolved_data = convolved_data.reshape(-1, convolved_data.shape[3])
+    
+    #重複を削除
+    input_data, unique_indices = np.unique(input_data, axis=0, return_index=True)
+    input_data_label = input_data_label[unique_indices]
+    convolved_data = convolved_data[unique_indices]
 
+    #２チャネルごとに列方向に描画
     num_images = int(convolved_data.shape[1] / 2)
-    #チャネルを２チャネルごとに分ける
-    for c in range(num_images):
-        convolved_data_sep = convolved_data[:, (2 * c) : (2 * (c + 1))]
-        # 写像先の散布図の作成
-        fig = plt.figure(figsize=(10, 10))
-        ax = fig.add_subplot(111, projection='3d')
-        ax.set_title(f"Embedded data Channel {2*c+1}-{2*(c+1)} ({dataset_name}, Embedding:{embedding_method}, B={B})")
+    num_input_channels = int(input_data.shape[3])
+    fig, axs = plt.subplots(num_images,num_input_channels, figsize=(num_input_channels*10,num_images*10))
+    for img_idx in range(num_images):
+        convolved_data_sep = convolved_data[:, (2 * img_idx) : (2 * (img_idx + 1))]
 
         # ランダムに一部の点にのみブロックの画像を表示
         num_samples = len(convolved_data)
-        num_blocks_to_display = min(500, num_samples)
-        #random_indices = random.sample(range(num_samples), num_blocks_to_display)
+        num_blocks_to_display = min(150, num_samples)
         random_indices = np.random.choice(num_samples, num_blocks_to_display, replace=False)
-        # print(np.shape(data_to_embed))
-        if input_data.shape[3] == 1:
+        
+        #入力チャネル数分行方向に描画
+        for c in range(num_input_channels):
+            if num_input_channels == 1:
+                ax = axs[img_idx]
+            else:
+                ax = axs[img_idx, c]
             for i in random_indices:
                 x, y = convolved_data_sep[i]
-                img = input_data[i]
-                
-                imgbox = OffsetImage(img, zoom=12-block_size, cmap="gray")
-                ab = AnnotationBbox(imgbox,(x, y), xybox=(0,0), frameon=True, xycoords="data", boxcoords="offset points", pad=0.0)
-                ax.add_artist(ab)
-                
-                
-        elif input_data.shape[3] == 6:
-            for i in random_indices:
-                x, y = convolved_data_sep[i]
-                img = input_data[i]
-                imgbox = OffsetImage(img, zoom=12 - block_size)  
-                ab = AnnotationBbox(imgbox,(x, y), xybox=(0,0),frameon=True,xycoords="data",boxcoords="offset points",pad=0.0,
-                )
+                img = input_data[i,:,:,c]
+                imgbox = OffsetImage(img, zoom=13-block_size, cmap="gray")
+                ab = AnnotationBbox(imgbox,(x, y), frameon=True, xycoords="data", pad=0.0)
                 ax.add_artist(ab)
         
-        #軸の範囲を設定
-        k=1.1
-        x_max = np.max(convolved_data_sep[:,0])*k
-        x_min = np.min(convolved_data_sep[:,0])*k
-        y_max = np.max(convolved_data_sep[:,1])*k
-        y_min = np.min(convolved_data_sep[:,1])*k
-        plt.axis([x_min,x_max,y_min,y_max, -1, 1])
-        plt.tight_layout()
-        # 画像として保存
-        plt.savefig(f"./emb_results/{filename}_{2*c+1}-{2*(c+1)}.png")
-        plt.close()
-        # plt.show()
+            #軸の範囲を設定
+            x_min = np.min(convolved_data_sep[random_indices,0])
+            x_max = np.max(convolved_data_sep[random_indices,0])
+            y_min = np.min(convolved_data_sep[random_indices,1])
+            y_max = np.max(convolved_data_sep[random_indices,1])
+            
+            k = 0.2*(x_max-x_min)/2
+            l = 0.2*(y_max-y_min)/2
+            ax.set_box_aspect (1)
+            ax.set_xlim(x_min-k,x_max+k)
+            ax.set_ylim(y_min-l,y_max+l)
+            ax.set_title(f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={block_size})")
+            
+    # 画像として保存
+    plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95)
+    plt.savefig(f"./emb_results/{filename}.png")
+    plt.close()
+    
+    if output_dots:
+        visualize_emb_dots(input_data_label, convolved_data, block_size, B, embedding_method, dataset_name)
+        
 
-def visualize_emb_dots(input_data,input_data_label,convolved_data,block_size: int,stride: int,B: int,embedding_method: str,dataset_name: str):
+def visualize_emb_dots(input_data_label, convolved_data, b: int, B: int,embedding_method: str,dataset_name: str, ):
     """
     埋め込み後の点を可視化
         input_data : 層の入力画像 (データ数, 高さ, 幅, 入力チャンネル数)
@@ -162,49 +167,51 @@ def visualize_emb_dots(input_data,input_data_label,convolved_data,block_size: in
         dataset_name : データセットの名前
     """
     # ファイル名の重複を防ぐ処理
-    filename = f"{dataset_name}_emb_{embedding_method}"
-    file_exists = os.path.exists("./emb_results/" + filename + "_1-2.png")
+    filename = f"{dataset_name}_emb_{embedding_method}_dots"
+    file_exists = os.path.exists("./emb_results/" + filename + '.png')
     counter = 1
     changed = False
     while file_exists:
         new_filename = filename + f"({counter})"
-        file_exists = os.path.exists("./emb_results/" + new_filename + "_1-2.png")
+        file_exists = os.path.exists("./emb_results/" + new_filename + '.png')
         counter += 1
         changed = True
     if changed:
         filename = new_filename
 
-    # 画像データからブロックに変換
-    input_data = util.view_as_windows(input_data, (1, block_size, block_size, input_data.shape[3]), stride)
-    input_data = input_data.reshape(-1, block_size, block_size, input_data.shape[-1])
-    input_data_label = np.repeat(np.argmax(input_data_label, axis=1),convolved_data.shape[1] * convolved_data.shape[2],)
-    convolved_data = convolved_data.reshape(-1, convolved_data.shape[3])
-
-    #10000点をランダムに選ぶ
-    select_indices = np.random.choice(input_data.shape[0], 10000, replace=False)
-    input_data = input_data[select_indices]
-    input_data_label = input_data_label[select_indices]
-    convolved_data = convolved_data[select_indices]
-    
+    #２チャネルごとに列方向に描画
     num_images = int(convolved_data.shape[1] / 2)
-
-    #チャネルを２チャネルごとに分ける
-    for c in range(num_images):
-        convolved_data_sep = convolved_data[:, (2 * c) : (2 * (c + 1))]
-        # 写像先の散布図の作成
-        fig = plt.figure(figsize=(12, 10))
-        ax = fig.add_subplot(111)
-        sc = ax.scatter(convolved_data_sep[:, 0],convolved_data_sep[:, 1],cmap="tab10",c=input_data_label,marker="o",s=50,edgecolors="black",)
-        plt.colorbar(sc, label='label')
-        ax.set_title(
-            f"Embedded data Channel {2*c+1}-{2*(c+1)} ({dataset_name}, Embedding:{embedding_method}, B={B})"
-        )
-        plt.tight_layout()
-        # 画像として保存
-        plt.savefig(f"./emb_results/{filename}_dots_{2*c+1}-{2*(c+1)}.png")
-        plt.close()
-        # plt.show()
-
+    fig, axs = plt.subplots(num_images, 1, figsize=(10,num_images*10))
+    
+    #一部の点を選ぶ
+    num_to_select = min(convolved_data.shape[0], 3000)
+    select_indices = np.random.choice(convolved_data.shape[0], num_to_select, replace=False)
+    convolved_data = convolved_data[select_indices]
+    input_data_label = input_data_label[select_indices]
+    
+    for img_idx in range(num_images):
+        convolved_data_sep = convolved_data[:, (2 * img_idx) : (2 * (img_idx + 1))]
+        ax = axs[img_idx]
+        sc = ax.scatter(convolved_data_sep[:,0], convolved_data_sep[:,1], cmap="tab10", c=input_data_label, marker="o",s=50,edgecolors="black",)
+        #plt.colorbar(sc, label='label')
+        
+        #軸の範囲を設定
+        x_min = np.min(convolved_data_sep[:,0])
+        x_max = np.max(convolved_data_sep[:,0])
+        y_min = np.min(convolved_data_sep[:,1])
+        y_max = np.max(convolved_data_sep[:,1])
+            
+        k = 0.2*(x_max-x_min)/2
+        l = 0.2*(y_max-y_min)/2
+        ax.set_box_aspect (1)
+        ax.set_xlim(x_min-k,x_max+k)
+        ax.set_ylim(y_min-l,y_max+l)
+        ax.set_title(f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={b})")
+            
+    # 画像として保存
+    plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95)
+    plt.savefig(f"./emb_results/{filename}.png")
+    plt.close()
 
 def calculate_similarity(array1, array2):
     count = 0
@@ -216,7 +223,6 @@ def calculate_similarity(array1, array2):
 
     similarity = count / total
     return similarity
-
 
 def binarize_images(images):
     min_val = np.min(images)
@@ -262,23 +268,18 @@ def binarize_2d_array(array_2d):
     return binarized_array
 
 
-def pad_images(images):
+def pad_images(images, out_size):
     # 元の画像サイズ (MNISTは28x28)
     original_size = images.shape[1]
 
-    # パディング後のサイズ (32x32)
-    padded_size = 32
-
     # パディング量を計算
-    pad_width = (padded_size - original_size) // 2
+    pad_width = (out_size - original_size) // 2
 
     # パディング後の画像データを格納する配列を作成
-    padded_images = np.zeros((images.shape[0], padded_size, padded_size))
+    padded_images = np.zeros((images.shape[0], out_size, out_size, images.shape[3]))
 
     # 元の画像を中央に配置してパディングする
-    padded_images[
-        :, pad_width : pad_width + original_size, pad_width : pad_width + original_size
-    ] = images
+    padded_images[:, pad_width : pad_width + original_size, pad_width : pad_width + original_size, :] = images
 
     return padded_images
 
