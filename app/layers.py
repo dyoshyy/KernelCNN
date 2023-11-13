@@ -92,26 +92,33 @@ class KIMLayer:
             print("Training sample shape:", np.shape(embedded_blocks))
             print('[KIM] Training KIM')
             embedded_blocks = torch.from_numpy(embedded_blocks.astype(np.float32)).clone()
-            self.likelihood = gpytorch.likelihoods.GaussianLikelihood()
+            self.likelihood = gpytorch.likelihoods.MultitaskGaussianLikelihood(num_tasks=self.C_next)
             self.GP = gpytorch_models.ExactGPModel(sampled_blocks, embedded_blocks, self.likelihood)
-            self.GP.train()
-            self.likelihood.train()
             optimizer= torch.optim.Adam(self.GP.parameters(), lr=0.1)
             mll = gpytorch.mlls.ExactMarginalLogLikelihood(self.likelihood, self.GP)
-            for i in range(50):
+            
+            #trainer = gpytorch_models.Trainer(self.GP, self.likelihood, optimizer, mll)
+            #self.GP, self.likelihood = trainer.update_hyperparameter(epochs=50)
+            self.GP.train()
+            self.likelihood.train()
+            epochs=50
+            for epoch in range(epochs):
                 optimizer.zero_grad()
                 output = self.GP(sampled_blocks)
-                print(embedded_blocks.shape)
-                loss = -mll(output, embedded_blocks)
+                loss = - mll(output, embedded_blocks)
                 loss.backward()
-                print('Iter %d/%d - Loss: %.3f   lengthscale: %.3f   noise: %.3f' % (
-                    i + 1, 50, loss.item(),
-                    self.GP.covar_module.base_kernel.lengthscale.item(),
-                    self.GP.likelihood.noise.item()
-                ))
                 optimizer.step()
+
+                if (epoch+1) % ((epochs)//10) == 0:
+                    print('Epoch %d/%d - Loss: %.3f ' % (
+                        epoch + 1, epochs, loss.item(),
+                        ))
+                elif (epoch+1) == 1:
+                    print('Epoch %d/%d - Loss: %.3f ' % (
+                        epoch + 1, epochs, loss.item(),
+                        ))       
+                
             print('[KIM] Completed')
-            
         else:
             print('[KIM] GPmodel found')
         
@@ -124,9 +131,11 @@ class KIMLayer:
         for batch_index in tqdm(range(num_batches)):
             batch_images = self.input_data[batch_size * batch_index : batch_size * (batch_index + 1)]
             blocks_to_convert = util.view_as_windows(batch_images, (1, self.b, self.b, self.C_prev), self.stride)
-            blocks_to_convert = blocks_to_convert.reshape(batch_size * (self.H-self.b+1)**2, self.b * self.b * self.C_prev) # ex) (10*784, 5*5*1)        
+            blocks_to_convert = blocks_to_convert.reshape(batch_size * (self.H-self.b+1)**2, self.b * self.b * self.C_prev) # ex) (10*784, 5*5*1)     
+            blocks_to_convert = torch.from_numpy(blocks_to_convert.astype(np.float32)).clone()
             predictions = self.likelihood(self.GP(blocks_to_convert))
-            predictions = predictions.numpy().reshape(batch_size, self.H-self.b+1, self.H-self.b+1, self.C_next)
+            predictions = predictions.mean.detach().numpy().reshape(batch_size, self.H-self.b+1, self.H-self.b+1, self.C_next)
+            print(predictions)
             self.output_data[batch_size * batch_index : batch_size * (batch_index + 1)] = predictions
 
     def calculate(self, input_X):
@@ -150,8 +159,10 @@ class KIMLayer:
         self.learn_embedding(input_X) 
         
         #学習したKIMで変換
+        self.GP.eval()
+        self.likelihood.eval()
         print('[KIM] Converting the image...')
-        self.convert_image_batch(batch_size=100)
+        self.convert_image_batch(batch_size=10)
         print('completed')
 
         return self.output_data
