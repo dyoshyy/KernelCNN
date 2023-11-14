@@ -115,10 +115,6 @@ class KIMLayer:
         '''
         KIM層の全体の計算
         '''
-        #パディング
-        if self.padding:
-            out_size = input_X.shape[1] + self.b - 1 # 28 + 5 - 1
-            input_X = pad_images(input_X, out_size)
         
         #インスタンス変数に格納
         num_inputs = input_X.shape[0]
@@ -261,13 +257,18 @@ class Model:
         for n, layer in enumerate(self.layers):
             self.shapes.append(np.shape(X)[1:])
             layer.dataset_name = self.data_set_name
-            X_temp = X
-            X = layer.calculate(X)
-            if self.display:
-                if isinstance(layer, KIMLayer):
+            if isinstance(layer, KIMLayer):
+                if layer.padding:
+                    out_size = X.shape[1] + layer.b - 1 # 28 + 5 - 1
+                    X = pad_images(X, out_size)
+                X_temp = X
+                X = layer.calculate(X)
+                if self.display:
                     visualize_emb(X_temp, Y, X, layer.b, layer.stride, layer.B, layer.embedding, self.data_set_name)
                     display_images(X, n+2, layer.embedding, self.data_set_name, f'KernelCNN train output Layer{n+2} (B={layer.B}, Embedding:{layer.embedding})')
-
+            else:
+                X = layer.calculate(X)
+            
         self.shapes.append(np.shape(X)[1:])
         if not isinstance(self.layers[-1], LabelLearningLayer):
             self.layers.append(LabelLearningLayer())
@@ -281,11 +282,15 @@ class Model:
         for n,layer in enumerate(self.layers):
             if isinstance(layer, LabelLearningLayer):
                 break
-            test_X = layer.calculate(test_X)
-            if self.display:
-                if isinstance(layer, KIMLayer):
+            if isinstance(layer, KIMLayer):
+                if layer.padding:
+                    out_size = test_X.shape[1] + layer.b - 1 # 28 + 5 - 1
+                    test_X = pad_images(test_X, out_size)
+                test_X = layer.calculate(test_X)
+                if self.display:
                     display_images(test_X, n+7, layer.embedding, self.data_set_name, f'KernelCNN test output Layer{n+2} (B={layer.B}, Embedding:{layer.embedding})')
-
+            else:
+                test_X = layer.calculate(test_X)
         Y_predicted = self.layers[-1].predict(test_X)
         Y_answer= [np.argmax(test_Y[n,:]) for n in range(test_Y.shape[0])]
 

@@ -29,9 +29,9 @@ def main_mnist(num_train , num_test, embedding_method, num_blocks):
     model.data_set_name = "MNIST"
     model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, padding=True, emb=embedding_method, num_blocks=num_blocks))
     model.add_layer(layers.MaxPoolingLayer(pool_size=2))
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, padding=True, emb=embedding_method, num_blocks=num_blocks))
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, padding=False, emb=embedding_method, num_blocks=num_blocks))
     model.add_layer(layers.MaxPoolingLayer(pool_size=2))
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 32, stride = 1, padding=False, emb=embedding_method, num_blocks=num_blocks))
+    #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 32, stride = 1, padding=False, emb=embedding_method, num_blocks=num_blocks))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
 
     model.fit(X_train, Y_train)
