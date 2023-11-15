@@ -43,7 +43,7 @@ if __name__ == '__main__':
     m = int(args[2])  #test
     emb = args[3]
     
-    main_mnist(num_train=n, num_test=m, embedding_method=emb, num_blocks=3000)
+    main_mnist(num_train=n, num_test=m, embedding_method=emb, num_blocks=5000)
     #print(output[0])
     #print(output[1])
     

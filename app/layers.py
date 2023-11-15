@@ -64,6 +64,10 @@ class KIMLayer:
         selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
         sampled_blocks = sampled_blocks[selected_indices]
         
+        #データの正規化
+        ms = MinMaxScaler()
+        sampled_blocks = ms.fit_transform(sampled_blocks)
+        
         return sampled_blocks
 
     def learn_embedding(self, train_X): 
@@ -84,8 +88,8 @@ class KIMLayer:
             #埋め込みデータを正規化,標準化
             ms = MinMaxScaler()
             ss = StandardScaler()
-            embedded_blocks = ms.fit_transform(embedded_blocks)
-            embedded_blocks = ss.fit_transform(embedded_blocks)
+            #embedded_blocks = ms.fit_transform(embedded_blocks)
+            #embedded_blocks = ss.fit_transform(embedded_blocks)
 
             print("Training sample shape:", np.shape(embedded_blocks))
             print('[KIM] Training KIM')
