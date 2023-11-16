@@ -1,31 +1,43 @@
-FROM python:3.9.10-buster
-USER root
+FROM mcr.microsoft.com/devcontainers/base:bullseye
 
-RUN apt-get update
-RUN apt-get -y install locales && \
-    localedef -f UTF-8 -i ja_JP ja_JP.UTF-8
-ENV LANG ja_JP.UTF-8
-ENV LANGUAGE ja_JP:ja
-ENV LC_ALL ja_JP.UTF-8
-ENV TZ JST-9
-ENV TERM xterm
+ARG DEBIAN_FRONTEND=noninteractive
+ARG USER=vscode
 
-#RUN apt install -y libopencv-dev
-RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y libgl1-mesa-dev
-RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+RUN DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y build-essential --no-install-recommends make \
+    ca-certificates \
+    git \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    wget \
+    curl \
+    llvm \
+    libncurses5-dev \
+    xz-utils \
+    tk-dev \
+    libxml2-dev \
+    libxmlsec1-dev \
+    libffi-dev \
+    liblzma-dev
 
-RUN apt-get install -y vim less
-RUN pip install --upgrade pip
-RUN pip install --upgrade setuptools
-RUN pip install numpy==1.24.0
-RUN pip install GPy
-RUN pip install gpytorch
-RUN pip install tensorflow[and-cuda]
-RUN pip install scikit-learn
-RUN pip install opencv-python
-RUN pip install matplotlib
-#RUN pip install line_profiler
-RUN pip install tqdm
-RUN pip install scikit-image
-RUN pip install torchvision
+# Python and poetry installation
+USER $USER
+ARG HOME="/home/$USER"
+ARG PYTHON_VERSION=3.9.10
+
+ENV PYENV_ROOT="${HOME}/.pyenv"
+ENV PATH="${PYENV_ROOT}/shims:${PYENV_ROOT}/bin:${HOME}/.local/bin:$PATH"
+
+RUN echo "done 0" \
+    && curl https://pyenv.run | bash \
+    && echo "done 1" \
+    && pyenv install ${PYTHON_VERSION} \
+    && echo "done 2" \
+    && pyenv global ${PYTHON_VERSION} \
+    && echo "done 3" \
+    && curl -sSL https://install.python-poetry.org | python3 - \
+    && poetry config virtualenvs.in-project true
