@@ -155,11 +155,12 @@ def visualize_emb(input_data,input_data_label,convolved_data,block_size: int,str
         l = 0.2*(y_max-y_min)/2
         
         #散布図のプロット
-        ax.scatter(convolved_data_sep[:,0], convolved_data_sep[:,1], cmap="tab10", c=input_data_label, marker="o",s=80,edgecolors="black",)
+        sc=ax.scatter(convolved_data_sep[:,0], convolved_data_sep[:,1], cmap="tab10", c=input_data_label, marker="o",s=600,edgecolors="black")
+        ax.colorbar(sc, label='label')
         #Annotationのプロット
         for dot_idx in range(len(convolved_data)):
             x, y = convolved_data_sep[dot_idx]
-            ax.annotate(chr(dot_idx+65), (x, y), (x+k/2, y+l/2),arrowprops=dict(arrowstyle="->"), size=20, color="black")
+            ax.annotate(chr(dot_idx+65), (x, y),horizontalalignment="center", verticalalignment="center" , size=20, color="black")
 
         ax.set_box_aspect (1)
         ax.set_xlim(x_min-k,x_max+k)
@@ -175,8 +176,6 @@ def visualize_emb(input_data,input_data_label,convolved_data,block_size: int,str
                 ax2.text(0.5,0.5,chr(dot_idx+65),horizontalalignment="center", verticalalignment="center", fontsize=20)
             else:
                 img = input_data[dot_idx, :, :, channel_idx-1]
-                #print(img)
-                #ax2.text(0, 0.5, 'aaa', va='center', ha='center', rotation='vertical', transform=plt.gca().transAxes)
                 ax2.imshow(img, cmap='gray') #vmin, vmaxの指定
                 if dot_idx == 0:
                     ax2.set_title(f"Channel{channel_idx}")

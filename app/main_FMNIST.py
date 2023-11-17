@@ -29,7 +29,7 @@ def main_fmnist(num_train , num_test, embedding_method, num_blocks):
     #モデル定義
     model = layers.Model(display=True)
     model.data_set_name = "Fashion-MNIST"
-    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, padding=True emb=embedding_method, num_blocks=num_blocks))
+    model.add_layer(layers.KIMLayer(block_size=5, channels_next = 6, stride = 1, padding=True, emb=embedding_method, num_blocks=num_blocks))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
     model.add_layer(layers.KIMLayer(block_size=5, channels_next = 16, stride = 1, padding=False, emb=embedding_method, num_blocks=num_blocks))
     model.add_layer(layers.AvgPoolingLayer(pool_size=2))
