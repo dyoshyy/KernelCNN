@@ -67,12 +67,12 @@ def main(train_num: int, test_num : int, datasets : str):
     model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
 
     # Train the model
-    batch_size = 128
+    batch_size = 64
     epochs = 1000
     es = EarlyStopping(monitor='val_loss', mode='auto', patience=5, verbose=0)
     cp = ModelCheckpoint("./weights/model_weights_epoch_{epoch:02d}.h5", save_weights_only=True, save_freq='epoch', period = 10)
     
-    history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[es, cp], validation_split=0.1)
+    history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[es], validation_split=0.1)
 
     # predict test samples
     test_loss, test_acc = model.evaluate(test_X, test_Y)

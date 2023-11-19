@@ -2,7 +2,7 @@ import GPy
 import numpy as np
 import math
 import time
-
+from tensorflow.keras import layers, models
 from functions import calculate_similarity, display_images, binarize_images, visualize_emb, visualize_emb_dots, select_embedding_method, pad_images
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
@@ -187,9 +187,42 @@ class MaxPoolingLayer:
         
         print('[MAX] Completed')
         return output_data
+    
+class LabelLearningLayer_NeuralNetwork:
+    def __init__(self):
+        self.model = None
 
+    def fit(self, X, Y):
+        input_dim = X.shape[1] * X.shape[2] * X.shape[3]
+        #ベクトル化し学習
+        X = X.reshape(X.shape[0], input_dim)
+        X = StandardScaler().fit_transform(X)
+        print(X[:10])
+        print(Y[:10])
+        if self.model is None:
+            print('Learning labels')
+            self.model = models.Sequential([
+                layers.Dense(120, activation='relu'),
+                layers.Dense(84, activation='relu'),
+                layers.Dense(10, activation='softmax')
+            ])
+            self.model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
+            batch_size = 64
+            epochs = 300
+            self.model.fit(X, Y, batch_size=batch_size, verbose=1, epochs=epochs, callbacks=[], validation_split=0.1)
+            print('Completed')
+        else:
+            print('GPmodel found')
 
-class LabelLearningLayer:
+    def predict(self, X):
+        #ベクトル化し予測
+        X = X.reshape(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
+        X = StandardScaler().fit_transform(X)
+        Y_predicted = self.model.predict(X)
+        output = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
+        return output
+
+class LabelLearningLayer_GaussianProcess:
     def __init__(self):
         self.GP = None
         self.num_GP = None
@@ -270,22 +303,17 @@ class Model:
                 if self.display:
                     visualize_emb(X_temp, Y, X, layer.b, layer.stride, layer.B, layer.embedding, self.data_set_name)
                     display_images(X, n+2, layer.embedding, self.data_set_name, f'KernelCNN train output Layer{n+2} (B={layer.B}, Embedding:{layer.embedding})')
-            else:
+            elif isinstance(layer, LabelLearningLayer_GaussianProcess) or isinstance(layer, LabelLearningLayer_NeuralNetwork): #最後の層のとき
+                layer.fit(X, Y)
+            else: #サブプーリング層
                 X = layer.calculate(X)
-            
-        self.shapes.append(np.shape(X)[1:])
-        if not isinstance(self.layers[-1], LabelLearningLayer):
-            self.layers.append(LabelLearningLayer())
-            
-        self.layers[-1].fit(X, Y)
+        
         self.time_fitting = time.time() - start_time
 
     def predict(self, test_X, test_Y):
         start_time = time.time()
         self.num_test = test_X.shape[0]
         for n,layer in enumerate(self.layers):
-            if isinstance(layer, LabelLearningLayer):
-                break
             if isinstance(layer, KIMLayer):
                 if layer.padding:
                     out_size = test_X.shape[1] + layer.b - 1 # 28 + 5 - 1
@@ -293,13 +321,13 @@ class Model:
                 test_X = layer.calculate(test_X)
                 if self.display:
                     display_images(test_X, n+7, layer.embedding, self.data_set_name, f'KernelCNN test output Layer{n+2} (B={layer.B}, Embedding:{layer.embedding})')
+            elif isinstance(layer, LabelLearningLayer_GaussianProcess) or isinstance(layer, LabelLearningLayer_NeuralNetwork):
+                Y_predicted = self.layers[-1].predict(test_X)
+                Y_answer= [np.argmax(test_Y[n,:]) for n in range(test_Y.shape[0])]
             else:
                 test_X = layer.calculate(test_X)
-        Y_predicted = self.layers[-1].predict(test_X)
-        Y_answer= [np.argmax(test_Y[n,:]) for n in range(test_Y.shape[0])]
 
         self.time_predicting = time.time() - start_time
-        
         accuracy = calculate_similarity(Y_predicted, Y_answer)
         
         print('Layers shape:',self.shapes)
@@ -312,7 +340,7 @@ class Model:
             param_file.write(f'Datasets: {self.data_set_name}\n')
             param_file.write('================================================================================\n')
             for i, layer in enumerate(self.layers):
-                if isinstance(layer, LabelLearningLayer):
+                if isinstance(layer, LabelLearningLayer_GaussianProcess) or isinstance(layer, LabelLearningLayer_NeuralNetwork):
                     continue  
                 if isinstance(layer, KIMLayer):
                     param_file.write(f'Layer {i+2}\n')

@@ -156,11 +156,11 @@ def visualize_emb(input_data,input_data_label,convolved_data,block_size: int,str
         
         #散布図のプロット
         sc=ax.scatter(convolved_data_sep[:,0], convolved_data_sep[:,1], cmap="tab10", c=input_data_label, marker="o",s=600,edgecolors="black")
-        ax.colorbar(sc, label='label')
+        plt.colorbar(sc, label='label')
         #Annotationのプロット
         for dot_idx in range(len(convolved_data)):
             x, y = convolved_data_sep[dot_idx]
-            ax.annotate(chr(dot_idx+65), (x, y),horizontalalignment="center", verticalalignment="center" , size=20, color="black")
+            ax.annotate(chr(dot_idx+65), (x, y),weight="bold", ha="center", va="center" , size=20, color="black")
 
         ax.set_box_aspect (1)
         ax.set_xlim(x_min-k,x_max+k)
