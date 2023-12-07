@@ -16,7 +16,7 @@ RUN apt-get install -y libgl1-mesa-dev
 RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 
 RUN apt-get install -y vim less
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip 
 RUN pip install --upgrade setuptools
 RUN pip install numpy==1.24.0
 RUN pip install GPy

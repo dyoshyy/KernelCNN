@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+import statistics
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import pathpatch_2d_to_3d
@@ -11,12 +12,35 @@ import random
 from skimage import util
 from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
+from KSLE import SLE
 
-random.seed(0)
+#random.seed
+np.random.seed(0)
+
+
+def make_unique_filename(preliminary_name: str, file_path: str):
+    file_exists = os.path.exists(file_path + "/" + preliminary_name + ".png")
+    counter = 1
+    changed = False
+    # preliminary_nameのファイルが存在する限りカウンターをインクリメント
+    while file_exists:
+        new_filename = preliminary_name + f"({counter})"
+        file_exists = os.path.exists(file_path + "/" + new_filename + ".png")
+        counter += 1
+        changed = True
+
+    # 一度でも名前が変更されたらnew_filenameを返し，一度も変更されなかったらpreliminary_nameを返す
+    if changed:
+        unique_name = new_filename
+    else:
+        unique_name = preliminary_name
+    return unique_name
+
 
 def normalize_output(img):
     img_min, img_max = np.min(img, axis=(0, 1)), np.max(img, axis=(0, 1))
     return (img - img_min) / (img_max - img_min)
+
 
 def scale_to_0_255(data):
     """
@@ -35,10 +59,12 @@ def scale_to_0_255(data):
         return scaled_data.astype(np.uint8)
 
 
-def display_images(data, layer_number, embedding_method: str, dataset_name: str, suptitle : str):
+def display_images(
+    data, layer_number, embedding_method: str, dataset_name: str, suptitle: str
+):
     for n in range(3):
         data_to_display = data[n]
-        data_to_display = scale_to_0_255(data_to_display)
+        #data_to_display = scale_to_0_255(data_to_display)
         num_in_a_row = 4  # default 4
         Channels = data_to_display.shape[2]
         Rows = math.ceil(Channels / 5)
@@ -60,68 +86,93 @@ def display_images(data, layer_number, embedding_method: str, dataset_name: str,
                     ax.set_title("Channel {}".format(index + 1))
 
         fig.suptitle(suptitle)
+        filename = f"{dataset_name}_{embedding_method}_{layer_number}_{n+1}"
+        file_dir = "./results_output"
+        filename = make_unique_filename(filename, file_dir)
         plt.tight_layout()
-        plt.savefig(
-            f"./results/{dataset_name}_{embedding_method}_{layer_number}_{n+1}_.png"
-        )
+        plt.savefig(file_dir +f"/{filename}.png")
         plt.close()
         # plt.show()
+
 
 def display_weights(weights, dataset_name, layer_idx):
     num_input_channels = weights.shape[2]
     num_output_channels = weights.shape[3]
-    
-    fig, axs = plt.subplots(num_output_channels,num_input_channels, figsize=(num_input_channels+1,num_output_channels+10))
-    fig.suptitle(f'Layer{layer_idx} weights')
-    
+
+    fig, axs = plt.subplots(
+        num_output_channels,
+        num_input_channels,
+        figsize=(num_input_channels + 1, num_output_channels + 10),
+    )
+    fig.suptitle(f"Layer{layer_idx} weights")
+
     for i in range(num_output_channels):
         for j in range(num_input_channels):
-            filter_weights = weights[:,:,j, i]
+            filter_weights = weights[:, :, j, i]
             if num_input_channels == 1:
-                axs[i].imshow(filter_weights, cmap='gray')
-                axs[i].axis('off')
+                axs[i].imshow(filter_weights, cmap="gray")
+                axs[i].axis("off")
             else:
-                axs[i, j].imshow(filter_weights, cmap='gray')
-                axs[i, j].axis('off')
-    
+                axs[i, j].imshow(filter_weights, cmap="gray")
+                axs[i, j].axis("off")
+
     # 横の余白を小さくし、縦の余白を大きくする
     plt.subplots_adjust(wspace=0.6, hspace=1.5)
     plt.tight_layout()
-    plt.savefig(f"./emb_results/{dataset_name}_LeNet_weights_layer{layer_idx}.png")
+    filename = f"{dataset_name}_LeNet_weights_layer{layer_idx}"
+    filename = make_unique_filename(filename, "./weights_results")
+    plt.savefig(f"./results_weights/{filename}.png")
     plt.close()
 
-def visualize_emb(input_data,input_data_label,convolved_data,block_size: int,stride: int,B: int,embedding_method: str,dataset_name: str, output_dots=True):
+
+def visualize_emb(
+    input_data,
+    input_data_label,
+    convolved_data,
+    block_size: int,
+    stride: int,
+    B: int,
+    embedding_method: str,
+    dataset_name: str,
+    output_dots=True,
+):
     """
     埋め込み後の点を可視化
         input_data : 層の入力画像 (データ数, 高さ, 幅, 入力チャンネル数)
         input_data_label : ブロックのラベル (データ数, 高さ, 幅, 出力チャンネル数)
-        convolved_data : 次元削減後のデータの第1,2次元
+        convolved_data : 次元削減後のデータ
         block_size : ブロックのサイズ
         stride : ストライド
         embedding_method : 埋め込み手法
         dataset_name : データセットの名前
     """
     # ファイル名の重複を防ぐ処理
+    file_dir = "./results_emb"
     filename = f"{dataset_name}_emb_{embedding_method}"
-    file_exists = os.path.exists("./emb_results/" + filename + '.png')
-    counter = 1
-    changed = False
-    while file_exists:
-        new_filename = filename + f"({counter})"
-        file_exists = os.path.exists("./emb_results/" + new_filename + '.png')
-        counter += 1
-        changed = True
-    if changed:
-        filename = new_filename
+    filename = make_unique_filename(filename, file_dir)
+    
+    input_data = input_data[:100]
+    input_data_label = input_data_label[:100]
+    convolved_data = convolved_data[:100]
 
     # 画像データからブロックに変換
-    input_data = util.view_as_windows(input_data, (1, block_size, block_size, input_data.shape[3]), stride)
-    input_data = input_data.reshape(-1, block_size, block_size, input_data.shape[-1])
-    input_data_label = np.repeat(np.argmax(input_data_label, axis=1),convolved_data.shape[1] * convolved_data.shape[2],) #１枚の画像のラベルをブロックの個数分繰り返す　（例：３のラベルを２８ｘ２８繰り返す）
+    blocks = np.empty((0,block_size,block_size,input_data.shape[3]))
+    for img_idx in range(input_data.shape[0]):
+        img = input_data[img_idx]
+        block = util.view_as_windows(img, (block_size, block_size, input_data.shape[3]), stride).reshape(-1, block_size, block_size, input_data.shape[3])
+        blocks = np.concatenate((blocks, block), axis=0)
+        
+    input_data = blocks
+    input_data_label = np.repeat(
+        np.argmax(input_data_label, axis=1),
+        convolved_data.shape[1] * convolved_data.shape[2],
+    )  # １枚の画像のラベルをブロックの個数分繰り返す　（例：３のラベルを２８ｘ２８繰り返す）
     convolved_data = convolved_data.reshape(-1, convolved_data.shape[3])
-    
-    #重複を削除
-    convolved_data, unique_indices = np.unique(convolved_data, axis=0, return_index=True)
+
+    # convolved_dataの重複を削除
+    convolved_data, unique_indices = np.unique(
+        convolved_data, axis=0, return_index=True
+    )
     input_data_label = input_data_label[unique_indices]
     input_data = input_data[unique_indices]
 
@@ -129,71 +180,117 @@ def visualize_emb(input_data,input_data_label,convolved_data,block_size: int,str
     num_samples = len(convolved_data)
     num_blocks_to_display = min(15, num_samples)
     random_indices = np.random.choice(num_samples, num_blocks_to_display, replace=False)
+    print(random_indices)
     convolved_data = convolved_data[random_indices]
     input_data = input_data[random_indices]
     input_data_label = input_data_label[random_indices]
-    
-    #0-255の範囲にスケール
+
+    # 0-255の範囲にスケール
     input_data = scale_to_0_255(input_data)
 
-    #２チャネルごとに列方向に描画
+    # ２チャネルごとに列方向に描画
     num_images = int(convolved_data.shape[1] / 2)
     num_input_channels = int(input_data.shape[3])
-    fig, axs = plt.subplots(num_images, 1, figsize=(10, num_images*6+1))
-    fig2, axs2 = plt.subplots(num_blocks_to_display, num_input_channels+1, figsize=(3+2*num_input_channels/3, num_blocks_to_display))
-    
+    fig, axs = plt.subplots(num_images, 1, figsize=(10, num_images * 6 + 1))
+    fig2, axs2 = plt.subplots(
+        num_blocks_to_display,
+        num_input_channels + 1,
+        figsize=(3 + 2 * num_input_channels / 3, num_blocks_to_display),
+    )
+
     for img_idx in range(num_images):
         convolved_data_sep = convolved_data[:, (2 * img_idx) : (2 * (img_idx + 1))]
         ax = axs[img_idx]
-        
-        #軸の範囲を設定
-        x_min = np.min(convolved_data_sep[:,0])
-        x_max = np.max(convolved_data_sep[:,0])
-        y_min = np.min(convolved_data_sep[:,1])
-        y_max = np.max(convolved_data_sep[:,1])
-        k = 0.2*(x_max-x_min)/2
-        l = 0.2*(y_max-y_min)/2
-        
-        #散布図のプロット
-        sc=ax.scatter(convolved_data_sep[:,0], convolved_data_sep[:,1], cmap="tab10", c=input_data_label, marker="o",s=600,edgecolors="black")
-        plt.colorbar(sc, label='label')
-        #Annotationのプロット
+
+        # 軸の範囲を設定
+        x_min = np.min(convolved_data_sep[:, 0])
+        x_max = np.max(convolved_data_sep[:, 0])
+        y_min = np.min(convolved_data_sep[:, 1])
+        y_max = np.max(convolved_data_sep[:, 1])
+        k = 0.2 * (x_max - x_min) / 2
+        l = 0.2 * (y_max - y_min) / 2
+
+        # 散布図のプロット
+        sc = ax.scatter(
+            convolved_data_sep[:, 0],
+            convolved_data_sep[:, 1],
+            cmap="tab10",
+            c=input_data_label,
+            marker="o",
+            s=600,
+            edgecolors="black",
+        )
+        plt.colorbar(sc, label="label")
+        # Annotationのプロット
         for dot_idx in range(len(convolved_data)):
             x, y = convolved_data_sep[dot_idx]
-            ax.annotate(chr(dot_idx+65), (x, y),weight="bold", ha="center", va="center" , size=20, color="black")
+            ax.annotate(
+                chr(dot_idx + 65),
+                (x, y),
+                weight="bold",
+                ha="center",
+                va="center",
+                size=20,
+                color="black",
+            )
 
-        ax.set_box_aspect (1)
-        ax.set_xlim(x_min-k,x_max+k)
-        ax.set_ylim(y_min-l,y_max+l)
-        ax.set_title(f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={block_size})")
+        ax.set_box_aspect(1)
+        ax.set_xlim(x_min - k, x_max + k)
+        ax.set_ylim(y_min - l, y_max + l)
+        ax.set_title(
+            f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={block_size})"
+        )
 
     for dot_idx in range(len(convolved_data)):
-        for channel_idx in range(num_input_channels+1):
+        for channel_idx in range(num_input_channels + 1):
             ax2 = axs2[dot_idx, channel_idx]
             ax2.axis("off")
             if channel_idx == 0:
-                #ax2に文字を書く
-                ax2.text(0.5,0.5,chr(dot_idx+65),horizontalalignment="center", verticalalignment="center", fontsize=20)
+                # ax2に文字を書く
+                ax2.text(
+                    0.5,
+                    0.5,
+                    chr(dot_idx + 65),
+                    horizontalalignment="center",
+                    verticalalignment="center",
+                    fontsize=20,
+                )
             else:
-                img = input_data[dot_idx, :, :, channel_idx-1]
-                ax2.imshow(img, cmap='gray') #vmin, vmaxの指定
+                img = input_data[dot_idx, :, :, channel_idx - 1]
+                # print(input_data[dot_idx])
+                # print(img)
+                ax2.imshow(img, cmap="gray")  # vmin, vmaxの指定
                 if dot_idx == 0:
                     ax2.set_title(f"Channel{channel_idx}")
 
     # 画像として保存
-    #plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95)
+    # plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95)
     fig.tight_layout()
     fig2.tight_layout()
-    fig.savefig(f"./emb_results/{filename}.png")
-    fig2.savefig(f"./emb_results/{filename}_blocks.png")
+    fig.savefig(file_dir +f"/{filename}.png")
+    fig2.savefig(file_dir +f"/{filename}_blocks.png")
     plt.close()
-    
-    output_dots=False
-    if output_dots:
-        visualize_emb_dots(input_data_label, convolved_data, block_size, B, embedding_method, dataset_name)
-        
 
-def visualize_emb_dots(input_data_label, convolved_data, b: int, B: int,embedding_method: str,dataset_name: str, ):
+    output_dots = False
+    if output_dots:
+        visualize_emb_dots(
+            input_data_label,
+            convolved_data,
+            block_size,
+            B,
+            embedding_method,
+            dataset_name,
+        )
+
+
+def visualize_emb_dots(
+    input_data_label,
+    convolved_data,
+    b: int,
+    B: int,
+    embedding_method: str,
+    dataset_name: str,
+):
     """
     埋め込み後の点を可視化
         input_data : 層の入力画像 (データ数, 高さ, 幅, 入力チャンネル数)
@@ -206,50 +303,63 @@ def visualize_emb_dots(input_data_label, convolved_data, b: int, B: int,embeddin
     """
     # ファイル名の重複を防ぐ処理
     filename = f"{dataset_name}_emb_{embedding_method}_dots"
-    file_exists = os.path.exists("./emb_results/" + filename + '.png')
+    file_exists = os.path.exists("./emb_results/" + filename + ".png")
     counter = 1
     changed = False
     while file_exists:
         new_filename = filename + f"({counter})"
-        file_exists = os.path.exists("./emb_results/" + new_filename + '.png')
+        file_exists = os.path.exists("./emb_results/" + new_filename + ".png")
         counter += 1
         changed = True
     if changed:
         filename = new_filename
 
-    #２チャネルごとに列方向に描画
+    # ２チャネルごとに列方向に描画
     num_images = int(convolved_data.shape[1] / 2)
-    fig, axs = plt.subplots(num_images, 1, figsize=(10,num_images*10))
-    
-    #一部の点を選ぶ
+    fig, axs = plt.subplots(num_images, 1, figsize=(10, num_images * 10))
+
+    # 一部の点を選ぶ
     num_to_select = min(convolved_data.shape[0], 3000)
-    select_indices = np.random.choice(convolved_data.shape[0], num_to_select, replace=False)
+    select_indices = np.random.choice(
+        convolved_data.shape[0], num_to_select, replace=False
+    )
     convolved_data = convolved_data[select_indices]
     input_data_label = input_data_label[select_indices]
-    
+
     for img_idx in range(num_images):
         convolved_data_sep = convolved_data[:, (2 * img_idx) : (2 * (img_idx + 1))]
         ax = axs[img_idx]
-        sc = ax.scatter(convolved_data_sep[:,0], convolved_data_sep[:,1], cmap="tab10", c=input_data_label, marker="o",s=50,edgecolors="black",)
-        #plt.colorbar(sc, label='label')
-        
-        #軸の範囲を設定
-        x_min = np.min(convolved_data_sep[:,0])
-        x_max = np.max(convolved_data_sep[:,0])
-        y_min = np.min(convolved_data_sep[:,1])
-        y_max = np.max(convolved_data_sep[:,1])
-            
-        k = 0.2*(x_max-x_min)/2
-        l = 0.2*(y_max-y_min)/2
-        ax.set_box_aspect (1)
-        ax.set_xlim(x_min-k,x_max+k)
-        ax.set_ylim(y_min-l,y_max+l)
-        ax.set_title(f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={b})")
-            
+        sc = ax.scatter(
+            convolved_data_sep[:, 0],
+            convolved_data_sep[:, 1],
+            cmap="tab10",
+            c=input_data_label,
+            marker="o",
+            s=50,
+            edgecolors="black",
+        )
+        # plt.colorbar(sc, label='label')
+
+        # 軸の範囲を設定
+        x_min = np.min(convolved_data_sep[:, 0])
+        x_max = np.max(convolved_data_sep[:, 0])
+        y_min = np.min(convolved_data_sep[:, 1])
+        y_max = np.max(convolved_data_sep[:, 1])
+
+        k = 0.2 * (x_max - x_min) / 2
+        l = 0.2 * (y_max - y_min) / 2
+        ax.set_box_aspect(1)
+        ax.set_xlim(x_min - k, x_max + k)
+        ax.set_ylim(y_min - l, y_max + l)
+        ax.set_title(
+            f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={b})"
+        )
+
     # 画像として保存
     plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95)
     plt.savefig(f"./emb_results/{filename}.png")
     plt.close()
+
 
 def calculate_similarity(array1, array2):
     count = 0
@@ -317,7 +427,12 @@ def pad_images(images, out_size):
     padded_images = np.zeros((images.shape[0], out_size, out_size, images.shape[3]))
 
     # 元の画像を中央に配置してパディングする
-    padded_images[:, pad_width : pad_width + original_size, pad_width : pad_width + original_size, :] = images
+    padded_images[
+        :,
+        pad_width : pad_width + original_size,
+        pad_width : pad_width + original_size,
+        :,
+    ] = images
 
     return padded_images
 
@@ -337,6 +452,9 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
         print(f"k for knn:{n}")
         LE = SpectralEmbedding(n_components=Channels_next, n_neighbors=n)
         embedded_blocks = LE.fit_transform(data_to_embed)
+    
+    elif embedding_method == "SLE":
+        model = SLE(data_to_embed, )
 
     elif embedding_method == "TSNE":
         tsne = TSNE(
@@ -360,3 +478,62 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
         print("Error: No embedding selected.")
 
     return embedded_blocks.astype(np.float32)
+
+
+def calculate_average_accuracy_kernelCNN(main_function, arguments, dataset_name, iterations=10):
+    accuracy_list = []
+    for i in range(iterations):
+        print(f"Executing {i+1}")
+        accuracy_list.append(main_function(arguments[0], arguments[1], arguments[2], arguments[3]))
+    
+    num_train = arguments[0]
+    num_test = arguments[1]    
+    #dataset_name = arguments[2]
+    mean = statistics.mean(accuracy_list)  # 平均
+    pstdev = statistics.pstdev(accuracy_list)  # 母標準偏差
+    
+    # パラメータをテキストファイルに保存
+    with open("Accuracy_results.txt", "a") as param_file:
+        
+        param_file.write("================================================================================\n")
+
+        # 正解率を保存
+        param_file.write(f"Datasets: {dataset_name}\n")
+        param_file.write(f"Train samples: {num_train}\n")
+        param_file.write(f"Test samples: {num_test}\n")
+        param_file.write(f"Number of Iterations: {iterations}\n")
+
+        param_file.write(f"Accuracy mean: {mean}\n")
+        param_file.write(f"Accuracy stdev: {pstdev}\n")
+        param_file.write("================================================================================\n")
+
+    return mean, pstdev
+
+def calculate_average_accuracy_CNN(main_function, arguments, iterations=10):
+    accuracy_list = []
+    for i in range(iterations):
+        print(f"Executing {i+1}")
+        accuracy_list.append(main_function(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]))
+    
+    num_train = arguments[0]
+    num_test = arguments[1]    
+    dataset_name = arguments[2]
+    mean = statistics.mean(accuracy_list)  # 平均
+    pstdev = statistics.pstdev(accuracy_list)  # 母標準偏差
+    
+    # パラメータをテキストファイルに保存
+    with open("Accuracy_results.txt", "a") as param_file:
+        
+        param_file.write("================================================================================\n")
+
+        # 正解率を保存
+        param_file.write(f"Datasets: {dataset_name}\n")
+        param_file.write(f"Train samples: {num_train}\n")
+        param_file.write(f"Test samples: {num_test}\n")
+        param_file.write(f"Number of Iterations: {iterations}\n")
+
+        param_file.write(f"Accuracy mean: {mean}\n")
+        param_file.write(f"Accuracy stdev: {pstdev}\n")
+        param_file.write("================================================================================\n")
+
+    return mean, pstdev
