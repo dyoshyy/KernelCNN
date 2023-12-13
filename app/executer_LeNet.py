@@ -101,7 +101,6 @@ if False:
     
 #層数変化
 if False:
-    
     main(60000, 10000, 'MNIST', layers_BOOL=[0,0,0,0,0])
     main(60000, 10000, 'MNIST', layers_BOOL=[1,0,0,0,0])
     main(60000, 10000, 'MNIST', layers_BOOL=[1,1,0,0,0])
@@ -125,8 +124,8 @@ if False:
 
 #中間層出力
 if True:
-    main(60000, 100, 'MNIST', block_size=[5,5], display=True)
-    main(60000, 100, 'FMNIST', block_size=[5,5], display=True)
+    #main(60000, 100, 'MNIST', block_size=[5,5], display=True)
+    #main(60000, 100, 'FMNIST', block_size=[5,5], display=True)
     main(60000, 100, 'CIFAR10', block_size=[5,5], display=True)
 
     

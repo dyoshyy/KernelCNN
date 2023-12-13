@@ -1,6 +1,3 @@
-from main_MNIST import main_mnist
-from main_FMNIST import main_fmnist
-from main_CIFAR10 import main_cifar10
 from functions import calculate_average_accuracy_kernelCNN
 from main_KernelCNN import main_kernelCNN
 #import LeNet
@@ -102,6 +99,6 @@ if False:
         main_cifar10(1000, 10000, 'LE', 3000, 7)
         
 if True:
-    main_kernelCNN(1000, 100, "MNIST", B=3000, embedding_method=["LE","LE"], block_size=[5,5])
-    main_kernelCNN(1000, 100, "FMNIST", B=3000, embedding_method=["LE","LE"], block_size=[5,5])
+    #main_kernelCNN(1000, 100, "MNIST", B=3000, embedding_method=["LE","LE"], block_size=[5,5])
+    #main_kernelCNN(1000, 100, "FMNIST", B=3000, embedding_method=["LE","LE"], block_size=[5,5])
     main_kernelCNN(1000, 100, "CIFAR10", B=3000, embedding_method=["LE","LE"], block_size=[5,5])
