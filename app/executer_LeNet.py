@@ -54,7 +54,7 @@ if False:
     calculate_average_accuracy(main, [50000, 10000, 'CIFAR10', None], 10)
 
 #ブロックサイズ変化
-if True:
+if False:
     main(60000, 10000, 'MNIST', [3,3], display=True)
     main(60000, 10000, 'MNIST', [3,5], display=True)
     main(60000, 10000, 'MNIST', [3,7], display=True)
@@ -99,6 +99,34 @@ if False:
     calculate_average_accuracy_CNN(main, [60000, 10000, 'CIFAR10', [7,7], False], 10)
     
     
+#層数変化
+if False:
     
+    main(60000, 10000, 'MNIST', layers_BOOL=[0,0,0,0,0])
+    main(60000, 10000, 'MNIST', layers_BOOL=[1,0,0,0,0])
+    main(60000, 10000, 'MNIST', layers_BOOL=[1,1,0,0,0])
+    main(60000, 10000, 'MNIST', layers_BOOL=[1,1,1,0,0])
+    main(60000, 10000, 'MNIST', layers_BOOL=[1,1,1,1,0])
+    main(60000, 10000, 'MNIST', layers_BOOL=[1,1,1,1,1])
     
+    main(60000, 10000, 'FMNIST', layers_BOOL=[0,0,0,0,0])
+    main(60000, 10000, 'FMNIST', layers_BOOL=[1,0,0,0,0])
+    main(60000, 10000, 'FMNIST', layers_BOOL=[1,1,0,0,0])
+    main(60000, 10000, 'FMNIST', layers_BOOL=[1,1,1,0,0])
+    main(60000, 10000, 'FMNIST', layers_BOOL=[1,1,1,1,0])
+    main(60000, 10000, 'FMNIST', layers_BOOL=[1,1,1,1,1])
+    
+    main(50000, 10000, 'CIFAR10', layers_BOOL=[0,0,0,0,0])
+    main(50000, 10000, 'CIFAR10', layers_BOOL=[1,0,0,0,0])
+    main(50000, 10000, 'CIFAR10', layers_BOOL=[1,1,0,0,0])
+    main(50000, 10000, 'CIFAR10', layers_BOOL=[1,1,1,0,0])
+    main(50000, 10000, 'CIFAR10', layers_BOOL=[1,1,1,1,0])
+    main(50000, 10000, 'CIFAR10', layers_BOOL=[1,1,1,1,1])
+
+#中間層出力
+if True:
+    main(60000, 100, 'MNIST', block_size=[5,5], display=True)
+    main(60000, 100, 'FMNIST', block_size=[5,5], display=True)
+    main(60000, 100, 'CIFAR10', block_size=[5,5], display=True)
+
     

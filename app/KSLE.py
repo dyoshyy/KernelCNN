@@ -171,7 +171,7 @@ class KSLE_ML():
         Z = Z[:,1:m_dim+1]  # This is for 2D display. Increase 3 to any number for dimension reduction
         
         self.Z = Z
-        self.embedding = Z.T
+        self.embedding = Z
         
         return self
 

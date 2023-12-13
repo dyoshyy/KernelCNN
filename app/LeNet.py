@@ -23,7 +23,7 @@ def get_intermediate_output(model, layer_name, data):
     return intermediate_layer_model.predict(data)
 
 
-def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], display=True):
+def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], display=True, layers_BOOL=[1,1,1,0]):
     backend.clear_session()
     print('Number of training samples:', num_train)
     #block_size = [7,3]
@@ -55,16 +55,21 @@ def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], displ
     test_Y = test_Y[:test_num]
 
     # LeNet-5 model definition
-    model = models.Sequential([
-        layers.Conv2D(6, kernel_size=(block_size[0], block_size[0]), activation='relu', strides= stride, input_shape=(32, 32, channel)),
-        layers.MaxPooling2D((2, 2)),
-        layers.Conv2D(16, kernel_size=(block_size[1], block_size[1]),activation='relu', strides= stride),
-        layers.MaxPooling2D((2, 2)),
-        layers.Flatten(),
-        layers.Dense(120, activation='relu'),
-        layers.Dense(84, activation='relu'),
-        layers.Dense(10, activation='softmax')
-    ])
+    
+    model = models.Sequential()
+    model.add(layers.Conv2D(6, kernel_size=(block_size[0], block_size[0]), activation='relu', strides= stride, input_shape=(32, 32, channel)))
+    if layers_BOOL[0]:
+        model.add(layers.MaxPooling2D((2, 2)))
+    if layers_BOOL[1]:
+        model.add(layers.Conv2D(16, kernel_size=(block_size[1], block_size[1]),activation='relu', strides= stride, padding='same'))
+    if layers_BOOL[2]:
+        model.add(layers.MaxPooling2D((2, 2)))
+    if layers_BOOL[3]:
+        model.add(layers.Conv2D(30, kernel_size=(block_size[1], block_size[1]),activation='relu', strides= stride, padding='same'))
+    model.add(layers.Flatten())
+    model.add(layers.Dense(120, activation='relu'))
+    model.add(layers.Dense(84, activation='relu'))
+    model.add(layers.Dense(10, activation='softmax'))
 
     #model.summary()
     # Compile the model
@@ -84,21 +89,38 @@ def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], displ
     print('Accuracy:',test_acc)
 
     if display:
+        
         #学習後のモデルの出力
         block_outputs = []
         block_outputs.append(get_intermediate_output(model, 'conv2d', train_X))
-        block_outputs.append(get_intermediate_output(model, 'max_pooling2d', train_X))
-        block_outputs.append(get_intermediate_output(model, 'conv2d_1', train_X))
-        #for i, output in enumerate(block_outputs):
-        #    print(f"Block {i+1} output shape:", output.shape)
+        if layers_BOOL[1]:
+            block_outputs.append(get_intermediate_output(model, 'max_pooling2d', train_X)) 
+            block_outputs.append(get_intermediate_output(model, 'conv2d_1', train_X))
+            if layers_BOOL[3]:
+                block_outputs.append(get_intermediate_output(model, 'max_pooling2d_1', train_X)) 
+                block_outputs.append(get_intermediate_output(model, 'conv2d_2', train_X))
+
         weights1 = model.get_layer("conv2d").get_weights()[0]
-        weights2 = model.get_layer("conv2d_1").get_weights()[0]
         visualize_emb(train_X, train_Y, block_outputs[0], block_size=block_size[0], stride=stride, B=None, embedding_method='LeNet', dataset_name=datasets)
-        visualize_emb(block_outputs[1], train_Y, block_outputs[2], block_size=block_size[1], stride=stride, B=None, embedding_method='LeNet', dataset_name=datasets)
         display_images(block_outputs[0], 2, 'LeNet', datasets, f'LeNet Output layer 2 n={num_train}')
-        display_images(block_outputs[2], 4, 'LeNet', datasets, f'LeNet Output layer 4 n={num_train}')
         display_weights(weights1, datasets, layer_idx=2)
-        display_weights(weights2, datasets, layer_idx=4)
+        
+        if layers_BOOL[1]:
+            if block_outputs[1].shape[1] == block_outputs[2].shape[1]: #paddingしてるとき
+                block_outputs[1]=(pad_images(block_outputs[1],18))
+
+            weights2 = model.get_layer("conv2d_1").get_weights()[0]
+            visualize_emb(block_outputs[1], train_Y, block_outputs[2], block_size=block_size[1], stride=stride, B=None, embedding_method='LeNet', dataset_name=datasets)
+            display_images(block_outputs[2], 4, 'LeNet', datasets, f'LeNet Output layer 4 n={num_train}')
+            display_weights(weights2, datasets, layer_idx=4)
+            
+            if layers_BOOL[3]:
+                if block_outputs[3].shape[1] == block_outputs[4].shape[1]:
+                    block_outputs[3]=(pad_images(block_outputs[3],11))
+                weights3 = model.get_layer("conv2d_2").get_weights()[0]
+                visualize_emb(block_outputs[3], train_Y, block_outputs[4], block_size=block_size[1], stride=stride, B=None, embedding_method='LeNet', dataset_name=datasets)
+                display_images(block_outputs[4], 6, 'LeNet', datasets, f'LeNet Output layer 6 n={num_train}')
+                display_weights(weights3, datasets, layer_idx=6)
     
     '''
     # 学習の履歴から損失と精度を取得

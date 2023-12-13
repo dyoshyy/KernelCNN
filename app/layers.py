@@ -32,7 +32,7 @@ class KIMLayer:
         self.dataset_name = None
         self.padding = padding
 
-    def sample_block(self, n_train, train_X):
+    def sample_block(self, n_train, train_X, train_Y):
         '''
         画像データからブロックをサンプリング
             n_train : 画像の枚数
@@ -48,30 +48,33 @@ class KIMLayer:
             blocks = util.view_as_windows(data, (self.b, self.b, self.C_prev), self.stride).reshape((self.H-self.b+1)**2, self.b, self.b, self.C_prev)
             sampled_blocks[(n)*(self.H-self.b+1)**2 : (n+1)*(self.H-self.b+1)**2 ] = blocks
         
+        train_Y = train_Y[:n_train]
         sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
-            
+        sampled_blocks_label = np.repeat(np.argmax(train_Y, axis=1), int(sampled_blocks.shape[0]/train_Y.shape[0]))
+        
         #画像を二値化
         sampled_blocks = binarize_images(sampled_blocks)
         sampled_blocks = sampled_blocks.reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)
         print('samples shape:',np.shape(sampled_blocks))
         
         #重複を削除
-        sampled_blocks= np.unique(sampled_blocks, axis=0) 
-
+        sampled_blocks, unique_index= np.unique(sampled_blocks, axis=0, return_index=True) 
+        sampled_blocks_label = sampled_blocks_label[unique_index]
         print('unique samples shape:', np.shape(sampled_blocks))
         
         #B個だけランダムに取り出す
         self.B = min(sampled_blocks.shape[0], self.B)  #Bより少ないサンプル数の場合はそのまま
         selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
         sampled_blocks = sampled_blocks[selected_indices]
+        sampled_blocks_label[selected_indices]
         
         #データの正規化
         ms = MinMaxScaler()
         sampled_blocks = ms.fit_transform(sampled_blocks)
         
-        return sampled_blocks
+        return sampled_blocks, sampled_blocks_label
 
-    def learn_embedding(self, train_X): 
+    def learn_embedding(self, train_X, train_Y): 
         '''
         埋め込みをKIMで学習
             train_X: 学習に使うX
@@ -80,8 +83,8 @@ class KIMLayer:
         n_train = 1000
 
         if self.GP is None:
-            sampled_blocks= self.sample_block(n_train, train_X)
-            embedded_blocks = select_embedding_method(self.embedding, self.C_next, sampled_blocks)
+            sampled_blocks, sampled_blocks_label = self.sample_block(n_train, train_X, train_Y)
+            embedded_blocks = select_embedding_method(self.embedding, self.C_next, sampled_blocks, sampled_blocks_label)
 
             #ガウス過程回帰で学習
             print('[KIM] Fitting samples...')
@@ -116,11 +119,10 @@ class KIMLayer:
             predictions = predictions.reshape(batch_size, self.H-self.b+1, self.H-self.b+1, self.C_next)
             self.output_data[batch_size * batch_index : batch_size * (batch_index + 1)] = predictions
 
-    def calculate(self, input_X):
+    def calculate(self, input_X, input_Y):
         '''
         KIM層の全体の計算
         '''
-        
         #インスタンス変数に格納
         num_inputs = input_X.shape[0]
         self.H = input_X.shape[1]
@@ -130,7 +132,7 @@ class KIMLayer:
         self.output_data = np.zeros((num_inputs, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next))
         
         #KIMで埋め込みを学習
-        self.learn_embedding(input_X) 
+        self.learn_embedding(input_X, input_Y) 
         
         #学習したKIMで変換
         print('[KIM] Converting the image...')
@@ -226,7 +228,8 @@ class LabelLearningLayer_GaussianProcess:
     def __init__(self):
         self.GP = None
         self.num_GP = None
-        self.OVER_10000 = False
+        self.OVER_threshold = False
+        self.threshold = 20000
 
     def fit(self, X, Y):
         input_dim = X.shape[1] * X.shape[2] * X.shape[3]
@@ -236,17 +239,18 @@ class LabelLearningLayer_GaussianProcess:
         if self.GP is None:
             print('Learning labels')
 
-            # 訓練サンプルが10000超える場合は10000ずつに分けて学習
-            if X.shape[0] > 10000:
-                self.OVER_10000 = True
+            # 訓練サンプルが10000超える場合はthresholdずつに分けて学習
+            
+            if X.shape[0] > self.threshold:
+                self.OVER_threshold = True
                 self.GP = []
                 #必要なGPの数
-                self.num_GP = int((X.shape[0]-1)/10000 + 1)
+                self.num_GP = int((X.shape[0]-1)/self.threshold + 1)
                 kernel = GPy.kern.RBF(input_dim = input_dim) + GPy.kern.Bias(input_dim = input_dim) + GPy.kern.Linear(input_dim = input_dim)
                 for i in range(self.num_GP):
                     print('learning {}'.format(i+1))
-                    X_sep = X[10000*i:10000*(i+1)]
-                    Y_sep = Y[10000*i:10000*(i+1)]
+                    X_sep = X[self.threshold*i:self.threshold*(i+1)]
+                    Y_sep = Y[self.threshold*i:self.threshold*(i+1)]
                     self.GP.append(GPy.models.GPRegression(X_sep,Y_sep, kernel=kernel))
                     self.GP[-1].optimize()
             else:
@@ -261,7 +265,7 @@ class LabelLearningLayer_GaussianProcess:
         #ベクトル化し予測
         X = X.reshape(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
         X = StandardScaler().fit_transform(X)
-        if self.OVER_10000:
+        if self.OVER_threshold:
             predictions = []
             for i in range(self.num_GP):
                 Y_predicted, _ = self.GP[i].predict(X)
@@ -301,13 +305,13 @@ class Model:
                     out_size = X.shape[1] + layer.b - 1 # 28 + 5 - 1
                     X = pad_images(X, out_size)
                 X_temp = X
-                X = layer.calculate(X)
+                X = layer.calculate(X, Y)
                 if self.display:
                     visualize_emb(X_temp, Y, X, layer.b, layer.stride, layer.B, layer.embedding, self.data_set_name)
                     display_images(X, n+2, layer.embedding, self.data_set_name, f'KernelCNN train output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')
             elif isinstance(layer, LabelLearningLayer_GaussianProcess) or isinstance(layer, LabelLearningLayer_NeuralNetwork): #最後の層のとき
                 layer.fit(X, Y)
-            else: #サブプーリング層
+            else: #プーリング層
                 X = layer.calculate(X)
         
         self.time_fitting = time.time() - start_time
@@ -320,9 +324,10 @@ class Model:
                 if layer.padding:
                     out_size = test_X.shape[1] + layer.b - 1 # 28 + 5 - 1
                     test_X = pad_images(test_X, out_size)
-                test_X = layer.calculate(test_X)
+                test_X = layer.calculate(test_X, None)
                 if self.display:
-                    display_images(test_X, n+7, layer.embedding, self.data_set_name, f'KernelCNN test output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')
+                    continue
+                    #display_images(test_X, n+7, layer.embedding, self.data_set_name, f'KernelCNN test output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')
             elif isinstance(layer, LabelLearningLayer_GaussianProcess) or isinstance(layer, LabelLearningLayer_NeuralNetwork):
                 Y_predicted = self.layers[-1].predict(test_X)
                 Y_answer= [np.argmax(test_Y[n,:]) for n in range(test_Y.shape[0])]

@@ -19,8 +19,8 @@ np.random.seed(0)
 
 
 def make_unique_filename(preliminary_name: str, file_path: str):
-    file_exists = os.path.exists(file_path + "/" + preliminary_name + ".png")
-    counter = 1
+    file_exists = os.path.exists(file_path + "/" + preliminary_name + "(1).png")
+    counter = 2
     changed = False
     # preliminary_nameのファイルが存在する限りカウンターをインクリメント
     while file_exists:
@@ -33,7 +33,7 @@ def make_unique_filename(preliminary_name: str, file_path: str):
     if changed:
         unique_name = new_filename
     else:
-        unique_name = preliminary_name
+        unique_name = preliminary_name + "(1)"
     return unique_name
 
 
@@ -59,23 +59,25 @@ def scale_to_0_255(data):
         return scaled_data.astype(np.uint8)
 
 
-def display_images(
-    data, layer_number, embedding_method: str, dataset_name: str, suptitle: str
-):
-    for n in range(3):
+def display_images(data, layer_number, embedding_method: str, dataset_name: str, suptitle: str):
+    num_data = 3
+    for n in range(num_data):
         data_to_display = data[n]
         #data_to_display = scale_to_0_255(data_to_display)
-        num_in_a_row = 4  # default 4
+        if data_to_display.shape[2] == 6:
+            num_in_a_row = 6
+        else:
+            num_in_a_row = 8  # default 4
         Channels = data_to_display.shape[2]
-        Rows = math.ceil(Channels / 5)
+        Rows = math.ceil(Channels / num_in_a_row)
 
-        fig, axes = plt.subplots(Rows, num_in_a_row, figsize=(15, 3 * Rows))
+        fig, axes = plt.subplots(Rows, num_in_a_row, figsize=(num_in_a_row*1.5, 2 * Rows))
         fig.subplots_adjust(hspace=0.4)
 
         for r in range(Rows):
             for c in range(num_in_a_row):
-                if Channels == 1:
-                    ax = axes[r]
+                if Rows == 1:
+                    ax = axes[c]
                 else:
                     ax = axes[r, c]
                 ax.axis("off")
@@ -85,8 +87,8 @@ def display_images(
                     ax.imshow(image, cmap="gray")
                     ax.set_title("Channel {}".format(index + 1))
 
-        fig.suptitle(suptitle)
-        filename = f"{dataset_name}_{embedding_method}_{layer_number}_{n+1}"
+        #fig.suptitle(suptitle)
+        filename = f"{layer_number}_{embedding_method}_{dataset_name}_{n+1}"
         file_dir = "./results_output"
         filename = make_unique_filename(filename, file_dir)
         plt.tight_layout()
@@ -170,9 +172,7 @@ def visualize_emb(
     convolved_data = convolved_data.reshape(-1, convolved_data.shape[3])
 
     # convolved_dataの重複を削除
-    convolved_data, unique_indices = np.unique(
-        convolved_data, axis=0, return_index=True
-    )
+    convolved_data, unique_indices = np.unique(convolved_data, axis=0, return_index=True)
     input_data_label = input_data_label[unique_indices]
     input_data = input_data[unique_indices]
 
@@ -189,7 +189,8 @@ def visualize_emb(
     input_data = scale_to_0_255(input_data)
 
     # ２チャネルごとに列方向に描画
-    num_images = int(convolved_data.shape[1] / 2)
+    #num_images = int(convolved_data.shape[1] / 2)
+    num_images = 3
     num_input_channels = int(input_data.shape[3])
     fig, axs = plt.subplots(num_images, 1, figsize=(10, num_images * 6 + 1))
     fig2, axs2 = plt.subplots(
@@ -220,7 +221,7 @@ def visualize_emb(
             s=600,
             edgecolors="black",
         )
-        plt.colorbar(sc, label="label")
+        plt.colorbar(sc, label="label") #凡例のプロット
         # Annotationのプロット
         for dot_idx in range(len(convolved_data)):
             x, y = convolved_data_sep[dot_idx]
@@ -437,7 +438,7 @@ def pad_images(images, out_size):
     return padded_images
 
 
-def select_embedding_method(embedding_method: str, Channels_next: int, data_to_embed):
+def select_embedding_method(embedding_method: str, Channels_next: int, data_to_embed, data_to_embed_label):
     if embedding_method == "PCA":
         pca = PCA(n_components=Channels_next, svd_solver="auto")
         embedded_blocks = pca.fit_transform(data_to_embed)
@@ -454,7 +455,7 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
         embedded_blocks = LE.fit_transform(data_to_embed)
     
     elif embedding_method == "SLE":
-        model = SLE(data_to_embed, )
+        embedded_blocks, _ = SLE(X=data_to_embed,  Y=data_to_embed_label, la=0.5,map_d=Channels_next)
 
     elif embedding_method == "TSNE":
         tsne = TSNE(

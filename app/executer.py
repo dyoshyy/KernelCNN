@@ -2,6 +2,7 @@ from main_MNIST import main_mnist
 from main_FMNIST import main_fmnist
 from main_CIFAR10 import main_cifar10
 from functions import calculate_average_accuracy_kernelCNN
+from main_KernelCNN import main_kernelCNN
 #import LeNet
 
 '''
@@ -66,21 +67,21 @@ main_GP(30000, 10000, 'CIFAR10')
 main_GP(50000, 10000, 'CIFAR10')
 '''
 if True:
-    if True:
+    if False:
         calculate_average_accuracy_kernelCNN(main_mnist, [1000, 10000, 'LE', 3000], 'MNIST',10)
         calculate_average_accuracy_kernelCNN(main_mnist, [10000, 10000, 'LE', 3000], 'MNIST',10)
         calculate_average_accuracy_kernelCNN(main_mnist, [30000, 10000, 'LE', 3000], 'MNIST',10)
         calculate_average_accuracy_kernelCNN(main_mnist, [60000, 10000, 'LE', 3000], 'MNIST',10)
 
-    if True:
+    if False:
         calculate_average_accuracy_kernelCNN(main_fmnist, [1000, 10000, 'LE', 3000],'FMNIST', 10)
         calculate_average_accuracy_kernelCNN(main_fmnist, [10000, 10000, 'LE', 3000],'FMNIST', 10)
         calculate_average_accuracy_kernelCNN(main_fmnist, [30000, 10000, 'LE', 3000],'FMNIST', 10)
         calculate_average_accuracy_kernelCNN(main_fmnist, [60000, 10000, 'LE', 3000],'FMNIST', 10)
 
-    if True:
-        calculate_average_accuracy_kernelCNN(main_cifar10, [1000, 10000, 'LE', 3000],'CIFAR10', 10)
-        calculate_average_accuracy_kernelCNN(main_cifar10, [10000, 10000, 'LE', 3000],'CIFAR10', 10)
+    if False:
+        #calculate_average_accuracy_kernelCNN(main_cifar10, [1000, 10000, 'LE', 3000],'CIFAR10', 10)
+        #calculate_average_accuracy_kernelCNN(main_cifar10, [10000, 10000, 'LE', 3000],'CIFAR10', 10)
         calculate_average_accuracy_kernelCNN(main_cifar10, [30000, 10000, 'LE', 3000],'CIFAR10', 10)
         calculate_average_accuracy_kernelCNN(main_cifar10, [50000, 10000, 'LE', 3000],'CIFAR10', 10)
 
@@ -99,3 +100,8 @@ if False:
         main_cifar10(1000, 10000, 'LE', 3000, 3)
         main_cifar10(1000, 10000, 'LE', 3000, 5)
         main_cifar10(1000, 10000, 'LE', 3000, 7)
+        
+if True:
+    main_kernelCNN(1000, 100, "MNIST", B=3000, embedding_method=["LE","LE"], block_size=[5,5])
+    main_kernelCNN(1000, 100, "FMNIST", B=3000, embedding_method=["LE","LE"], block_size=[5,5])
+    main_kernelCNN(1000, 100, "CIFAR10", B=3000, embedding_method=["LE","LE"], block_size=[5,5])
