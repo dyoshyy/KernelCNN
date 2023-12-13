@@ -1,8 +1,7 @@
 FROM python:3.9.10-buster
 USER root
 
-RUN apt-get update
-RUN apt-get -y install locales && \
+RUN apt-get update && apt-get -y install locales && \
     localedef -f UTF-8 -i ja_JP ja_JP.UTF-8
 ENV LANG ja_JP.UTF-8
 ENV LANGUAGE ja_JP:ja
@@ -11,21 +10,11 @@ ENV TZ JST-9
 ENV TERM xterm
 
 #RUN apt install -y libopencv-dev
-RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y libgl1-mesa-dev
-RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y libgl1-mesa-dev && \
+    ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN apt-get install -y vim less
-RUN pip install --upgrade pip 
-RUN pip install --upgrade setuptools
-RUN pip install numpy==1.24.0
-RUN pip install GPy
-RUN pip install gpytorch
-RUN pip install tensorflow[and-cuda]
-RUN pip install scikit-learn
-RUN pip install opencv-python
-RUN pip install matplotlib
-#RUN pip install line_profiler
-RUN pip install tqdm
-RUN pip install scikit-image
-RUN pip install torchvision
+COPY requirements.txt /root/
+RUN  pip install -r /root/requirements.txt
