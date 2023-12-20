@@ -15,7 +15,7 @@ from functions import pad_images
 import sys
 
 import functions
-
+np.random.seed(0)
 # Define a function to get intermediate outputs for the convolutional layers
 
 def get_intermediate_output(model, layer_name, data):
@@ -28,6 +28,7 @@ def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], displ
     print('Number of training samples:', num_train)
     #block_size = [7,3]
     stride = 1
+    image_size = 48
     
     if (datasets == 'MNIST') or (datasets == 'FMNIST'):
         if datasets == 'MNIST':
@@ -37,13 +38,15 @@ def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], displ
 
         train_X = train_X.reshape(-1, 28, 28, 1) 
         test_X = test_X.reshape(-1, 28, 28, 1)
-        train_X = pad_images(train_X, 32)
-        test_X = pad_images(test_X, 32)
+        train_X = pad_images(train_X, image_size)
+        test_X = pad_images(test_X, image_size)
         channel = 1
     elif datasets == 'CIFAR10':
         (train_X, train_Y), (test_X, test_Y) = cifar10.load_data()
         train_X = train_X.reshape(-1, 32, 32, 3) 
         test_X = test_X.reshape(-1, 32, 32, 3)
+        train_X = pad_images(train_X, image_size)
+        test_X = pad_images(test_X, image_size)
         channel = 3
     
     train_Y = to_categorical(train_Y, 10)
@@ -57,15 +60,15 @@ def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], displ
     # LeNet-5 model definition
     
     model = models.Sequential()
-    model.add(layers.Conv2D(6, kernel_size=(block_size[0], block_size[0]), activation='relu', strides= stride, input_shape=(32, 32, channel)))
+    model.add(layers.Conv2D(6, kernel_size=(block_size[0], block_size[0]), activation='relu', strides= stride, input_shape=(image_size, image_size, channel)))
     if layers_BOOL[0]:
         model.add(layers.MaxPooling2D((2, 2)))
     if layers_BOOL[1]:
-        model.add(layers.Conv2D(16, kernel_size=(block_size[1], block_size[1]),activation='relu', strides= stride, padding='same'))
+        model.add(layers.Conv2D(16, kernel_size=(block_size[1], block_size[1]),activation='relu', strides= stride, padding='valid'))
     if layers_BOOL[2]:
         model.add(layers.MaxPooling2D((2, 2)))
     if layers_BOOL[3]:
-        model.add(layers.Conv2D(30, kernel_size=(block_size[1], block_size[1]),activation='relu', strides= stride, padding='same'))
+        model.add(layers.Conv2D(32, kernel_size=(block_size[1], block_size[1]),activation='relu', strides= stride, padding='valid'))
     model.add(layers.Flatten())
     model.add(layers.Dense(120, activation='relu'))
     model.add(layers.Dense(84, activation='relu'))

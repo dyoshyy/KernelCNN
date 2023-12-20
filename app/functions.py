@@ -14,17 +14,14 @@ from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
 from KSLE import SLE
 
-#random.seed
-np.random.seed(0)
-
 
 def make_unique_filename(preliminary_name: str, file_path: str):
-    file_exists = os.path.exists(file_path + "/" + preliminary_name + "(1).png")
+    file_exists = os.path.exists(file_path + "/" + preliminary_name + "_1.png")
     counter = 2
     changed = False
     # preliminary_nameのファイルが存在する限りカウンターをインクリメント
     while file_exists:
-        new_filename = preliminary_name + f"({counter})"
+        new_filename = preliminary_name + f"_{counter}"
         file_exists = os.path.exists(file_path + "/" + new_filename + ".png")
         counter += 1
         changed = True
@@ -33,7 +30,7 @@ def make_unique_filename(preliminary_name: str, file_path: str):
     if changed:
         unique_name = new_filename
     else:
-        unique_name = preliminary_name + "(1)"
+        unique_name = preliminary_name + "_1"
     return unique_name
 
 
@@ -61,12 +58,14 @@ def scale_to_0_255(data):
 
 def display_images(data, layer_number, embedding_method: str, dataset_name: str, suptitle: str):
     num_data = 3
-    for n in range(num_data):
+    img_idx = 1
+    for n in [0,1,7]:
         data_to_display = data[n]
         #data_to_display = scale_to_0_255(data_to_display)
         if data_to_display.shape[2] == 6:
             num_in_a_row = 6
         else:
+            data_to_display = data_to_display[:, :, :16]
             num_in_a_row = 8  # default 4
         Channels = data_to_display.shape[2]
         Rows = math.ceil(Channels / num_in_a_row)
@@ -88,32 +87,29 @@ def display_images(data, layer_number, embedding_method: str, dataset_name: str,
                     ax.set_title("Channel {}".format(index + 1))
 
         #fig.suptitle(suptitle)
-        filename = f"{layer_number}_{embedding_method}_{dataset_name}_{n+1}"
+        filename = f"{layer_number}_{embedding_method}_{dataset_name}_{img_idx}"
         file_dir = "./results_output"
         filename = make_unique_filename(filename, file_dir)
         plt.tight_layout()
         plt.savefig(file_dir +f"/{filename}.png")
         plt.close()
         # plt.show()
+        img_idx+=1
 
 
 def display_weights(weights, dataset_name, layer_idx):
     num_input_channels = weights.shape[2]
     num_output_channels = weights.shape[3]
 
-    fig, axs = plt.subplots(
-        num_output_channels,
-        num_input_channels,
-        figsize=(num_input_channels + 1, num_output_channels + 10),
-    )
-    fig.suptitle(f"Layer{layer_idx} weights")
+    fig, axs = plt.subplots(num_input_channels, num_output_channels, figsize=(num_output_channels + 10, num_input_channels + 1), dpi=72)
+    #fig.suptitle(f"Layer{layer_idx} weights")
 
-    for i in range(num_output_channels):
-        for j in range(num_input_channels):
-            filter_weights = weights[:, :, j, i]
+    for i in range(num_input_channels):
+        for j in range(num_output_channels):
+            filter_weights = weights[:, :, i, j]
             if num_input_channels == 1:
-                axs[i].imshow(filter_weights, cmap="gray")
-                axs[i].axis("off")
+                axs[j].imshow(filter_weights, cmap="gray")
+                axs[j].axis("off")
             else:
                 axs[i, j].imshow(filter_weights, cmap="gray")
                 axs[i, j].axis("off")
@@ -150,7 +146,7 @@ def visualize_emb(
     """
     # ファイル名の重複を防ぐ処理
     file_dir = "./results_emb"
-    filename = f"{dataset_name}_emb_{embedding_method}"
+    filename = f"{embedding_method}_{dataset_name}"
     filename = make_unique_filename(filename, file_dir)
     
     input_data = input_data[:100]
@@ -165,10 +161,7 @@ def visualize_emb(
         blocks = np.concatenate((blocks, block), axis=0)
         
     input_data = blocks
-    input_data_label = np.repeat(
-        np.argmax(input_data_label, axis=1),
-        convolved_data.shape[1] * convolved_data.shape[2],
-    )  # １枚の画像のラベルをブロックの個数分繰り返す　（例：３のラベルを２８ｘ２８繰り返す）
+    input_data_label = np.repeat(np.argmax(input_data_label, axis=1), convolved_data.shape[1] * convolved_data.shape[2])  # １枚の画像のラベルをブロックの個数分繰り返す　（例：３のラベルを２８ｘ２８繰り返す）
     convolved_data = convolved_data.reshape(-1, convolved_data.shape[3])
 
     # convolved_dataの重複を削除
@@ -191,13 +184,13 @@ def visualize_emb(
     # ２チャネルごとに列方向に描画
     #num_images = int(convolved_data.shape[1] / 2)
     num_images = 3
-    num_input_channels = int(input_data.shape[3])
-    fig, axs = plt.subplots(num_images, 1, figsize=(10, num_images * 6 + 1))
-    fig2, axs2 = plt.subplots(
-        num_blocks_to_display,
-        num_input_channels + 1,
-        figsize=(3 + 2 * num_input_channels / 3, num_blocks_to_display),
-    )
+    if int(input_data.shape[3])==1 or int(input_data.shape[3])==3:
+        num_input_channels = int(input_data.shape[3])
+    else:
+        num_input_channels = 6
+    #num_input_channels = int(input_data.shape[3])
+    fig, axs = plt.subplots(num_images, 1, figsize=(8, num_images * 6 + 1))
+    fig2, axs2 = plt.subplots(num_blocks_to_display,num_input_channels + 1,figsize=(3 + 2 * num_input_channels / 3, num_blocks_to_display),)
 
     for img_idx in range(num_images):
         convolved_data_sep = convolved_data[:, (2 * img_idx) : (2 * (img_idx + 1))]
@@ -221,7 +214,7 @@ def visualize_emb(
             s=600,
             edgecolors="black",
         )
-        plt.colorbar(sc, label="label") #凡例のプロット
+        #plt.colorbar(sc, label="label") #凡例のプロット
         # Annotationのプロット
         for dot_idx in range(len(convolved_data)):
             x, y = convolved_data_sep[dot_idx]
@@ -238,12 +231,9 @@ def visualize_emb(
         ax.set_box_aspect(1)
         ax.set_xlim(x_min - k, x_max + k)
         ax.set_ylim(y_min - l, y_max + l)
-        ax.set_title(
-            f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={block_size})"
-        )
-
+        #ax.set_title(f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={block_size})")
     for dot_idx in range(len(convolved_data)):
-        for channel_idx in range(num_input_channels + 1):
+        for channel_idx in range(num_input_channels+1):
             ax2 = axs2[dot_idx, channel_idx]
             ax2.axis("off")
             if channel_idx == 0:
@@ -462,8 +452,8 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
             n_components=Channels_next,
             random_state=0,
             method="exact",
-            perplexity=30,
-            n_iter=1000,
+            perplexity=int(data_to_embed.shape[0] / Channels_next),
+            n_iter=1500,
             init="pca",
             learning_rate="auto",
         )

@@ -12,7 +12,6 @@ from scipy import stats
 from skimage import util
 from tqdm import tqdm
 
-#np.random.seed(1)
 np.set_printoptions(precision=3, threshold=10000, linewidth=200, edgeitems=10)
 
 class KIMLayer:
@@ -33,46 +32,50 @@ class KIMLayer:
         self.padding = padding
 
     def sample_block(self, n_train, train_X, train_Y):
-        '''
-        画像データからブロックをサンプリング
-            n_train : 画像の枚数
-            train_X : 学習する画像データ
-            train_Y : 画像のラベル(NOT One-hot vector)
-        '''
-        sampled_blocks = np.empty((n_train*(self.H-self.b+1)**2, self.b, self.b, self.C_prev))
-    
-        for n in range(n_train):
-            # 一枚持ってくる
-            data = train_X[n,:,:,:]
-            # すべてのブロックをサンプリング
-            blocks = util.view_as_windows(data, (self.b, self.b, self.C_prev), self.stride).reshape((self.H-self.b+1)**2, self.b, self.b, self.C_prev)
-            sampled_blocks[(n)*(self.H-self.b+1)**2 : (n+1)*(self.H-self.b+1)**2 ] = blocks
+            '''
+            Args:
+                n_train (int): 画像の枚数
+                train_X (ndarray): 学習する画像データ
+                train_Y (ndarray): 画像のラベル(NOT One-hot vector)
+            
+            Returns:
+                ndarray: サンプリングされたブロックの配列
+                ndarray: サンプリングされたブロックのラベル
+            '''
+            sampled_blocks = np.empty((n_train*(self.H-self.b+1)**2, self.b, self.b, self.C_prev))
         
-        train_Y = train_Y[:n_train]
-        sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
-        sampled_blocks_label = np.repeat(np.argmax(train_Y, axis=1), int(sampled_blocks.shape[0]/train_Y.shape[0]))
-        
-        #画像を二値化
-        sampled_blocks = binarize_images(sampled_blocks)
-        sampled_blocks = sampled_blocks.reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)
-        print('samples shape:',np.shape(sampled_blocks))
-        
-        #重複を削除
-        sampled_blocks, unique_index= np.unique(sampled_blocks, axis=0, return_index=True) 
-        sampled_blocks_label = sampled_blocks_label[unique_index]
-        print('unique samples shape:', np.shape(sampled_blocks))
-        
-        #B個だけランダムに取り出す
-        self.B = min(sampled_blocks.shape[0], self.B)  #Bより少ないサンプル数の場合はそのまま
-        selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
-        sampled_blocks = sampled_blocks[selected_indices]
-        sampled_blocks_label[selected_indices]
-        
-        #データの正規化
-        ms = MinMaxScaler()
-        sampled_blocks = ms.fit_transform(sampled_blocks)
-        
-        return sampled_blocks, sampled_blocks_label
+            for n in range(n_train):
+                # 一枚持ってくる
+                data = train_X[n,:,:,:]
+                # すべてのブロックをサンプリング
+                blocks = util.view_as_windows(data, (self.b, self.b, self.C_prev), self.stride).reshape((self.H-self.b+1)**2, self.b, self.b, self.C_prev)
+                sampled_blocks[(n)*(self.H-self.b+1)**2 : (n+1)*(self.H-self.b+1)**2 ] = blocks
+            
+            train_Y = train_Y[:n_train]
+            sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
+            sampled_blocks_label = np.repeat(np.argmax(train_Y, axis=1), int(sampled_blocks.shape[0]/train_Y.shape[0]))
+            
+            #画像を二値化
+            sampled_blocks = binarize_images(sampled_blocks)
+            sampled_blocks = sampled_blocks.reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)
+            print('samples shape:',np.shape(sampled_blocks))
+            
+            #重複を削除
+            sampled_blocks, unique_index= np.unique(sampled_blocks, axis=0, return_index=True) 
+            sampled_blocks_label = sampled_blocks_label[unique_index]
+            print('unique samples shape:', np.shape(sampled_blocks))
+            
+            #B個だけランダムに取り出す
+            self.B = min(sampled_blocks.shape[0], self.B)  #Bより少ないサンプル数の場合はそのまま
+            selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
+            sampled_blocks = sampled_blocks[selected_indices]
+            sampled_blocks_label[selected_indices]
+            
+            #データの正規化
+            ms = MinMaxScaler()
+            sampled_blocks = ms.fit_transform(sampled_blocks)
+            
+            return sampled_blocks, sampled_blocks_label
 
     def learn_embedding(self, train_X, train_Y): 
         '''
@@ -106,23 +109,36 @@ class KIMLayer:
             print('[KIM] GPmodel found')
         
     def convert_image_batch(self, batch_size=10):
-        '''
-        学習済みのKIMで元の画像を変換
-        '''
-        num_batches = math.ceil(self.input_data.shape[0]/batch_size)
+            """Converts the input image batch into a batch of predictions.
 
-        for batch_index in tqdm(range(num_batches)):
-            batch_images = self.input_data[batch_size * batch_index : batch_size * (batch_index + 1)]
-            blocks_to_convert = util.view_as_windows(batch_images, (1, self.b, self.b, self.C_prev), self.stride)
-            blocks_to_convert = blocks_to_convert.reshape(batch_size * (self.H-self.b+1)**2, self.b * self.b * self.C_prev) # ex) (10*784, 5*5*1)        
-            predictions, _ = self.GP.predict(blocks_to_convert) # shape: (10*784, 6)
-            predictions = predictions.reshape(batch_size, self.H-self.b+1, self.H-self.b+1, self.C_next)
-            self.output_data[batch_size * batch_index : batch_size * (batch_index + 1)] = predictions
+            Args:
+                batch_size (int, optional): The size of each batch. Defaults to 10.
+            """
+            num_batches = math.ceil(self.input_data.shape[0]/batch_size)
+
+            for batch_index in tqdm(range(num_batches)):
+                batch_images = self.input_data[batch_size * batch_index : batch_size * (batch_index + 1)]
+                blocks_to_convert = util.view_as_windows(batch_images, (1, self.b, self.b, self.C_prev), self.stride)
+                blocks_to_convert = blocks_to_convert.reshape(batch_size * (self.H-self.b+1)**2, self.b * self.b * self.C_prev) # ex) (10*784, 5*5*1)        
+                predictions, _ = self.GP.predict(blocks_to_convert) # shape: (10*784, 6)
+                predictions = predictions.reshape(batch_size, self.H-self.b+1, self.H-self.b+1, self.C_next)
+                self.output_data[batch_size * batch_index : batch_size * (batch_index + 1)] = predictions
 
     def calculate(self, input_X, input_Y):
-        '''
-        KIM層の全体の計算
-        '''
+        """
+        このメソッドは、入力データに対してKIM (Kernelized Input Mapping) を適用し、
+        結果を出力データとして保存します。
+
+        Parameters:
+        input_X (numpy.ndarray): 入力データ。形状は (num_inputs, H, W, C_prev) で、
+                                num_inputs は入力の数、H と W はそれぞれ高さと幅、
+                                C_prev は前の層のチャネル数を表します。
+        input_Y (numpy.ndarray): 入力データに対応するラベル。
+
+        Returns:
+        numpy.ndarray: KIM を適用した後の出力データ。形状は (num_inputs, (H-b+1)/stride, (W-b+1)/stride, C_next) です。
+        """
+        
         #インスタンス変数に格納
         num_inputs = input_X.shape[0]
         self.H = input_X.shape[1]
@@ -138,7 +154,8 @@ class KIMLayer:
         print('[KIM] Converting the image...')
         self.convert_image_batch(batch_size=100)
         print('completed')
-
+        #ReLU
+        #self.output_data = np.maximum(0, self.output_data)
         return self.output_data
 
 class AvgPoolingLayer:
@@ -229,7 +246,7 @@ class LabelLearningLayer_GaussianProcess:
         self.GP = None
         self.num_GP = None
         self.OVER_threshold = False
-        self.threshold = 20000
+        self.threshold = 10000
 
     def fit(self, X, Y):
         input_dim = X.shape[1] * X.shape[2] * X.shape[3]
