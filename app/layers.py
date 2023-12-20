@@ -77,27 +77,73 @@ class KIMLayer:
             
             return sampled_blocks, sampled_blocks_label
 
+    def sample_and_embed_blocks(self, n_train, train_X, train_Y):
+            '''
+            Args:
+                n_train (int): 画像の枚数
+                train_X (ndarray): 学習する画像データ
+                train_Y (ndarray): 画像のラベル(NOT One-hot vector)
+            
+            Returns:
+                ndarray: サンプリングされたブロックの配列
+                ndarray: サンプリングされたブロックの埋め込み
+            '''
+            sampled_blocks = np.empty((n_train*(self.H-self.b+1)**2, self.b, self.b, self.C_prev))
+            print('sampling...')
+            for n in range(n_train):
+                # 一枚持ってくる
+                data = train_X[n,:,:,:]
+                # すべてのブロックをサンプリング
+                blocks = util.view_as_windows(data, (self.b, self.b, self.C_prev), self.stride).reshape((self.H-self.b+1)**2, self.b, self.b, self.C_prev)
+                sampled_blocks[(n)*(self.H-self.b+1)**2 : (n+1)*(self.H-self.b+1)**2 ] = blocks
+            
+            train_Y = train_Y[:n_train]
+            sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
+            sampled_blocks_label = np.repeat(np.argmax(train_Y, axis=1), int(sampled_blocks.shape[0]/train_Y.shape[0]))
+            print('sampling completed')
+
+            #画像を二値化
+            sampled_blocks = binarize_images(sampled_blocks)
+            sampled_blocks = sampled_blocks.reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)
+            print('All samples shape:',np.shape(sampled_blocks))
+            
+            #重複を削除
+            sampled_blocks, unique_index= np.unique(sampled_blocks, axis=0, return_index=True) 
+            sampled_blocks_label = sampled_blocks_label[unique_index]
+            print('unique samples shape:', np.shape(sampled_blocks))
+            
+            if sampled_blocks.shape[0] > 9000:
+                selected_indices = np.random.choice(embedded_blocks.shape[0], 9000, replace=False)
+                sampled_blocks = sampled_blocks[selected_indices]
+                sampled_blocks_label = sampled_blocks_label[selected_indices]
+                
+            #埋め込み
+            print('embedding...')
+            embedded_blocks = select_embedding_method(self.embedding, self.C_next, sampled_blocks, sampled_blocks_label)
+            print('embedding completed')
+            
+            #B個だけランダムに取り出す
+            self.B = min(sampled_blocks.shape[0], self.B)  #Bより少ないサンプル数の場合はそのまま
+            selected_indices = np.random.choice(embedded_blocks.shape[0], self.B, replace=False)
+            sampled_blocks = sampled_blocks[selected_indices]
+            embedded_blocks = embedded_blocks[selected_indices]
+            
+            return sampled_blocks, embedded_blocks
+            
     def learn_embedding(self, train_X, train_Y): 
         '''
         埋め込みをKIMで学習
             train_X: 学習に使うX
             train_Y: Xのラベルデータ
         '''
-        n_train = 1000
+        n_train = 100 #埋め込みを学習するサンプル数
 
         if self.GP is None:
-            sampled_blocks, sampled_blocks_label = self.sample_block(n_train, train_X, train_Y)
-            embedded_blocks = select_embedding_method(self.embedding, self.C_next, sampled_blocks, sampled_blocks_label)
-
+            #sampled_blocks, sampled_blocks_label = self.sample_block(n_train, train_X, train_Y)
+            #embedded_blocks = select_embedding_method(self.embedding, self.C_next, sampled_blocks, sampled_blocks_label)
+            sampled_blocks, embedded_blocks = self.sample_and_embed_blocks(n_train, train_X, train_Y)
             #ガウス過程回帰で学習
             print('[KIM] Fitting samples...')
-            
-            #埋め込みデータを正規化,標準化
-            ms = MinMaxScaler()
-            ss = StandardScaler()
-            #embedded_blocks = ms.fit_transform(embedded_blocks)
-            #embedded_blocks = ss.fit_transform(embedded_blocks)
-
             print("Training sample shape:", np.shape(embedded_blocks))
             print('[KIM] Training KIM')
             kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev)
@@ -109,7 +155,8 @@ class KIMLayer:
             print('[KIM] GPmodel found')
         
     def convert_image_batch(self, batch_size=10):
-            """Converts the input image batch into a batch of predictions.
+            """
+            Converts the input image batch into a batch of predictions.
 
             Args:
                 batch_size (int, optional): The size of each batch. Defaults to 10.

@@ -58,9 +58,17 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
     #model.add_layer(layers.MaxPoolingLayer(pool_size=2))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 32, stride = 1, padding=False, emb=embedding_method, num_blocks=num_blocks))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
-    model.add_layer(layers.LabelLearningLayer_GaussianProcess())
-    #model.add_layer(layers.LabelLearningLayer_NeuralNetwork())
+    #model.add_layer(layers.LabelLearningLayer_GaussianProcess())
+    model.add_layer(layers.LabelLearningLayer_NeuralNetwork())
 
+    print("Summary of the training:")
+    print("Dataset:", dataset_name)
+    print("Number of training samples:", num_train)
+    print("Number of testing samples:", num_test)
+    print("Embedding method:", embedding_method)
+    print("Block size:", block_size)
+    print("Layers activation status:", layers_BOOL)
+    
     model.fit(X_train, Y_train)
     accuracy = model.predict(X_test, Y_test)
     return accuracy
