@@ -112,8 +112,9 @@ class KIMLayer:
             sampled_blocks_label = sampled_blocks_label[unique_index]
             print('unique samples shape:', np.shape(sampled_blocks))
             
-            if sampled_blocks.shape[0] > 9000:
-                selected_indices = np.random.choice(embedded_blocks.shape[0], 9000, replace=False)
+            embedding_samples_threshold = 5000
+            if sampled_blocks.shape[0] > embedding_samples_threshold:
+                selected_indices = np.random.choice(sampled_blocks.shape[0], embedding_samples_threshold, replace=False)
                 sampled_blocks = sampled_blocks[selected_indices]
                 sampled_blocks_label = sampled_blocks_label[selected_indices]
                 
@@ -139,18 +140,10 @@ class KIMLayer:
         n_train = 100 #埋め込みを学習するサンプル数
 
         if self.GP is None:
-            #sampled_blocks, sampled_blocks_label = self.sample_block(n_train, train_X, train_Y)
-            #embedded_blocks = select_embedding_method(self.embedding, self.C_next, sampled_blocks, sampled_blocks_label)
             sampled_blocks, embedded_blocks = self.sample_and_embed_blocks(n_train, train_X, train_Y)
-            #ガウス過程回帰で学習
-            print('[KIM] Fitting samples...')
-            print("Training sample shape:", np.shape(embedded_blocks))
-            print('[KIM] Training KIM')
             kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev)
             self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
             self.GP.optimize()
-            print('[KIM] Completed')
-            
         else:
             print('[KIM] GPmodel found')
         

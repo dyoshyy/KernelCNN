@@ -61,13 +61,15 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
     #model.add_layer(layers.LabelLearningLayer_GaussianProcess())
     model.add_layer(layers.LabelLearningLayer_NeuralNetwork())
 
+    print("========================================")
     print("Summary of the training:")
-    print("Dataset:", dataset_name)
+    print("Dataset:", datasets)
     print("Number of training samples:", num_train)
     print("Number of testing samples:", num_test)
     print("Embedding method:", embedding_method)
     print("Block size:", block_size)
     print("Layers activation status:", layers_BOOL)
+    print("========================================")    
     
     model.fit(X_train, Y_train)
     accuracy = model.predict(X_test, Y_test)

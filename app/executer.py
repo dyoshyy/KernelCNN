@@ -130,7 +130,7 @@ if True:
     for emb in ["LLE", "TSNE"]:
         #emb = "TSNE"
         if emb == "TSNE":
-            main_kernelCNN(10000, 10000, "MNIST", B=3000, embedding_method=[emb, emb], block_size=[5,5])
-        main_kernelCNN(10000, 10000, "FMNIST", B=3000, embedding_method=[emb,emb], block_size=[5,5])
-        main_kernelCNN(10000, 10000, "CIFAR10", B=3000, embedding_method=[emb,emb], block_size=[5,5])
+            main_kernelCNN(10000, 10000, "MNIST", B=2000, embedding_method=[emb, emb], block_size=[5,5])
+        main_kernelCNN(10000, 10000, "FMNIST", B=2000, embedding_method=[emb,emb], block_size=[5,5])
+        main_kernelCNN(10000, 10000, "CIFAR10", B=2000, embedding_method=[emb,emb], block_size=[5,5])
     
