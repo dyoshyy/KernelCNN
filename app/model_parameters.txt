@@ -9055,3 +9055,87 @@ Fitting time: 2257.3810951709747 seconds
 Predicting time: 701.3217287063599 seconds
 Accuracy: 42.120000000000005 %
 ================================================================================
+Datasets: CIFAR10
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 300
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 300
+-------------------------------
+Train samples: 1000
+Test samples: 100
+Layer shape: [(32, 32, 3), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 108.81354856491089 seconds
+Predicting time: 1.6110680103302002 seconds
+Accuracy: 25.0 %
+================================================================================
+Datasets: CIFAR10
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 200
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 200
+-------------------------------
+Train samples: 1000
+Test samples: 100
+Layer shape: [(32, 32, 3), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 104.34136605262756 seconds
+Predicting time: 1.3173046112060547 seconds
+Accuracy: 25.0 %
+================================================================================
+Datasets: CIFAR10
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 120
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 26
+-------------------------------
+Train samples: 1000
+Test samples: 100
+Layer shape: [(32, 32, 3), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 55.093509912490845 seconds
+Predicting time: 2.1167383193969727 seconds
+Accuracy: 27.0 %
+================================================================================
+Datasets: MNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 120
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 120
+-------------------------------
+Train samples: 1000
+Test samples: 100
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 89.19308590888977 seconds
+Predicting time: 7.990455389022827 seconds
+Accuracy: 89.0 %
+================================================================================

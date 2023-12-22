@@ -66,7 +66,7 @@ main_GP(30000, 10000, 'CIFAR10')
 main_GP(50000, 10000, 'CIFAR10')
 '''
 
-if False:
+if True:
     if False:
         calculate_average_accuracy_kernelCNN(main_mnist, [1000, 10000, 'LE', 3000], 'MNIST',10)
         calculate_average_accuracy_kernelCNN(main_mnist, [10000, 10000, 'LE', 3000], 'MNIST',10)
@@ -126,13 +126,11 @@ if False:
         main_kernelCNN(10000, 10000, "CIFAR10", B=B, embedding_method=["LE","LE"], block_size=[5,5])
 
 #埋め込み手法比較
-if False:
+if True:
     for emb in ["LLE", "TSNE"]:
         #emb = "TSNE"
         if emb == "TSNE":
             main_kernelCNN(10000, 10000, "MNIST", B=2000, embedding_method=[emb, emb], block_size=[5,5])
         main_kernelCNN(10000, 10000, "FMNIST", B=2000, embedding_method=[emb,emb], block_size=[5,5])
         main_kernelCNN(10000, 10000, "CIFAR10", B=2000, embedding_method=[emb,emb], block_size=[5,5])
-
-main_kernelCNN(1000, 100, "CIFAR10", B=120, embedding_method=["LE","LE"], block_size=[5,5])
-#main_kernelCNN(1000, 100, "MNIST", B=120, embedding_method=["LE","LE"], block_size=[5,5])
+    

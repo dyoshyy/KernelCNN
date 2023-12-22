@@ -460,7 +460,8 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
         embedded_blocks = tsne.fit_transform(data_to_embed)
 
     elif embedding_method == "LLE":
-        lle = LocallyLinearEmbedding(n_components=Channels_next,n_neighbors=int(data_to_embed.shape[0] / Channels_next))
+        
+        lle = LocallyLinearEmbedding(n_components=Channels_next, n_neighbors=int(data_to_embed.shape[0] / Channels_next))
         embedded_blocks = lle.fit_transform(data_to_embed)
     else:
         print("Error: No embedding selected.")
