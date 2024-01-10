@@ -31,52 +31,6 @@ class KIMLayer:
         self.dataset_name = None
         self.padding = padding
 
-    def sample_block(self, n_train, train_X, train_Y):
-            '''
-            Args:
-                n_train (int): 画像の枚数
-                train_X (ndarray): 学習する画像データ
-                train_Y (ndarray): 画像のラベル(NOT One-hot vector)
-            
-            Returns:
-                ndarray: サンプリングされたブロックの配列
-                ndarray: サンプリングされたブロックのラベル
-            '''
-            sampled_blocks = np.empty((n_train*(self.H-self.b+1)**2, self.b, self.b, self.C_prev))
-        
-            for n in range(n_train):
-                # 一枚持ってくる
-                data = train_X[n,:,:,:]
-                # すべてのブロックをサンプリング
-                blocks = util.view_as_windows(data, (self.b, self.b, self.C_prev), self.stride).reshape((self.H-self.b+1)**2, self.b, self.b, self.C_prev)
-                sampled_blocks[(n)*(self.H-self.b+1)**2 : (n+1)*(self.H-self.b+1)**2 ] = blocks
-            
-            train_Y = train_Y[:n_train]
-            sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
-            sampled_blocks_label = np.repeat(np.argmax(train_Y, axis=1), int(sampled_blocks.shape[0]/train_Y.shape[0]))
-            
-            #画像を二値化
-            sampled_blocks = binarize_images(sampled_blocks)
-            sampled_blocks = sampled_blocks.reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)
-            print('samples shape:',np.shape(sampled_blocks))
-            
-            #重複を削除
-            sampled_blocks, unique_index= np.unique(sampled_blocks, axis=0, return_index=True) 
-            sampled_blocks_label = sampled_blocks_label[unique_index]
-            print('unique samples shape:', np.shape(sampled_blocks))
-            
-            #B個だけランダムに取り出す
-            self.B = min(sampled_blocks.shape[0], self.B)  #Bより少ないサンプル数の場合はそのまま
-            selected_indices = np.random.choice(sampled_blocks.shape[0], self.B, replace=False)
-            sampled_blocks = sampled_blocks[selected_indices]
-            sampled_blocks_label[selected_indices]
-            
-            #データの正規化
-            ms = MinMaxScaler()
-            sampled_blocks = ms.fit_transform(sampled_blocks)
-            
-            return sampled_blocks, sampled_blocks_label
-
     def sample_and_embed_blocks(self, n_train, train_X, train_Y):
             '''
             Args:
