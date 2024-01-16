@@ -3,7 +3,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras import backend
-from tensorflow.keras import layers, models
+from tensorflow.keras import layers, models, losses
 from tensorflow.keras.datasets import mnist, fashion_mnist, cifar10
 from tensorflow.keras.utils import to_categorical
 from keras.callbacks import EarlyStopping, ModelCheckpoint
@@ -28,7 +28,7 @@ def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], displ
     print('Number of training samples:', num_train)
     #block_size = [7,3]
     stride = 1
-    image_size = 48
+    image_size = 32
     
     if (datasets == 'MNIST') or (datasets == 'FMNIST'):
         if datasets == 'MNIST':
@@ -51,40 +51,42 @@ def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], displ
     
     train_Y = to_categorical(train_Y, 10)
     test_Y = to_categorical(test_Y, 10)
-
     train_X = train_X[:num_train]/255
     train_Y = train_Y[:num_train]
     test_X = test_X[:test_num]/255
     test_Y = test_Y[:test_num]
 
     # LeNet-5 model definition
-    
+    #activation = 'relu'
+    activation = 'tanh'
     model = models.Sequential()
-    model.add(layers.Conv2D(6, kernel_size=(block_size[0], block_size[0]), activation='relu', strides= stride, input_shape=(image_size, image_size, channel)))
+    model.add(layers.Conv2D(6, kernel_size=(block_size[0], block_size[0]), activation=activation, strides= stride, input_shape=(image_size, image_size, channel)))
     if layers_BOOL[0]:
-        model.add(layers.MaxPooling2D((2, 2)))
+        model.add(layers.AveragePooling2D((2, 2)))
+        model.add(layers.Activation('sigmoid'))
     if layers_BOOL[1]:
-        model.add(layers.Conv2D(16, kernel_size=(block_size[1], block_size[1]),activation='relu', strides= stride, padding='valid'))
+        model.add(layers.Conv2D(16, kernel_size=(block_size[1], block_size[1]),activation=activation, strides= stride, padding='valid'))
     if layers_BOOL[2]:
-        model.add(layers.MaxPooling2D((2, 2)))
+        model.add(layers.AveragePooling2D((2, 2)))
+        model.add(layers.Activation('sigmoid'))
     if layers_BOOL[3]:
-        model.add(layers.Conv2D(32, kernel_size=(block_size[1], block_size[1]),activation='relu', strides= stride, padding='valid'))
+        model.add(layers.Conv2D(32, kernel_size=(block_size[1], block_size[1]),activation=activation, strides= stride, padding='valid'))
     model.add(layers.Flatten())
-    model.add(layers.Dense(120, activation='relu'))
-    model.add(layers.Dense(84, activation='relu'))
+    model.add(layers.Dense(120, activation=activation))
+    model.add(layers.Dense(84, activation=activation))
     model.add(layers.Dense(10, activation='softmax'))
 
-    #model.summary()
+    model.summary()
     # Compile the model
-    model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
     # Train the model
     batch_size = 64
-    epochs = 1000
+    epochs = 50
     es = EarlyStopping(monitor='val_loss', mode='auto', patience=5, verbose=0)
     #cp = ModelCheckpoint("./weights/model_weights_epoch_{epoch:02d}.h5", save_weights_only=True, save_freq='epoch', period = 10)
     
-    history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[es], validation_split=0.2)
+    history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[es], validation_split=0.1)
 
     # predict test samples
     test_loss, test_acc = model.evaluate(test_X, test_Y)
@@ -97,10 +99,10 @@ def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], displ
         block_outputs = []
         block_outputs.append(get_intermediate_output(model, 'conv2d', train_X))
         if layers_BOOL[1]:
-            block_outputs.append(get_intermediate_output(model, 'max_pooling2d', train_X)) 
+            block_outputs.append(get_intermediate_output(model, 'activation', train_X)) 
             block_outputs.append(get_intermediate_output(model, 'conv2d_1', train_X))
             if layers_BOOL[3]:
-                block_outputs.append(get_intermediate_output(model, 'max_pooling2d_1', train_X)) 
+                block_outputs.append(get_intermediate_output(model, 'activation_1', train_X)) 
                 block_outputs.append(get_intermediate_output(model, 'conv2d_2', train_X))
 
         weights1 = model.get_layer("conv2d").get_weights()[0]

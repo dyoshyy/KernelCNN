@@ -66,6 +66,7 @@ class KIMLayer:
             sampled_blocks_label = sampled_blocks_label[unique_index]
             print('unique samples shape:', np.shape(sampled_blocks))
             
+            #サンプル数が5000を超える場合は5000にする
             embedding_samples_threshold = 5000
             if sampled_blocks.shape[0] > embedding_samples_threshold:
                 selected_indices = np.random.choice(sampled_blocks.shape[0], embedding_samples_threshold, replace=False)
