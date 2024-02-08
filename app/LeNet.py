@@ -23,7 +23,7 @@ def get_intermediate_output(model, layer_name, data):
     return intermediate_layer_model.predict(data)
 
 
-def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], display=True, layers_BOOL=[1,1,1,0]):
+def main(num_train: int, num_test : int, datasets : str, block_size=[5,5], display=True, layers_BOOL=[1,1,1,0]):
     backend.clear_session()
     print('Number of training samples:', num_train)
     #block_size = [7,3]
@@ -53,8 +53,8 @@ def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], displ
     test_Y = to_categorical(test_Y, 10)
     train_X = train_X[:num_train]/255
     train_Y = train_Y[:num_train]
-    test_X = test_X[:test_num]/255
-    test_Y = test_Y[:test_num]
+    test_X = test_X[:num_test]/255
+    test_Y = test_Y[:num_test]
 
     # LeNet-5 model definition
     #activation = 'relu'
@@ -82,19 +82,28 @@ def main(num_train: int, test_num : int, datasets : str, block_size=[5,5], displ
 
     # Train the model
     batch_size = 64
-    epochs = 50
-    es = EarlyStopping(monitor='val_loss', mode='auto', patience=5, verbose=0)
+    epochs = 500
+    es = EarlyStopping(monitor='val_loss', mode='auto', patience=15, verbose=0)
     #cp = ModelCheckpoint("./weights/model_weights_epoch_{epoch:02d}.h5", save_weights_only=True, save_freq='epoch', period = 10)
     
-    history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[es], validation_split=0.1)
+    history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=1, epochs=epochs, callbacks=[es], validation_split=0.1)
 
     # predict test samples
     test_loss, test_acc = model.evaluate(test_X, test_Y)
     test_acc*=100
     print('Accuracy:',test_acc)
+    with open('model_parameters.txt', 'a') as param_file:
+        param_file.write(f'Datasets: {datasets}\n LeNet\n')
+        param_file.write('================================================================================\n')
+        # 正解率を保存
+        param_file.write(f'Train samples: {num_train}\n')
+        param_file.write(f'Test samples: {num_test}\n')
+        param_file.write(f'Block size: {block_size}\n')
+        param_file.write(f'Layers: {layers_BOOL}\n')
+        param_file.write(f'Accuracy: {test_acc} %\n')
+        param_file.write('================================================================================\n')
 
     if display:
-        
         #学習後のモデルの出力
         block_outputs = []
         block_outputs.append(get_intermediate_output(model, 'conv2d', train_X))

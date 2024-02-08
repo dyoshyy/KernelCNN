@@ -95,27 +95,31 @@ if False:
     
 #ブロックサイズ変化
 if True:
-    #main_kernelCNN(10000, 10000, 'MNIST', B=3000, embedding_method=['LE','LE'], block_size=[3,3])
-    #main_kernelCNN(10000, 10000, 'MNIST', B=3000, embedding_method=['LE','LE'], block_size=[7,7])
-    #main_kernelCNN(10000, 10000, 'MNIST', B=3000, embedding_method=['LE','LE'], block_size=[7,3])
-    #main_kernelCNN(10000, 10000, 'MNIST', B=3000, embedding_method=['LE','LE'], block_size=[3,7])
-
-
-    if False:
-        main_fmnist(1000, 10000, 'LE', 3000, 3)
-        main_fmnist(1000, 10000, 'LE', 3000, 5)
-        main_fmnist(1000, 10000, 'LE', 3000, 7)
-
-        main_cifar10(1000, 10000, 'LE', 3000, 3)
-        main_cifar10(1000, 10000, 'LE', 3000, 5)
-        main_cifar10(1000, 10000, 'LE', 3000, 7)
+    for dataset in datasets_array:
+        for block_size in [[3,3], [5,5], [7,7]]:
+            accuracy_sum = 0
+            n=1
+            for _ in range(n):
+                accuracy_sum += main_kernelCNN(10000, 10000, dataset, B=2000, embedding_method=['LE','LE'], block_size=block_size)
+            
+            average_accuracy = accuracy_sum/n
+            print(f'accuarcy:{average_accuracy}')
+            with open('./average_accuracy.txt', 'a') as file:
+                file.write(f'{dataset}:\n') 
+                file.write(f'block size:{block_size}\n') 
+                file.write(str(average_accuracy)+'\n')
+            
         
 #層数変化
 if False:
-    #for dataset in datasets_array:
-        dataset = "CIFAR10"
-        main(60000, 1000, dataset, [5, 5, 5], display=True, layers_BOOL=[1,1,1,1])
-        main_kernelCNN(1000, 100, dataset, B=3000, embedding_method=['LE','LE','LE'], block_size=[5,5,5], layers_BOOL=[1,1,1,1])
+    for dataset in datasets_array:
+        #dataset = "CIFAR10"
+        #if dataset == "MNIST":
+            #continue
+        #else:
+            for layers_status in [[0,0,0,0], [1,0,0,0], [1,1,0,0], [1,1,1,0], [1,1,1,1]]:
+                #main(60000, 10000, dataset, [5, 5, 5], display=True, layers_BOOL=layers_status)
+                main_kernelCNN(10000, 10000, dataset, B=2000, embedding_method=['LE','LE','LE'], block_size=[5,5,5], layers_BOOL=layers_status)
 
     
 #Bの変化
@@ -127,14 +131,14 @@ if False:
 
 #埋め込み手法比較
 if False:
-    for emb in ["LLE", "TSNE"]:
+    #for emb in ["LLE", "TSNE"]:
+    for emb in embedding_array:
         #emb = "TSNE"
-        if emb == "TSNE":
-            main_kernelCNN(10000, 10000, "MNIST", B=2000, embedding_method=[emb, emb], block_size=[5,5])
-        main_kernelCNN(10000, 10000, "FMNIST", B=2000, embedding_method=[emb,emb], block_size=[5,5])
-        main_kernelCNN(10000, 10000, "CIFAR10", B=2000, embedding_method=[emb,emb], block_size=[5,5])
+        main_kernelCNN(10000, 10000, "MNIST", embedding_method=[emb, emb], block_size=[5,5])
+        main_kernelCNN(10000, 10000, "FMNIST", embedding_method=[emb,emb], block_size=[5,5])
+        main_kernelCNN(10000, 10000, "CIFAR10", embedding_method=[emb,emb], block_size=[5,5])
         
-if True:
+if False:
     for dataset in datasets_array:
         main_kernelCNN(100, 100, dataset, B=1000, embedding_method=["LE","LE"], block_size=[5,5])
 

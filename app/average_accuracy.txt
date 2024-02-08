@@ -1,0 +1,27 @@
+MNIST:
+block size:[3, 3]
+97.69
+MNIST:
+block size:[5, 5]
+98.31
+MNIST:
+block size:[7, 7]
+96.99
+FMNIST:
+block size:[3, 3]
+83.76
+FMNIST:
+block size:[5, 5]
+85.81
+FMNIST:
+block size:[7, 7]
+83.24000000000001
+CIFAR10:
+block size:[3, 3]
+48.69
+CIFAR10:
+block size:[5, 5]
+47.010000000000005
+CIFAR10:
+block size:[7, 7]
+43.99

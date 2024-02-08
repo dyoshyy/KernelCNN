@@ -53,6 +53,30 @@ if False:
     calculate_average_accuracy(main, [30000, 10000, 'CIFAR10', None], 10)
     calculate_average_accuracy(main, [50000, 10000, 'CIFAR10', None], 10)
 
+#識別率の比較
+if True:
+    if False:
+        main(1000,  10000, 'MNIST', block_size=[5,5], display=True)
+        main(10000, 10000, 'MNIST', block_size=[5,5], display=True)
+        main(30000, 10000, 'MNIST', block_size=[5,5], display=True)
+        main(50000, 10000, 'MNIST', block_size=[5,5], display=True)
+        main(60000, 10000, 'MNIST', block_size=[5,5], display=True)
+
+    if False:
+        main(1000,  10000, 'FMNIST', block_size=[5,5], display=True)
+        main(10000, 10000, 'FMNIST', block_size=[5,5], display=True)
+        main(30000, 10000, 'FMNIST', block_size=[5,5], display=True)
+        main(50000, 10000, 'FMNIST', block_size=[5,5], display=True)
+        main(60000, 10000, 'FMNIST', block_size=[5,5], display=True)
+    
+    if True:
+        main(1000,  10000, 'CIFAR10', block_size=[5,5], display=True)
+        main(10000, 10000, 'CIFAR10', block_size=[5,5], display=True)
+        main(30000, 10000, 'CIFAR10', block_size=[5,5], display=True)
+        main(50000, 10000, 'CIFAR10', block_size=[5,5], display=True)
+    
+    
+
 #ブロックサイズ変化
 if False:
     
@@ -105,7 +129,7 @@ if False:
     
     
 #層数変化
-if True:
+if False:
     #main(60000, 10000, 'MNIST', layers_BOOL=[0,0,0,0])
     #main(60000, 10000, 'MNIST', layers_BOOL=[1,0,0,0])
     #main(60000, 10000, 'MNIST', layers_BOOL=[1,1,0,0])

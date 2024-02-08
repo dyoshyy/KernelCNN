@@ -55,14 +55,15 @@ class KIMLayer:
             sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
             sampled_blocks_label = np.repeat(np.argmax(train_Y, axis=1), int(sampled_blocks.shape[0]/train_Y.shape[0]))
             print('sampling completed')
-
-            #画像を二値化
-            sampled_blocks = binarize_images(sampled_blocks)
-            sampled_blocks = sampled_blocks.reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)
             print('All samples shape:',np.shape(sampled_blocks))
             
-            #重複を削除
-            sampled_blocks, unique_index= np.unique(sampled_blocks, axis=0, return_index=True) 
+            #画像を二値化
+            binarized_sampled_blocks = binarize_images(sampled_blocks)
+            binarized_sampled_blocks = binarized_sampled_blocks.reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)
+            
+            #重複を削除し，そのインデックスのブロックのみを使う
+            _, unique_index= np.unique(binarized_sampled_blocks, axis=0, return_index=True)
+            sampled_blocks = sampled_blocks.reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)[unique_index]
             sampled_blocks_label = sampled_blocks_label[unique_index]
             print('unique samples shape:', np.shape(sampled_blocks))
             
@@ -92,13 +93,17 @@ class KIMLayer:
             train_X: 学習に使うX
             train_Y: Xのラベルデータ
         '''
-        n_train = 100 #埋め込みを学習するサンプル数
+        n_train = 300 #埋め込みを学習するサンプル数
 
         if self.GP is None:
             sampled_blocks, embedded_blocks = self.sample_and_embed_blocks(n_train, train_X, train_Y)
             kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev)
             self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
+            print('optimizing KIM parameters...')
+            
             self.GP.optimize()
+            print('model summary:', self.GP)
+            print('optimizing completed')
         else:
             print('[KIM] GPmodel found')
         
@@ -151,7 +156,36 @@ class KIMLayer:
         print('completed')
         #ReLU
         #self.output_data = np.maximum(0, self.output_data)
+        #Tanh
+        #self.output_data = np.tanh(self.output_data)
         return self.output_data
+    
+class TanhLayer:
+    def calculate(self, input_data):
+        """
+        Applies the hyperbolic tangent (tanh) activation function to the input data.
+
+        Args:
+            input_data (numpy.ndarray): The input data.
+
+        Returns:
+            numpy.ndarray: The output data after applying the tanh activation function.
+        """
+        return np.tanh(input_data)
+    
+class SigmoidLayer:
+    def calculate(self, input_data):
+        """
+        Applies the sigmoid activation function to the input data.
+
+        Args:
+            input_data (numpy.ndarray): The input data.
+
+        Returns:
+            numpy.ndarray: The output data after applying the sigmoid activation function.
+        """
+        return 1 / (1 + np.exp(-input_data))
+
 
 class AvgPoolingLayer:
     def __init__(self, pool_size):
@@ -175,6 +209,8 @@ class AvgPoolingLayer:
                 # Calculate mean value
                 output_data[:, i, j, :] = np.mean(window, axis=(1, 2))
         
+        #sigmoid
+        #output_data = 1 / (1 + np.exp(-output_data))
         print('[AVG] Completed')
         return output_data
 
@@ -215,14 +251,14 @@ class LabelLearningLayer_NeuralNetwork:
         if self.model is None:
             print('Learning labels')
             self.model = models.Sequential([
-                layers.Dense(120, activation='relu'),
-                layers.Dense(84, activation='relu'),
+                layers.Dense(120, activation='tanh'),
+                layers.Dense(84, activation='tanh'),
                 layers.Dense(10, activation='softmax')
             ])
-            self.model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
+            self.model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
             batch_size = 64
-            epochs = 300
-            es = EarlyStopping(monitor='val_loss', mode='auto', patience=5, verbose=0)
+            epochs = 100
+            es = EarlyStopping(monitor='val_loss', mode='auto', patience=30, verbose=0)
             self.model.fit(X, Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[es], validation_split=0.2)
             print('Completed')
         else:
@@ -318,6 +354,7 @@ class Model:
                     X = pad_images(X, out_size)
                 X_temp = X
                 X = layer.calculate(X, Y)
+                #中間層の出力を可視化
                 if self.display:
                     visualize_emb(X_temp, Y, X, layer.b, layer.stride, layer.B, layer.embedding, self.data_set_name)
                     display_images(X, n+2, layer.embedding, self.data_set_name, f'KernelCNN train output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')

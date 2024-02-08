@@ -22,8 +22,6 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
 
         X_train = X_train.reshape(-1, 28, 28, 1) 
         X_test = X_test.reshape(-1, 28, 28, 1)
-        X_train = pad_images(X_train, 32)
-        X_test = pad_images(X_test, 32)
         X_train = pad_images(X_train, imagesize)
         X_test = pad_images(X_test, imagesize)
     elif datasets == 'CIFAR10':
@@ -47,19 +45,25 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
     model = layers.Model(display=True)
     model.data_set_name = datasets
     model.add_layer(layers.KIMLayer(block_size=block_size[0], channels_next = 6, stride = 1, padding=False, emb=embedding_method[0], num_blocks=B))
+    #model.add_layer(layers.TanhLayer())
     if layers_BOOL[0]:
+        #model.add_layer(layers.AvgPoolingLayer(pool_size=2))
         model.add_layer(layers.MaxPoolingLayer(pool_size=2))
+        #model.add_layer(layers.SigmoidLayer())
     if layers_BOOL[1]:
         model.add_layer(layers.KIMLayer(block_size=block_size[1], channels_next = 16, stride = 1, padding=False, emb=embedding_method[1], num_blocks=B))
+        #model.add_layer(layers.TanhLayer())
     if layers_BOOL[2]:
-        model.add_layer(layers.MaxPoolingLayer(pool_size=2))                                                                                        
+        #model.add_layer(layers.AvgPoolingLayer(pool_size=2))
+        model.add_layer(layers.MaxPoolingLayer(pool_size=2))
+        #model.add_layer(layers.SigmoidLayer())                                                                                        
     if layers_BOOL[3]:
         model.add_layer(layers.KIMLayer(block_size=block_size[2], channels_next = 32, stride = 1, padding=False, emb=embedding_method[2], num_blocks=B))
     #model.add_layer(layers.MaxPoolingLayer(pool_size=2))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 32, stride = 1, padding=False, emb=embedding_method, num_blocks=num_blocks))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
-    #model.add_layer(layers.LabelLearningLayer_GaussianProcess())
-    model.add_layer(layers.LabelLearningLayer_NeuralNetwork())
+    model.add_layer(layers.LabelLearningLayer_GaussianProcess())
+    #model.add_layer(layers.LabelLearningLayer_NeuralNetwork())
 
     print("========================================")
     print("Summary of the training:")
