@@ -7,6 +7,7 @@ from keras.callbacks import EarlyStopping
 from functions import calculate_similarity, display_images, binarize_images, visualize_emb, visualize_emb_dots, select_embedding_method, pad_images
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.svm import SVC
 from scipy import stats
 
 from skimage import util
@@ -98,7 +99,9 @@ class KIMLayer:
             sampled_blocks, embedded_blocks = self.sample_and_embed_blocks(n_train, train_X, train_Y)
             kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev)
             self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
+            print('optimizing the GP model')
             self.GP.optimize()
+            print('completed')
         else:
             print('[KIM] GPmodel found')
         
@@ -122,7 +125,7 @@ class KIMLayer:
     def calculate(self, input_X, input_Y):
         """
         このメソッドは、入力データに対してKIM (Kernelized Input Mapping) を適用し、
-        結果を出力データとして保存します。
+        結果を出力データとして保存します。KIMモデルが存在しない場合は入力データから学習します。
 
         Parameters:
         input_X (numpy.ndarray): 入力データ。形状は (num_inputs, H, W, C_prev) で、
@@ -203,38 +206,30 @@ class MaxPoolingLayer:
         print('[MAX] Completed')
         return output_data
     
-class LabelLearningLayer_NeuralNetwork:
+class LabelLearningLayer_SupportVectorsMachine:
     def __init__(self):
-        self.model = None
+        self.SVM = None
 
     def fit(self, X, Y):
         input_dim = X.shape[1] * X.shape[2] * X.shape[3]
         #ベクトル化し学習
         X = X.reshape(X.shape[0], input_dim)
         X = StandardScaler().fit_transform(X)
-        if self.model is None:
+        if self.SVM is None:
             print('Learning labels')
-            self.model = models.Sequential([
-                layers.Dense(120, activation='relu'),
-                layers.Dense(84, activation='relu'),
-                layers.Dense(10, activation='softmax')
-            ])
-            self.model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
-            batch_size = 64
-            epochs = 300
-            es = EarlyStopping(monitor='val_loss', mode='auto', patience=5, verbose=0)
-            self.model.fit(X, Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[es], validation_split=0.2)
+            self.SVM = SVC(kernel='rbf', C=1, gamma=0.1)
+            self.SVM.fit(X, Y)
             print('Completed')
         else:
-            print('GPmodel found')
+            print('SVM model found')
 
     def predict(self, X):
         #ベクトル化し予測
         X = X.reshape(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
         X = StandardScaler().fit_transform(X)
-        Y_predicted = self.model.predict(X)
-        output = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
+        output = self.SVM.predict(X)
         return output
+
 
 class LabelLearningLayer_GaussianProcess:
     def __init__(self):
@@ -321,7 +316,7 @@ class Model:
                 if self.display:
                     visualize_emb(X_temp, Y, X, layer.b, layer.stride, layer.B, layer.embedding, self.data_set_name)
                     display_images(X, n+2, layer.embedding, self.data_set_name, f'KernelCNN train output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')
-            elif isinstance(layer, LabelLearningLayer_GaussianProcess) or isinstance(layer, LabelLearningLayer_NeuralNetwork): #最後の層のとき
+            elif isinstance(layer, LabelLearningLayer_GaussianProcess) or isinstance(layer, LabelLearningLayer_SupportVectorsMachine): #最後の層のとき
                 layer.fit(X, Y)
             else: #プーリング層
                 X = layer.calculate(X)
@@ -340,7 +335,7 @@ class Model:
                 if self.display:
                     continue
                     #display_images(test_X, n+7, layer.embedding, self.data_set_name, f'KernelCNN test output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')
-            elif isinstance(layer, LabelLearningLayer_GaussianProcess) or isinstance(layer, LabelLearningLayer_NeuralNetwork):
+            elif isinstance(layer, LabelLearningLayer_GaussianProcess) or isinstance(layer, LabelLearningLayer_SupportVectorsMachine):
                 Y_predicted = self.layers[-1].predict(test_X)
                 Y_answer= [np.argmax(test_Y[n,:]) for n in range(test_Y.shape[0])]
             else:
@@ -359,7 +354,7 @@ class Model:
             param_file.write(f'Datasets: {self.data_set_name}\n')
             param_file.write('================================================================================\n')
             for i, layer in enumerate(self.layers):
-                if isinstance(layer, LabelLearningLayer_GaussianProcess) or isinstance(layer, LabelLearningLayer_NeuralNetwork):
+                if isinstance(layer, LabelLearningLayer_GaussianProcess) or isinstance(layer, LabelLearningLayer_SupportVectorsMachine):
                     continue  
                 if isinstance(layer, KIMLayer):
                     param_file.write(f'Layer {i+2}\n')

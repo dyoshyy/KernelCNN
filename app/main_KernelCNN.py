@@ -59,7 +59,7 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 32, stride = 1, padding=False, emb=embedding_method, num_blocks=num_blocks))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
     #model.add_layer(layers.LabelLearningLayer_GaussianProcess())
-    model.add_layer(layers.LabelLearningLayer_NeuralNetwork())
+    model.add_layer(layers.LabelLearningLayer_SupportVectorsMachine())
 
     print("========================================")
     print("Summary of the training:")
