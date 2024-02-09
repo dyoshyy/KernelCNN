@@ -1,6 +1,7 @@
-# distutils: language=c++
+
 # cython: language_level=3
 # distutils: define_macros=NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
+# distutils: include_dirs=/usr/local/lib/python3.9/site-packages/numpy/core/include
 # distutils: extra_compile_args = ["-O3"]
 # cython: language_level=3, boundscheck=False, wraparound=False
 # cython: cdivision=True
@@ -17,6 +18,7 @@ from keras.callbacks import EarlyStopping
 from functions import calculate_similarity, display_images, binarize_images, visualize_emb, visualize_emb_dots, select_embedding_method, pad_images
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.svm import SVC
 from scipy import stats
 
 from skimage import util
@@ -25,24 +27,38 @@ from tqdm import tqdm
 np.set_printoptions(precision=3, threshold=10000, linewidth=200, edgeitems=10)
 ctypedef cnp.float64_t DTYPE_t 
 
-class KIMLayer:
-    def __init__(self, block_size : int, channels_next : int, stride : int, padding : bool, emb : str, num_blocks : int):
-        cdef int b = block_size
-        cdef int b_radius = int((b - 1) / 2)
-        cdef int stride = stride
-        cdef int C_next = channels_next
-        cdef int C_prev = None
-        cdef int H = None
-        cdef int W = None
-        cdef object output_data = None
-        cdef object input_data = None
-        cdef str embedding = emb
-        cdef object GP = None
-        cdef int B = num_blocks
-        cdef str dataset_name = None
-        cdef bint padding = padding
+cdef class KIMLayer:
+    cdef public int b_radius
+    cdef public int stride
+    cdef public int C_next
+    cdef public int C_prev
+    cdef object input_data
+    cdef object output_data
+    cdef public object GP
+    cdef int H
+    cdef int W
+    cdef public str embedding
+    cdef public int B
+    cdef public str dataset_name
+    cdef public bint padding
+    cdef public int b
 
-    def sample_and_embed_blocks(self, n_train: int, train_X: np.ndarray, train_Y: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def __init__(self, block_size : int, channels_next : int, stride : int, padding : bool, emb : str, num_blocks : int):
+        self.b = block_size
+        self.b_radius = int((self.b - 1) / 2)
+        self.stride = stride
+        self.C_next = channels_next
+        self.C_prev = 0
+        self.H = 0
+        self.W = 0
+        self.output_data = np.empty((0, 0, 0, 0))
+        self.input_data = np.empty((0, 0, 0, 0))
+        self.embedding = emb
+        self.B = num_blocks
+        self.padding = padding
+        self.GP = None
+
+    cdef sample_and_embed_blocks(self, n_train: int, train_X: np.ndarray, train_Y: np.ndarray):
         '''
         Args:
             n_train (int): 画像の枚数
@@ -53,7 +69,8 @@ class KIMLayer:
             ndarray: サンプリングされたブロックの配列
             ndarray: サンプリングされたブロックの埋め込み
         '''
-        cdef np.ndarray[np.float64_t, ndim=4] sampled_blocks = np.empty((n_train*(self.H-self.b+1)**2, self.b, self.b, self.C_prev))
+        cdef cnp.ndarray[DTYPE_t, ndim=4] sampled_blocks = np.empty((n_train*(self.H-self.b+1)**2, self.b, self.b, self.C_prev))
+        cdef cnp.ndarray[DTYPE_t, ndim=2] sampled_blocks_unique
         print('sampling...')
         cdef int n
         cdef cnp.ndarray[DTYPE_t, ndim=3] data
@@ -77,37 +94,37 @@ class KIMLayer:
         
         #重複を削除し，そのインデックスのブロックのみを使う
         _, unique_index= np.unique(binarized_sampled_blocks, axis=0, return_index=True)
-        sampled_blocks = sampled_blocks.reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)[unique_index]
+        sampled_blocks_unique = sampled_blocks.reshape(sampled_blocks.shape[0], self.b * self.b * self.C_prev)[unique_index]
         sampled_blocks_label = sampled_blocks_label[unique_index]
-        print('unique samples shape:', np.shape(sampled_blocks))
+        print('unique samples shape:', np.shape(sampled_blocks_unique))
         
         #サンプル数が5000を超える場合は5000にする
         embedding_samples_threshold = 5000
-        if sampled_blocks.shape[0] > embedding_samples_threshold:
-            selected_indices = np.random.choice(sampled_blocks.shape[0], embedding_samples_threshold, replace=False)
-            sampled_blocks = sampled_blocks[selected_indices]
+        if sampled_blocks_unique.shape[0] > embedding_samples_threshold:
+            selected_indices = np.random.choice(sampled_blocks_unique.shape[0], embedding_samples_threshold, replace=False)
+            sampled_blocks_unique = sampled_blocks_unique[selected_indices]
             sampled_blocks_label = sampled_blocks_label[selected_indices]
             
         #埋め込み
         print('embedding...')
-        embedded_blocks = select_embedding_method(self.embedding, self.C_next, sampled_blocks, sampled_blocks_label)
+        embedded_blocks = select_embedding_method(self.embedding, self.C_next, sampled_blocks_unique, sampled_blocks_label)
         print('embedding completed')
         
         #B個だけランダムに取り出す
-        self.B = min(sampled_blocks.shape[0], self.B)  #Bより少ないサンプル数の場合はそのまま
+        self.B = min(sampled_blocks_unique.shape[0], self.B)  #Bより少ないサンプル数の場合はそのまま
         selected_indices = np.random.choice(embedded_blocks.shape[0], self.B, replace=False)
-        sampled_blocks = sampled_blocks[selected_indices]
+        sampled_blocks_unique = sampled_blocks_unique[selected_indices]
         embedded_blocks = embedded_blocks[selected_indices]
         
-        return sampled_blocks, embedded_blocks
+        return sampled_blocks_unique, embedded_blocks
             
-    def learn_embedding(self, train_X, train_Y): 
+    cdef learn_embedding(self, train_X, train_Y): 
         '''
         埋め込みをKIMで学習
             train_X: 学習に使うX
             train_Y: Xのラベルデータ
         '''
-        n_train = 300 #埋め込みを学習するサンプル数
+        n_train = 100 #埋め込みを学習するサンプル数
 
         if self.GP is None:
             sampled_blocks, embedded_blocks = self.sample_and_embed_blocks(n_train, train_X, train_Y)
@@ -116,12 +133,12 @@ class KIMLayer:
             print('optimizing KIM parameters...')
             
             self.GP.optimize()
-            print('model summary:', self.GP)
+            #print('model summary:', self.GP)
             print('optimizing completed')
         else:
             print('[KIM] GPmodel found')
         
-    def convert_image_batch(self, batch_size: int = 10):
+    cdef convert_image_batch(self, batch_size: int = 10):
         """
         Converts the input image batch into a batch of predictions.
 
@@ -129,20 +146,17 @@ class KIMLayer:
             batch_size (int, optional): The size of each batch. Defaults to 10.
         """
         cdef int num_batches = math.ceil(self.input_data.shape[0] / batch_size)
-        cdef int batch_index
-        cdef tuple batch_images
-        cdef tuple blocks_to_convert
-        cdef tuple predictions
+        cdef cnp.ndarray[DTYPE_t, ndim=4] batch_images
+        cdef cnp.ndarray[DTYPE_t, ndim=2] blocks_to_convert
+        cdef cnp.ndarray[DTYPE_t, ndim=4] predictions
 
         for batch_index in tqdm(range(num_batches)):
             batch_images = self.input_data[batch_size * batch_index: batch_size * (batch_index + 1)]
-            blocks_to_convert = util.view_as_windows(batch_images, (1, self.b, self.b, self.C_prev), self.stride)
-            blocks_to_convert = blocks_to_convert.reshape(batch_size * (self.H - self.b + 1) ** 2, self.b * self.b * self.C_prev)  # ex) (10*784, 5*5*1)
-            predictions, _ = self.GP.predict(blocks_to_convert)  # shape: (10*784, 6)
-            predictions = predictions.reshape(batch_size, self.H - self.b + 1, self.H - self.b + 1, self.C_next)
+            blocks_to_convert = util.view_as_windows(batch_images, (1, self.b, self.b, self.C_prev), self.stride).reshape(batch_size * (self.H - self.b + 1) ** 2, self.b * self.b * self.C_prev) # ex) (10*784, 5*5*1)
+            predictions = self.GP.predict(blocks_to_convert)[0].reshape(batch_size, self.H - self.b + 1, self.H - self.b + 1, self.C_next)  # shape: (10*784, 6)
             self.output_data[batch_size * batch_index: batch_size * (batch_index + 1)] = predictions
 
-    def calculate(self, input_X, input_Y):
+    cpdef calculate(self, input_X, input_Y):
         """
         このメソッドは、入力データに対してKIM (Kernelized Input Mapping) を適用し、
         結果を出力データとして保存します。
@@ -156,7 +170,8 @@ class KIMLayer:
         Returns:
         numpy.ndarray: KIM を適用した後の出力データ。形状は (num_inputs, (H-b+1)/stride, (W-b+1)/stride, C_next) です。
         """
-        
+        cdef cnp.ndarray[DTYPE_t, ndim=4] output_data
+        cdef cnp.ndarray[DTYPE_t, ndim=4] input_data
         #インスタンス変数に格納
         num_inputs = input_X.shape[0]
         self.H = input_X.shape[1]
@@ -345,6 +360,30 @@ class LabelLearningLayer_GaussianProcess:
             Y_predicted, _ = self.GP.predict(X)
             Y_predicted = np.array(Y_predicted)
             output = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
+        return output
+
+class LabelLearningLayer_SupportVectorsMachine:
+    def __init__(self):
+        self.SVM = None
+
+    def fit(self, X, Y):
+        input_dim = X.shape[1] * X.shape[2] * X.shape[3]
+        #ベクトル化し学習
+        X = X.reshape(X.shape[0], input_dim)
+        X = StandardScaler().fit_transform(X)
+        if self.SVM is None:
+            print('Learning labels')
+            self.SVM = SVC(kernel='rbf', C=1, gamma=0.1)
+            self.SVM.fit(X, Y)
+            print('Completed')
+        else:
+            print('SVM model found')
+
+    def predict(self, X):
+        #ベクトル化し予測
+        X = X.reshape(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
+        X = StandardScaler().fit_transform(X)
+        output = self.SVM.predict(X)
         return output
 
 class Model:

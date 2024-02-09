@@ -12,6 +12,7 @@ from keras.utils import to_categorical
 import numpy as np
 np.random.seed(0)
 
+
 def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_method=["LE", "LE"], block_size=[5, 5], layers_BOOL=[1, 1, 1, 0]):
     imagesize = 32
     if (datasets == 'MNIST') or (datasets == 'FMNIST'):
@@ -24,6 +25,7 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
         X_test = X_test.reshape(-1, 28, 28, 1)
         X_train = pad_images(X_train, imagesize)
         X_test = pad_images(X_test, imagesize)
+        
     elif datasets == 'CIFAR10':
         (X_train, Y_train), (X_test, Y_test) = cifar10.load_data()
         X_train = X_train.reshape(-1, 32, 32, 3) 
@@ -62,8 +64,9 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
     #model.add_layer(layers.MaxPoolingLayer(pool_size=2))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 32, stride = 1, padding=False, emb=embedding_method, num_blocks=num_blocks))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
-    model.add_layer(layers.LabelLearningLayer_GaussianProcess())
+    #model.add_layer(layers.LabelLearningLayer_GaussianProcess())
     #model.add_layer(layers.LabelLearningLayer_NeuralNetwork())
+    model.add_layer(layers.LabelLearningLayer_SupporVectorsMachine())
 
     print("========================================")
     print("Summary of the training:")
