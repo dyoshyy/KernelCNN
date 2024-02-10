@@ -157,7 +157,7 @@ class KIMLayer:
         self.convert_image_batch(batch_size=100)
         print('completed')
         #ReLU
-        self.output_data = np.maximum(0, self.output_data)
+        #self.output_data = np.maximum(0, self.output_data)
         return self.output_data
 
 class AvgPoolingLayer:
