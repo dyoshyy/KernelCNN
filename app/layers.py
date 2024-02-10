@@ -8,6 +8,7 @@ from functions import calculate_similarity, display_images, binarize_images, vis
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.svm import SVC
+from sklearn import metrics
 from scipy import stats
 
 from skimage import util
@@ -97,12 +98,13 @@ class KIMLayer:
 
         if self.GP is None:
             sampled_blocks, embedded_blocks = self.sample_and_embed_blocks(n_train, train_X, train_Y)
-            kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev, variance=0.001, lengthscale=1.0) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev, variance=60000) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev, variances=0.05)
+            #kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev, variance=0.001, lengthscale=1.0) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev, variance=60000) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev, variances=0.05)
+            kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev, variance=0.001) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev, variances=0.05)
             self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
             self.GP.Gaussian_noise.variance = 0.001
             print('optimizing the GP model')
-            self.GP.optimize()
-            print('model parameters:', self.GP)
+            self.GP.optimize(optimizer='lbfgs')
+            #print('model parameters:', self.GP)
             print('completed')
         else:
             print('[KIM] GPmodel found')
@@ -155,7 +157,7 @@ class KIMLayer:
         self.convert_image_batch(batch_size=100)
         print('completed')
         #ReLU
-        #self.output_data = np.maximum(0, self.output_data)
+        self.output_data = np.maximum(0, self.output_data)
         return self.output_data
 
 class AvgPoolingLayer:
@@ -217,10 +219,11 @@ class LabelLearningLayer_SupportVectorsMachine:
         #ベクトル化し学習
         X = X.reshape(X.shape[0], input_dim)
         X = StandardScaler().fit_transform(X)
+        X = MinMaxScaler().fit_transform(X)
         Y = np.argmax(Y, axis=1)
         if self.SVM is None:
             print('Learning labels')
-            self.SVM = SVC(kernel='rbf', C=100, gamma=2.0)
+            self.SVM = SVC(kernel='poly', C=10.0, gamma=1.0, coef0=1.0, probability=True, decision_function_shape='ovr')
             self.SVM.fit(X, Y)
             print('Completed')
         else:
@@ -230,6 +233,7 @@ class LabelLearningLayer_SupportVectorsMachine:
         #ベクトル化し予測
         X = X.reshape(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
         X = StandardScaler().fit_transform(X)
+        X = MinMaxScaler().fit_transform(X)
         output = self.SVM.predict(X)
         return output
 
@@ -288,10 +292,12 @@ class Model:
                     continue
             else: #プーリング層のとき
                 test_X = layer.calculate(test_X)
-
+                
+        Y_answer= [np.argmax(test_Y[n,:]) for n in range(test_Y.shape[0])]
         self.time_predicting = time.time() - start_time
-        accuracy = calculate_similarity(Y_predicted, test_Y)*100 #%単位
-        
+        accuracy = metrics.accuracy_score(Y_answer, Y_predicted) * 100
+        classification_report = metrics.classification_report(Y_answer, Y_predicted)
+        print(classification_report)
         
         print('Layers shape:',self.shapes)
         print('Fitting time:', self.time_fitting)

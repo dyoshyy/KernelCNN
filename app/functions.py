@@ -89,6 +89,8 @@ def display_images(data, layer_number, embedding_method: str, dataset_name: str,
         #fig.suptitle(suptitle)
         filename = f"{layer_number}_{embedding_method}_{dataset_name}_{img_idx}"
         file_dir = "./results_output"
+        if not os.path.exists(file_dir):
+            os.makedirs(file_dir)
         filename = make_unique_filename(filename, file_dir)
         plt.tight_layout()
         plt.savefig(file_dir +f"/{filename}.png")
@@ -145,7 +147,10 @@ def visualize_emb(
         dataset_name : データセットの名前
     """
     # ファイル名の重複を防ぐ処理
+
     file_dir = "./results_emb"
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
     filename = f"{embedding_method}_{dataset_name}"
     filename = make_unique_filename(filename, file_dir)
     
