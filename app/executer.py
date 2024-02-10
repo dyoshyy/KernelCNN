@@ -1,6 +1,7 @@
 from functions import calculate_average_accuracy_kernelCNN
 from main_KernelCNN import main_kernelCNN
 from LeNet import main
+import os
 #import LeNet
 datasets_array = ['MNIST', 'FMNIST', 'CIFAR10']
 embedding_array = ['LE', 'PCA', 'LLE', 'TSNE']
@@ -88,13 +89,27 @@ if False:
 
 
 #ベースライン     
-if False:
-    main_kernelCNN(1000, 100, "MNIST", B=3000, embedding_method=["LE","LE"], block_size=[5,5])
-    main_kernelCNN(1000, 100, "FMNIST", B=3000, embedding_method=["LE","LE"], block_size=[5,5])
-    main_kernelCNN(1000, 100, "CIFAR10", B=3000, embedding_method=["LE","LE"], block_size=[5,5])
+if True:
+    
+    for dataset in datasets_array:
+        for n in [1000, 10000, 30000, 50000, 60000]:
+            N=10
+            accuracy_sum = 0
+            for _ in range(N):
+                accuracy_sum += main_kernelCNN(n, 10000, dataset, B=3000, embedding_method=["LE","LE"], block_size=[5,5])
+            
+            avg_accuracy = accuracy_sum / N
+            file_dir = './average_accuracy.txt'
+            if not os.path.exists(file_dir):
+                os.makedirs(file_dir)
+            with open(file_dir, 'a') as file:
+                file.write(f'{dataset}:\n') 
+                file.write(f'n={n}\n') 
+                file.write(str(avg_accuracy)+'\n')
+    
     
 #ブロックサイズ変化
-if True:
+if False:
     #main_kernelCNN(10000, 10000, 'MNIST', B=3000, embedding_method=['LE','LE'], block_size=[3,3])
     #main_kernelCNN(10000, 10000, 'MNIST', B=3000, embedding_method=['LE','LE'], block_size=[7,7])
     #main_kernelCNN(10000, 10000, 'MNIST', B=3000, embedding_method=['LE','LE'], block_size=[7,3])
