@@ -87,5 +87,5 @@ if __name__ == '__main__':
     else:
         layers_BOOL=[1,1,1,0]
     #arguments = [n,m,emb,3000]
-    main_kernelCNN(num_train=num_train, num_test=num_test, datasets=dataset_name, B=3000, embedding_method=embedding_method, block_size=block_size, layers_BOOL=layers_BOOL)
+    main_kernelCNN(num_train=num_train, num_test=num_test, datasets=dataset_name, B=1000, embedding_method=embedding_method, block_size=block_size, layers_BOOL=layers_BOOL)
     
