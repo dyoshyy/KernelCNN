@@ -58,8 +58,10 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
     #model.add_layer(layers.MaxPoolingLayer(pool_size=2))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 32, stride = 1, padding=False, emb=embedding_method, num_blocks=num_blocks))
     #model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
-    #model.add_layer(layers.LabelLearningLayer_GaussianProcess())
-    model.add_layer(layers.LabelLearningLayer_SupportVectorsMachine())
+    
+    model.add_layer(layers.GaussianProcess())
+    #model.add_layer(layers.SupportVectorsMachine())
+    #model.add_layer(layers.RandomForest())
 
     print("========================================")
     print("Summary of the training:")
@@ -68,6 +70,7 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
     print("Number of testing samples:", num_test)
     print("Embedding method:", embedding_method)
     print("Block size:", block_size)
+    print("KIM blocks:", B)
     print("Layers activation status:", layers_BOOL)
     print("========================================")    
     

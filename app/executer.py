@@ -2,111 +2,32 @@ from functions import calculate_average_accuracy_kernelCNN
 from main_KernelCNN import main_kernelCNN
 from LeNet import main
 import os
+import numpy as np
 #import LeNet
 datasets_array = ['MNIST', 'FMNIST', 'CIFAR10']
 embedding_array = ['LE', 'PCA', 'LLE', 'TSNE']
-'''
-main_mnist(100, 10000, 'LE', 3000)
-main_mnist(1000, 10000, 'LE', 3000)
-main_mnist(10000, 10000, 'LE', 3000)
-main_mnist(30000, 10000, 'LE', 3000)
-main_mnist(60000, 10000, 'LE', 3000)
-'''
-
-'''
-main_fmnist(100, 10000, 'LE', 3000)
-main_fmnist(1000, 10000, 'LE', 3000)
-main_fmnist(10000, 10000, 'LE', 3000)
-main_fmnist(30000, 10000, 'LE', 3000)
-main_fmnist(60000, 10000, 'LE', 3000)
-
-main_cifar10(100, 10000, 'LE', 3000)
-main_cifar10(1000, 10000, 'LE', 3000)
-main_cifar10(10000, 10000, 'LE', 3000)
-main_cifar10(30000, 10000, 'LE', 3000)
-main_cifar10(50000, 10000, 'LE', 3000)
-'''
-
-#手法ごとの比較
-'''
-main_mnist(1000, 100, 'PCA', 3000)
-main_mnist(1000, 100, 'LLE', 3000)
-main_mnist(1000, 100, 'LE', 3000)
-main_mnist(1000, 100, 'TSNE', 3000)
-
-main_fmnist(1000, 100, 'PCA', 3000)
-main_fmnist(1000, 100, 'LLE', 3000)
-main_fmnist(1000, 100, 'LE', 3000)
-main_fmnist(1000, 100, 'TSNE', 3000)
-
-main_cifar10(1000, 100, 'PCA', 3000)
-main_cifar10(1000, 100, 'LLE', 3000)
-main_cifar10(1000, 100, 'LE', 3000)
-main_cifar10(1000, 100, 'TSNE', 3000)
-
-'''
-'''
-main_GP(100, 10000, 'MNIST')
-main_GP(1000, 10000, 'MNIST')
-main_GP(10000, 10000, 'MNIST')
-main_GP(30000, 10000, 'MNIST')
-main_GP(50000, 10000, 'MNIST')
-main_GP(60000, 10000, 'MNIST')
-
-main_GP(100, 10000, 'FMNIST')
-main_GP(1000, 10000, 'FMNIST')
-main_GP(10000, 10000, 'FMNIST')
-main_GP(30000, 10000, 'FMNIST')
-main_GP(50000, 10000, 'FMNIST')
-main_GP(60000, 10000, 'FMNIST')
-
-main_GP(100, 10000, 'CIFAR10')
-main_GP(1000, 10000, 'CIFAR10')
-main_GP(10000, 10000, 'CIFAR10')
-main_GP(30000, 10000, 'CIFAR10')
-main_GP(50000, 10000, 'CIFAR10')
-'''
-
-if False:
-    if False:
-        calculate_average_accuracy_kernelCNN(main_mnist, [1000, 10000, 'LE', 3000], 'MNIST',10)
-        calculate_average_accuracy_kernelCNN(main_mnist, [10000, 10000, 'LE', 3000], 'MNIST',10)
-        calculate_average_accuracy_kernelCNN(main_mnist, [30000, 10000, 'LE', 3000], 'MNIST',10)
-        calculate_average_accuracy_kernelCNN(main_mnist, [60000, 10000, 'LE', 3000], 'MNIST',10)
-
-    if False:
-        calculate_average_accuracy_kernelCNN(main_fmnist, [1000, 10000, 'LE', 3000],'FMNIST', 10)
-        calculate_average_accuracy_kernelCNN(main_fmnist, [10000, 10000, 'LE', 3000],'FMNIST', 10)
-        calculate_average_accuracy_kernelCNN(main_fmnist, [30000, 10000, 'LE', 3000],'FMNIST', 10)
-        calculate_average_accuracy_kernelCNN(main_fmnist, [60000, 10000, 'LE', 3000],'FMNIST', 10)
-
-    if False:
-        #calculate_average_accuracy_kernelCNN(main_cifar10, [1000, 10000, 'LE', 3000],'CIFAR10', 10)
-        #calculate_average_accuracy_kernelCNN(main_cifar10, [10000, 10000, 'LE', 3000],'CIFAR10', 10)
-        calculate_average_accuracy_kernelCNN(main_cifar10, [30000, 10000, 'LE', 3000],'CIFAR10', 10)
-        calculate_average_accuracy_kernelCNN(main_cifar10, [50000, 10000, 'LE', 3000],'CIFAR10', 10)
-
 
 
 #ベースライン     
 if True:
     
     for dataset in datasets_array:
-        for n in [1000, 10000, 30000, 50000, 60000]:
-            N=10
-            accuracy_sum = 0
+        for n in [1000, 10000, 30000, 60000]:
+            N = 1
+            accuracy_list = []
             for _ in range(N):
-                accuracy_sum += main_kernelCNN(n, 10000, dataset, B=3000, embedding_method=["LE","LE"], block_size=[5,5])
+                accuracy = main_kernelCNN(n, 10000, dataset, B=500, embedding_method=["LE","LE"], block_size=[5,5])
+                accuracy_list.append(accuracy)
             
-            avg_accuracy = accuracy_sum / N
-            file_dir = './average_accuracy.txt'
-            if not os.path.exists(file_dir):
-                os.makedirs(file_dir)
+            avg_accuracy = np.mean(accuracy_list)
+            variance_accuracy = np.var(accuracy_list)
+            
+            file_dir = './average_accuracy2.txt'
             with open(file_dir, 'a') as file:
                 file.write(f'{dataset}:\n') 
                 file.write(f'n={n}\n') 
-                file.write(str(avg_accuracy)+'\n')
-    
+                file.write(f'Average Accuracy: {avg_accuracy}\n')
+                file.write(f'Variance: {variance_accuracy}\n')
     
 #ブロックサイズ変化
 if False:
