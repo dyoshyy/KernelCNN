@@ -2,5 +2,9 @@ results_emb/
 results_output/
 results_weights/
 weights/
+
+
 __pycache__/
+*.pyc
+*.log
 *.txt
