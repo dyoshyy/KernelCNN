@@ -1,6 +1,6 @@
 from functions import calculate_average_accuracy_kernelCNN
 from main_KernelCNN import main_kernelCNN
-from LeNet import main
+from app.main_LeNet import main_LeNet
 import os
 import numpy as np
 #import LeNet
@@ -10,7 +10,9 @@ embedding_array = ['LE', 'PCA', 'LLE', 'TSNE']
 
 #ベースライン     
 if True:
+
     
+   
     for dataset in datasets_array:
         for n in [1000, 10000, 30000, 60000]:
             N = 1
