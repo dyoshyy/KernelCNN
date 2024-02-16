@@ -113,10 +113,14 @@ class KIMLayer:
             sampled_blocks, embedded_blocks = self.sample_and_embed_blocks(train_X, train_Y)
             #kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev, variance=0.001, lengthscale=1.0) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev, variance=60000) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev, variances=0.05)
             kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev, variance=0.001) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev, variances=0.05)
-            self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
+            
+            self.GP = GPy.models.SparseGPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
             self.GP.Gaussian_noise.variance = 0.001
             print('optimizing the GP model')
+            print('model parameters:', self.GP)
             self.GP.optimize(optimizer='lbfgs')
+            print('model parameters:', self.GP)
+            
             #print('model parameters:', self.GP)
             print('completed')
         else:
