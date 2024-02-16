@@ -471,7 +471,13 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
     else:
         print("Error: No embedding selected.")
 
-    return embedded_blocks.astype(np.float16)
+    normalized_blocks = []
+    for channel in range(embedded_blocks.shape[1]):
+        channel_data = embedded_blocks[:, channel]
+        normalized_channel = (channel_data - np.mean(channel_data)) / np.std(channel_data)
+        normalized_blocks.append(normalized_channel)
+    normalized_blocks = np.stack(normalized_blocks, axis=1)
+    return normalized_blocks
 
 
 def calculate_average_accuracy_kernelCNN(main_function, arguments, dataset_name, iterations=10):

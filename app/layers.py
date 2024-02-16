@@ -285,14 +285,23 @@ class GaussianProcess(LabelLearningLayer):
     
     def fit(self, X, Y):
         X = self.vectorize_standarize(X)
-        print(Y.shape)
+        Y = np.array(Y)
         if self.classifier is None:
             print('Learning labels')
-            self.classifier = GPy.models.GPClassification(X, Y.reshape(-1, 1), kernel=GPy.kern.RBF(input_dim=X.shape[1], variance=1.0, lengthscale=1.0))
+            print(X.shape, Y.shape)
+            self.classifier = GPy.models.GPRegression(X, Y, kernel=GPy.kern.RBF(input_dim=X.shape[1], variance=1.0, lengthscale=1.0))
             self.classifier.optimize()
             print('Completed')
         else:
             print('GaussianProcess model found')
+    
+    def predict(self, X):
+        X = self.vectorize_standarize(X)
+        output = self.classifier.predict(X)
+        
+        output = np.array(output)
+        print(output.shape)
+        return output
 
 class Model:
     def __init__(self, display):
@@ -357,7 +366,7 @@ class Model:
                     #display_images(test_X, n+7, layer.embedding, self.data_set_name, f'KernelCNN test output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')
             elif isinstance(layer, LabelLearningLayer):
                 Y_predicted = self.layers[-1].predict(test_X)
-                if len(Y_predicted.shape) > 1: #one-hot vectorのときはargmaxをとる
+                if Y_predicted.shape[1] > 1: #one-hot vectorのときはargmaxをとる
                     Y_predicted = [np.argmax(Y_predicted[n, :]) for n in range(Y_predicted.shape[0])]
                 else:
                     continue
