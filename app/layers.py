@@ -5,12 +5,13 @@ import time
 from keras import layers, models    
 from keras.callbacks import EarlyStopping
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
 from functions import calculate_similarity, display_images, binarize_images, visualize_emb, visualize_emb_dots, select_embedding_method, pad_images
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.svm import SVC
 from sklearn import metrics
-from sklearn.model_selection import StratifiedShuffleSplit
 from scipy import stats
 
 from skimage import util
@@ -113,7 +114,6 @@ class KIMLayer:
             sampled_blocks, embedded_blocks = self.sample_and_embed_blocks()
             #kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev, variance=0.001, lengthscale=1.0) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev, variance=60000) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev, variances=0.05)
             kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev, variance=0.001) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev, variances=0.05)
-            
             self.GP = GPy.models.SparseGPRegression(sampled_blocks, embedded_blocks, num_inducing=100, kernel=kernel)
             self.GP.Gaussian_noise.variance = 0.001
             print('optimizing the GP model')
@@ -334,6 +334,48 @@ class GaussianProcess(LabelLearningLayer):
             output = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
         return output
 
+class kNearestNeighbors(LabelLearningLayer):
+    def __init__(self, num_neighbors=1):
+        super().__init__()
+        self.num_neighbors = num_neighbors
+        self.num_classes = 10
+
+    def fit(self, X, Y):
+        X = self.vectorize_standarize(X)
+        Y = np.argmax(Y, axis=1)
+        if self.classifier is None:
+            print('Learning labels')
+            self.classifier = KNeighborsClassifier(n_neighbors=self.num_neighbors)
+            self.classifier.fit(X, Y)
+            print('Completed')
+        else:
+            print('k-NN model found')
+    
+    def predict(self, X):
+        X = self.vectorize_standarize(X)
+        output = self.classifier.predict(X)
+        return output
+    
+class QuadraticDiscriminantAnalysis(LabelLearningLayer):
+    def __init__(self):
+        super().__init__()
+
+    def fit(self, X, Y):
+        X = self.vectorize_standarize(X)
+        Y = np.argmax(Y, axis=1)
+        if self.classifier is None:
+            print('Learning labels')
+            self.classifier = QDA()
+            self.classifier.fit(X, Y)
+            print('Completed')
+        else:
+            print('QDA model found')
+    
+    def predict(self, X):
+        X = self.vectorize_standarize(X)
+        output = self.classifier.predict(X)
+        return output
+        
 
 class Model:
     def __init__(self, display):

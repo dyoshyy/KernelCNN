@@ -2,6 +2,7 @@ import sys
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
+#import layers
 import layers
 import functions
 #import layers_originalGP as layers
@@ -62,7 +63,9 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
     #model.add_layer(layers.GaussianProcess())
     model.add_layer(layers.SupportVectorsMachine())
     #model.add_layer(layers.RandomForest())
-
+    #model.add_layer(layers.kNearestNeighbors(num_neighbors=1))
+    #model.add_layer(layers.QuadraticDiscriminantAnalysis())
+    
     print("========================================")
     print("Summary of the training:")
     print("Dataset:", datasets)
@@ -80,6 +83,9 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
 
 if __name__ == '__main__':
     args = sys.argv
+    if len(args) < 6:
+        print("Usage: python main_KernelCNN.py [num_train] [num_test] [dataset] [embedding_method] [block_size] [layers_BOOL]")
+        sys.exit(1)
     num_train = int(args[1])  #train
     num_test = int(args[2])  #test
     dataset_name = args[3]
@@ -90,5 +96,5 @@ if __name__ == '__main__':
     else:
         layers_BOOL=[1,1,1,0]
     #arguments = [n,m,emb,3000]
-    main_kernelCNN(num_train=num_train, num_test=num_test, datasets=dataset_name, B=500, embedding_method=embedding_method, block_size=block_size, layers_BOOL=layers_BOOL)
+    main_kernelCNN(num_train=num_train, num_test=num_test, datasets=dataset_name, B=100, embedding_method=embedding_method, block_size=block_size, layers_BOOL=layers_BOOL)
     
