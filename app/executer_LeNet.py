@@ -11,8 +11,8 @@ embedding_array = ['LE', 'PCA', 'LLE', 'TSNE']
 if True:
     
     for dataset in datasets_array:
-        for n in [1000, 10000, 30000, 50000, 60000]:
-            N=1 #iteration number
+        for n in [1000, 10000, 30000, 60000]:
+            N = 1 #iteration number
             accuracy_list = []
             for _ in range(N):
                 accuracy = main_LeNet(n, 10000, dataset, block_size=[5, 5], display=False, layers_BOOL=[1,1,1,0])
