@@ -231,7 +231,7 @@ class LabelLearningLayer:
         input_dim = X.shape[1] * X.shape[2] * X.shape[3]
         X = X.reshape(X.shape[0], input_dim)
         X = StandardScaler().fit_transform(X)
-        X = MinMaxScaler().fit_transform(X)
+        #X = MinMaxScaler().fit_transform(X)
         return X
 
 class SupportVectorsMachine(LabelLearningLayer):
@@ -396,13 +396,6 @@ class Model:
                     #display_images(test_X, n+7, layer.embedding, self.data_set_name, f'KernelCNN test output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')
             elif isinstance(layer, LabelLearningLayer):
                 Y_predicted = self.layers[-1].predict(test_X)
-                #print(len(Y_predicted))
-                Y_predicted = np.array(Y_predicted)
-                print(Y_predicted.shape)
-                if Y_predicted.shape[1] > 1: #one-hot vectorのときはargmaxをとる
-                    Y_predicted = [np.argmax(Y_predicted[n, :]) for n in range(Y_predicted.shape[0])]
-                else:
-                    continue
             else: #プーリング層のとき
                 test_X = layer.calculate(test_X)
                 

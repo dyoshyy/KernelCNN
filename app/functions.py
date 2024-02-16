@@ -476,9 +476,9 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
     normalized_blocks = []
     for channel in range(embedded_blocks.shape[1]):
         channel_data = embedded_blocks[:, channel]
-        normalized_channel = StandardScaler().fit_transform(channel_data.reshape(-1, 1))
-        normalized_channel = MinMaxScaler().fit_transform(normalized_channel)
-        normalized_blocks.append(normalized_channel)
+        #normalized_channel = MinMaxScaler().fit_transform(channel_data.reshape(-1, 1))
+        channel_data = StandardScaler().fit_transform(channel_data.reshape(-1, 1))
+        normalized_blocks.append(channel_data)
     normalized_blocks = np.stack(normalized_blocks, axis=1).reshape(-1, Channels_next)
     return normalized_blocks
 
