@@ -278,33 +278,10 @@ class RandomForest(LabelLearningLayer):
         X = self.vectorize_standarize(X)
         output = self.classifier.predict(X)
         return output
-
-class GaussianProcess(LabelLearningLayer):
-    def __init__(self) -> None:
-        super().__init__()
-    
-    def fit(self, X, Y):
-        X = self.vectorize_standarize(X)
-        Y = np.array(Y)
-        if self.classifier is None:
-            print('Learning labels')
-            print(X.shape, Y.shape)
-            self.classifier = GPy.models.GPRegression(X, Y, kernel=GPy.kern.RBF(input_dim=X.shape[1], variance=1.0, lengthscale=1.0))
-            self.classifier.optimize()
-            print('Completed')
-        else:
-            print('GaussianProcess model found')
-    
-    def predict(self, X):
-        X = self.vectorize_standarize(X)
-        output = self.classifier.predict(X)
-        
-        output = np.array(output)
-        print(output.shape)
-        return output
     
 class GaussianProcess(LabelLearningLayer):
     def __init__(self):
+        super().__init__()
         self.num_GP = None
         self.OVER_threshold = False
         self.threshold = 10000
@@ -340,12 +317,21 @@ class GaussianProcess(LabelLearningLayer):
     def predict(self, X):
         X = self.vectorize_standarize(X)
         if self.OVER_threshold:
-            output = np.zeros((X.shape[0], 10))
+            predictions = []
             for i in range(self.num_GP):
-                output[self.threshold*i:self.threshold*(i+1)] = self.classifier[i].predict(X[self.threshold*i:self.threshold*(i+1)])[0]
+                Y_predicted, _ = self.classifier[i].predict(X)
+                Y_predicted = np.array(Y_predicted)
+                predict = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
+                predictions.append(predict)
+            ensemble_predictions = np.vstack(predictions)
+            output = stats.mode(ensemble_predictions, axis=0).mode.ravel()
+            
         else:
-            output = self.classifier.predict(X)[0]
+            Y_predicted, _ = self.classifier.predict(X)
+            Y_predicted = np.array(Y_predicted)
+            output = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
         return output
+
 
 class Model:
     def __init__(self, display):
@@ -410,6 +396,9 @@ class Model:
                     #display_images(test_X, n+7, layer.embedding, self.data_set_name, f'KernelCNN test output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')
             elif isinstance(layer, LabelLearningLayer):
                 Y_predicted = self.layers[-1].predict(test_X)
+                #print(len(Y_predicted))
+                Y_predicted = np.array(Y_predicted)
+                print(Y_predicted.shape)
                 if Y_predicted.shape[1] > 1: #one-hot vectorのときはargmaxをとる
                     Y_predicted = [np.argmax(Y_predicted[n, :]) for n in range(Y_predicted.shape[0])]
                 else:

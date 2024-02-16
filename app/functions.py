@@ -10,8 +10,10 @@ from matplotlib.path import Path
 import math
 import random
 from skimage import util
+from sklearn.discriminant_analysis import StandardScaler
 from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
+from sklearn.preprocessing import MinMaxScaler
 from KSLE import SLE
 
 
@@ -474,9 +476,10 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
     normalized_blocks = []
     for channel in range(embedded_blocks.shape[1]):
         channel_data = embedded_blocks[:, channel]
-        normalized_channel = (channel_data - np.mean(channel_data)) / np.std(channel_data)
+        normalized_channel = StandardScaler().fit_transform(channel_data.reshape(-1, 1))
+        normalized_channel = MinMaxScaler().fit_transform(normalized_channel)
         normalized_blocks.append(normalized_channel)
-    normalized_blocks = np.stack(normalized_blocks, axis=1)
+    normalized_blocks = np.stack(normalized_blocks, axis=1).reshape(-1, Channels_next)
     return normalized_blocks
 
 
