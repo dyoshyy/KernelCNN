@@ -37,7 +37,7 @@ class KIMLayer:
         self.X_for_KIM = None
         self.Y_for_KIM = None
 
-    def sample_and_embed_blocks(self, train_X, train_Y):
+    def sample_and_embed_blocks(self):
             '''
             Args:
                 n_images (int): 画像の枚数
@@ -88,7 +88,7 @@ class KIMLayer:
             
             return sampled_blocks, embedded_blocks
             
-    def learn_embedding(self, train_X, train_Y): 
+    def learn_embedding(self): 
         '''
         埋め込みをKIMで学習
             train_X: 学習に使うX
@@ -110,7 +110,7 @@ class KIMLayer:
         '''
             
         if self.GP is None:
-            sampled_blocks, embedded_blocks = self.sample_and_embed_blocks(train_X, train_Y)
+            sampled_blocks, embedded_blocks = self.sample_and_embed_blocks()
             #kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev, variance=0.001, lengthscale=1.0) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev, variance=60000) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev, variances=0.05)
             kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev, variance=0.001) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev, variances=0.05)
             
@@ -167,7 +167,7 @@ class KIMLayer:
         self.output_data = np.zeros((num_inputs, int((self.H-self.b+1)/self.stride), int((self.W-self.b+1)/self.stride), self.C_next))
         
         #KIMで埋め込みを学習
-        self.learn_embedding(input_X, input_Y) 
+        self.learn_embedding() 
         
         #学習したKIMで変換
         print('[KIM] Converting the image...')
