@@ -9916,3 +9916,45 @@ Fitting time: 336.6077015399933 seconds
 Predicting time: 1109.5348629951477 seconds
 Accuracy: 92.61 %
 ================================================================================
+Datasets: FMNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 1000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 1000
+-------------------------------
+Train samples: 1000
+Test samples: 10000
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 362.4731287956238 seconds
+Predicting time: 623.6741364002228 seconds
+Accuracy: 78.05 %
+================================================================================
+Datasets: FMNIST
+================================================================================
+Layer 2
+Embedding method: LE
+block size: 5
+stride: 1
+B: 1000
+-------------------------------
+Layer 4
+Embedding method: LE
+block size: 5
+stride: 1
+B: 1000
+-------------------------------
+Train samples: 1000
+Test samples: 10000
+Layer shape: [(32, 32, 1), (28, 28, 6), (14, 14, 6), (10, 10, 16), (5, 5, 16)]
+Fitting time: 322.2890944480896 seconds
+Predicting time: 611.5781102180481 seconds
+Accuracy: 80.58 %
+================================================================================
