@@ -2,6 +2,7 @@ results_emb/
 results_output/
 results_weights/
 weights/
+nohup/
 
 
 __pycache__/
