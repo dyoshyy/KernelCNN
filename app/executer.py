@@ -2,6 +2,7 @@ from functions import calculate_average_accuracy_kernelCNN
 from main_KernelCNN import main_kernelCNN
 from app.main_LeNet import main_LeNet
 import os
+import numpy as np
 #import LeNet
 datasets_array = ['MNIST', 'FMNIST', 'CIFAR10']
 embedding_array = ['LE', 'PCA', 'LLE', 'TSNE']
@@ -9,24 +10,27 @@ embedding_array = ['LE', 'PCA', 'LLE', 'TSNE']
 
 #ベースライン     
 if True:
+
     
-    #for dataset in datasets_array:
-    for dataset in ['FMNIST', 'CIFAR10']:
-        for n in [1000, 10000, 30000, 50000, 60000]:
-            N=5 #iteration number
-            accuracy_sum = 0
+   
+    for dataset in datasets_array:
+        for n in [1000, 10000, 30000, 60000]:
+            N = 1
+            accuracy_list = []
             for _ in range(N):
-                accuracy_sum += main_kernelCNN(n, 10000, dataset, B=1000, embedding_method=["LE","LE"], block_size=[5,5])
-                #accuracy_sum += main_LeNet(n, 10000, dataset, block_size=[5, 5], display=False, layers_BOOL=[1,1,1,0])
+                accuracy = main_kernelCNN(n, 10000, dataset, B=500, embedding_method=["LE","LE"], block_size=[5,5])
+                accuracy_list.append(accuracy)
             
-            avg_accuracy = accuracy_sum / N
-            file_dir = './average_accuracy_kernel.txt'
+            avg_accuracy = np.mean(accuracy_list)
+            variance_accuracy = np.var(accuracy_list)
+            
+            file_dir = './average_accuracy2.txt'
             with open(file_dir, 'a') as file:
                 file.write(f'{dataset}:\n') 
                 file.write(f'n={n}\n') 
-                file.write(str(avg_accuracy)+'\n')
+                file.write(f'Average Accuracy: {avg_accuracy}\n')
+                file.write(f'Variance: {variance_accuracy}\n')
     
-   
 #ブロックサイズ変化
 if False:
     #main_kernelCNN(10000, 10000, 'MNIST', B=3000, embedding_method=['LE','LE'], block_size=[3,3])

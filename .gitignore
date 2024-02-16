@@ -1,5 +1,5 @@
-/app/results_emb/
-/app/results_output/
-/app/results_weights/
-/app/weights/
+results_emb/
+results_output/
+results_weights/
+weights/
 *.txt

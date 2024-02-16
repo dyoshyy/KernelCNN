@@ -4,11 +4,13 @@ import math
 import time
 from keras import layers, models    
 from keras.callbacks import EarlyStopping
+from sklearn.ensemble import RandomForestClassifier
 from functions import calculate_similarity, display_images, binarize_images, visualize_emb, visualize_emb_dots, select_embedding_method, pad_images
 
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from sklearn.svm import SVC
 from sklearn import metrics
+from sklearn.model_selection import StratifiedShuffleSplit
 from scipy import stats
 
 from skimage import util
@@ -32,11 +34,13 @@ class KIMLayer:
         self.B = num_blocks
         self.dataset_name = None
         self.padding = padding
+        self.X_for_KIM = None
+        self.Y_for_KIM = None
 
-    def sample_and_embed_blocks(self, n_train, train_X, train_Y):
+    def sample_and_embed_blocks(self, train_X, train_Y):
             '''
             Args:
-                n_train (int): 画像の枚数
+                n_images (int): 画像の枚数
                 train_X (ndarray): 学習する画像データ
                 train_Y (ndarray): 画像のラベル(NOT One-hot vector)
             
@@ -44,18 +48,14 @@ class KIMLayer:
                 ndarray: サンプリングされたブロックの配列
                 ndarray: サンプリングされたブロックの埋め込み
             '''
-            sampled_blocks = np.empty((n_train*(self.H-self.b+1)**2, self.b, self.b, self.C_prev))
+            n_images = self.X_for_KIM.shape[0]
+            sampled_blocks = np.empty((n_images*(self.H-self.b+1)**2, self.b, self.b, self.C_prev))
             print('sampling...')
-            for n in range(n_train):
-                # 一枚持ってくる
-                data = train_X[n,:,:,:]
-                # すべてのブロックをサンプリング
-                blocks = util.view_as_windows(data, (self.b, self.b, self.C_prev), self.stride).reshape((self.H-self.b+1)**2, self.b, self.b, self.C_prev)
-                sampled_blocks[(n)*(self.H-self.b+1)**2 : (n+1)*(self.H-self.b+1)**2 ] = blocks
-            
-            train_Y = train_Y[:n_train]
+            sampled_blocks = [util.view_as_windows(self.X_for_KIM[n,:,:,:], (self.b, self.b, self.C_prev), self.stride).reshape((self.H-self.b+1)**2, self.b, self.b, self.C_prev) for n in range(n_images)]
+            sampled_blocks = np.concatenate(sampled_blocks, axis=0)
+
             sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
-            sampled_blocks_label = np.repeat(np.argmax(train_Y, axis=1), int(sampled_blocks.shape[0]/train_Y.shape[0]))
+            sampled_blocks_label = np.repeat(np.argmax(self.Y_for_KIM, axis=1), int(sampled_blocks.shape[0]/self.Y_for_KIM.shape[0]))
             print('sampling completed')
 
             #画像を二値化
@@ -94,10 +94,23 @@ class KIMLayer:
             train_X: 学習に使うX
             train_Y: Xのラベルデータ
         '''
-        n_train = 100 #埋め込みを学習するサンプル数
-
+        '''
+        #クラスの偏りがないようにサンプルを選ぶ
+        n_images = 100 #埋め込みの学習に用いる画像枚数
+        n_classes = 10
+        selected_X = []
+        selected_Y = []
+        for label in range(n_classes):
+            indices = np.where(train_Y == label)[0][:int(n_images/n_classes)]
+            selected_X.extend(train_X[indices])
+            selected_Y.extend(train_Y[indices])
+        
+        selected_X = np.array(selected_X)
+        selected_Y = np.array(selected_Y) 
+        '''
+            
         if self.GP is None:
-            sampled_blocks, embedded_blocks = self.sample_and_embed_blocks(n_train, train_X, train_Y)
+            sampled_blocks, embedded_blocks = self.sample_and_embed_blocks(train_X, train_Y)
             #kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev, variance=0.001, lengthscale=1.0) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev, variance=60000) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev, variances=0.05)
             kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev, variance=0.001) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev, variances=0.05)
             self.GP = GPy.models.GPRegression(sampled_blocks, embedded_blocks, kernel=kernel)
@@ -209,33 +222,77 @@ class MaxPoolingLayer:
         
         print('[MAX] Completed')
         return output_data
-    
-class LabelLearningLayer_SupportVectorsMachine:
-    def __init__(self):
-        self.SVM = None
 
-    def fit(self, X, Y):
+class LabelLearningLayer:
+    def __init__(self) -> None:
+        self.classifier = None
+
+    def vectorize_standarize(self, X):
         input_dim = X.shape[1] * X.shape[2] * X.shape[3]
-        #ベクトル化し学習
         X = X.reshape(X.shape[0], input_dim)
         X = StandardScaler().fit_transform(X)
         X = MinMaxScaler().fit_transform(X)
+        return X
+
+class SupportVectorsMachine(LabelLearningLayer):
+    def __init__(self):
+        super().__init__()
+
+    def fit(self, X, Y):
+        X = self.vectorize_standarize(X)
         Y = np.argmax(Y, axis=1)
-        if self.SVM is None:
+        if self.classifier is None:
             print('Learning labels')
-            self.SVM = SVC(kernel='poly', C=10.0, gamma=1.0, coef0=1.0, probability=True, decision_function_shape='ovr')
-            self.SVM.fit(X, Y)
+            self.classifier = SVC(kernel='rbf', C=10.0, gamma='auto', probability=True, decision_function_shape='ovr')
+            #np.savetxt('train_X.csv', X, delimiter=',')
+            #np.savetxt('train_Y.csv', Y, delimiter=',')
+            self.classifier.fit(X, Y)
             print('Completed')
         else:
             print('SVM model found')
 
     def predict(self, X):
         #ベクトル化し予測
-        X = X.reshape(X.shape[0], X.shape[1] * X.shape[2] * X.shape[3])
-        X = StandardScaler().fit_transform(X)
-        X = MinMaxScaler().fit_transform(X)
-        output = self.SVM.predict(X)
+        X = self.vectorize_standarize(X)
+        #np.savetxt('test_X.csv', X, delimiter=',')
+        output = self.classifier.predict(X)
         return output
+
+class RandomForest(LabelLearningLayer):
+    def __init__(self):
+        super().__init__()
+
+    def fit(self, X, Y):
+        X = self.vectorize_standarize(X)
+        Y = np.argmax(Y, axis=1)
+        if self.classifier is None:
+            print('Learning labels')
+            self.classifier = RandomForestClassifier(n_estimators=100, random_state=0)
+            self.classifier.fit(X, Y)
+            print('Completed')
+        else:
+            print('RandomForest model found')
+
+    def predict(self, X):
+        #ベクトル化し予測
+        X = self.vectorize_standarize(X)
+        output = self.classifier.predict(X)
+        return output
+
+class GaussianProcess(LabelLearningLayer):
+    def __init__(self) -> None:
+        super().__init__()
+    
+    def fit(self, X, Y):
+        X = self.vectorize_standarize(X)
+        print(Y.shape)
+        if self.classifier is None:
+            print('Learning labels')
+            self.classifier = GPy.models.GPClassification(X, Y.reshape(-1, 1), kernel=GPy.kern.RBF(input_dim=X.shape[1], variance=1.0, lengthscale=1.0))
+            self.classifier.optimize()
+            print('Completed')
+        else:
+            print('GaussianProcess model found')
 
 class Model:
     def __init__(self, display):
@@ -257,15 +314,29 @@ class Model:
             self.shapes.append(np.shape(X)[1:])
             layer.dataset_name = self.data_set_name
             if isinstance(layer, KIMLayer):
+                #クラスの偏りがないようにサンプルを選ぶ
+                n_train = 300 #埋め込みの学習に用いる画像枚数
+                n_classes = 10
+                selected_X = []
+                selected_Y = []
+                for label in range(n_classes):
+                    indices = np.where(np.argmax(Y, axis=1) == label)[0][:int(n_train/n_classes)]
+                    selected_X.extend(X[indices])
+                    selected_Y.extend(Y[indices]) 
+                layer.X_for_KIM = np.array(selected_X)
+                layer.Y_for_KIM = np.array(selected_Y)
+                
+                #paddingが有効の場合は画像をパディング
                 if layer.padding:
                     out_size = X.shape[1] + layer.b - 1 # 28 + 5 - 1
                     X = pad_images(X, out_size)
                 X_temp = X
                 X = layer.calculate(X, Y)
+                #displayが有効の場合は中間層の出力と埋め込みを可視化
                 if self.display:
                     visualize_emb(X_temp, Y, X, layer.b, layer.stride, layer.B, layer.embedding, self.data_set_name)
                     display_images(X, n+2, layer.embedding, self.data_set_name, f'KernelCNN train output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')
-            elif isinstance(layer, LabelLearningLayer_SupportVectorsMachine): #最後の層のとき
+            elif isinstance(layer, LabelLearningLayer): #識別層のとき
                 layer.fit(X, Y)
             else: #プーリング層
                 X = layer.calculate(X)
@@ -284,7 +355,7 @@ class Model:
                 if self.display:
                     continue
                     #display_images(test_X, n+7, layer.embedding, self.data_set_name, f'KernelCNN test output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')
-            elif isinstance(layer, LabelLearningLayer_SupportVectorsMachine): #識別層のとき
+            elif isinstance(layer, LabelLearningLayer):
                 Y_predicted = self.layers[-1].predict(test_X)
                 if len(Y_predicted.shape) > 1: #one-hot vectorのときはargmaxをとる
                     Y_predicted = [np.argmax(Y_predicted[n, :]) for n in range(Y_predicted.shape[0])]
@@ -294,6 +365,7 @@ class Model:
                 test_X = layer.calculate(test_X)
                 
         Y_answer= [np.argmax(test_Y[n,:]) for n in range(test_Y.shape[0])]
+        #np.savetxt('test_Y.csv', Y_answer, delimiter=',')
         self.time_predicting = time.time() - start_time
         accuracy = metrics.accuracy_score(Y_answer, Y_predicted) * 100
         classification_report = metrics.classification_report(Y_answer, Y_predicted)
@@ -309,7 +381,7 @@ class Model:
             param_file.write(f'Datasets: {self.data_set_name}\n')
             param_file.write('================================================================================\n')
             for i, layer in enumerate(self.layers):
-                if isinstance(layer, LabelLearningLayer_SupportVectorsMachine):
+                if isinstance(layer, LabelLearningLayer):
                     continue  
                 if isinstance(layer, KIMLayer):
                     param_file.write(f'Layer {i+2}\n')
