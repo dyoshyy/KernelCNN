@@ -46,11 +46,11 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
     #モデル定義
     model = layers.Model(display=True)
     model.data_set_name = datasets
-    model.add_layer(layers.KIMLayer(block_size=block_size[0], channels_next = 6, stride = 1, padding=False, emb=embedding_method[0], num_blocks=B))
+    model.add_layer(layers.KIMLayer(block_size=block_size[0], channels_next = 30, stride = 1, padding=False, emb=embedding_method[0], num_blocks=B))
     if layers_BOOL[0]:
         model.add_layer(layers.MaxPoolingLayer(pool_size=2))
     if layers_BOOL[1]:
-        model.add_layer(layers.KIMLayer(block_size=block_size[1], channels_next = 16, stride = 1, padding=False, emb=embedding_method[1], num_blocks=B))
+        model.add_layer(layers.KIMLayer(block_size=block_size[1], channels_next = 60, stride = 1, padding=False, emb=embedding_method[1], num_blocks=B))
     if layers_BOOL[2]:
         model.add_layer(layers.MaxPoolingLayer(pool_size=2))                                                                                        
     if layers_BOOL[3]:
@@ -90,5 +90,5 @@ if __name__ == '__main__':
     else:
         layers_BOOL=[1,1,1,0]
     #arguments = [n,m,emb,3000]
-    main_kernelCNN(num_train=num_train, num_test=num_test, datasets=dataset_name, B=1000, embedding_method=embedding_method, block_size=block_size, layers_BOOL=layers_BOOL)
+    main_kernelCNN(num_train=num_train, num_test=num_test, datasets=dataset_name, B=500, embedding_method=embedding_method, block_size=block_size, layers_BOOL=layers_BOOL)
     

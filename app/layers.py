@@ -231,7 +231,7 @@ class LabelLearningLayer:
         input_dim = X.shape[1] * X.shape[2] * X.shape[3]
         X = X.reshape(X.shape[0], input_dim)
         X = StandardScaler().fit_transform(X)
-        X = MinMaxScaler().fit_transform(X)
+        #X = MinMaxScaler().fit_transform(X)
         return X
 
 class SupportVectorsMachine(LabelLearningLayer):
@@ -278,21 +278,60 @@ class RandomForest(LabelLearningLayer):
         X = self.vectorize_standarize(X)
         output = self.classifier.predict(X)
         return output
-
-class GaussianProcess(LabelLearningLayer):
-    def __init__(self) -> None:
-        super().__init__()
     
+class GaussianProcess(LabelLearningLayer):
+    def __init__(self):
+        super().__init__()
+        self.num_GP = None
+        self.OVER_threshold = False
+        self.threshold = 10000
+
     def fit(self, X, Y):
+        input_dim = X.shape[1] * X.shape[2] * X.shape[3]
         X = self.vectorize_standarize(X)
-        print(Y.shape)
+        
         if self.classifier is None:
             print('Learning labels')
-            self.classifier = GPy.models.GPClassification(X, Y.reshape(-1, 1), kernel=GPy.kern.RBF(input_dim=X.shape[1], variance=1.0, lengthscale=1.0))
-            self.classifier.optimize()
-            print('Completed')
+
+            # 訓練サンプルが10000超える場合はthresholdずつに分けて学習
+            if X.shape[0] > self.threshold:
+                self.OVER_threshold = True
+                self.classifier = []
+                #必要なGPの数
+                self.num_GP = int((X.shape[0]-1)/self.threshold + 1)
+                kernel = GPy.kern.RBF(input_dim = input_dim) + GPy.kern.Bias(input_dim = input_dim) + GPy.kern.Linear(input_dim = input_dim)
+                for i in range(self.num_GP):
+                    print('learning {}'.format(i+1))
+                    X_sep = X[self.threshold*i:self.threshold*(i+1)]
+                    Y_sep = Y[self.threshold*i:self.threshold*(i+1)]
+                    self.classifier.append(GPy.models.GPRegression(X_sep,Y_sep, kernel=kernel))
+                    self.classifier[-1].optimize()
+            else:
+                kernel = GPy.kern.RBF(input_dim = input_dim) + GPy.kern.Bias(input_dim = input_dim) + GPy.kern.Linear(input_dim = input_dim)
+                self.classifier = GPy.models.GPRegression(X, Y, kernel=kernel)
+                self.classifier.optimize()
+                print('Completed')
         else:
-            print('GaussianProcess model found')
+            print('GPmodel found')
+    
+    def predict(self, X):
+        X = self.vectorize_standarize(X)
+        if self.OVER_threshold:
+            predictions = []
+            for i in range(self.num_GP):
+                Y_predicted, _ = self.classifier[i].predict(X)
+                Y_predicted = np.array(Y_predicted)
+                predict = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
+                predictions.append(predict)
+            ensemble_predictions = np.vstack(predictions)
+            output = stats.mode(ensemble_predictions, axis=0).mode.ravel()
+            
+        else:
+            Y_predicted, _ = self.classifier.predict(X)
+            Y_predicted = np.array(Y_predicted)
+            output = [np.argmax(Y_predicted[n,:]) for n in range(X.shape[0])]
+        return output
+
 
 class Model:
     def __init__(self, display):
@@ -357,10 +396,6 @@ class Model:
                     #display_images(test_X, n+7, layer.embedding, self.data_set_name, f'KernelCNN test output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')
             elif isinstance(layer, LabelLearningLayer):
                 Y_predicted = self.layers[-1].predict(test_X)
-                if len(Y_predicted.shape) > 1: #one-hot vectorのときはargmaxをとる
-                    Y_predicted = [np.argmax(Y_predicted[n, :]) for n in range(Y_predicted.shape[0])]
-                else:
-                    continue
             else: #プーリング層のとき
                 test_X = layer.calculate(test_X)
                 

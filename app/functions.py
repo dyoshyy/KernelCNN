@@ -10,8 +10,10 @@ from matplotlib.path import Path
 import math
 import random
 from skimage import util
+from sklearn.discriminant_analysis import StandardScaler
 from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
+from sklearn.preprocessing import MinMaxScaler
 from KSLE import SLE
 
 
@@ -471,7 +473,14 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
     else:
         print("Error: No embedding selected.")
 
-    return embedded_blocks.astype(np.float16)
+    normalized_blocks = []
+    for channel in range(embedded_blocks.shape[1]):
+        channel_data = embedded_blocks[:, channel]
+        #normalized_channel = MinMaxScaler().fit_transform(channel_data.reshape(-1, 1))
+        channel_data = StandardScaler().fit_transform(channel_data.reshape(-1, 1))
+        normalized_blocks.append(channel_data)
+    normalized_blocks = np.stack(normalized_blocks, axis=1).reshape(-1, Channels_next)
+    return normalized_blocks
 
 
 def calculate_average_accuracy_kernelCNN(main_function, arguments, dataset_name, iterations=10):
