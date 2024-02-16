@@ -12,6 +12,7 @@ from sklearn import metrics
 from functions import visualize_emb
 from functions import display_images, display_weights, make_unique_filename
 from functions import pad_images
+import layers as my_layers
 
 import sys
 
@@ -89,18 +90,24 @@ def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5],
     history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[cp], validation_split=0.1)
 
     #SVMによる識別
-    features_output = get_intermediate_output(model, 'max_pooling2d_1', train_X)
-    flattened_output = features_output.reshape(features_output.shape[0], -1)
+    train_features = get_intermediate_output(model, 'max_pooling2d_1', train_X)
 
     # Train an SVM classifier
+    '''
     svm = SVC(kernel='rbf', C=10.0, gamma='auto', probability=True, decision_function_shape='ovr')
     train_Y_1d = np.argmax(train_Y, axis=1)
     svm.fit(flattened_output, train_Y_1d)
+    '''
+    train_Y = np.argmax(train_Y, axis=1)
+    #classifier = my_layers.SupportVectorsMachine()
+    classifier = my_layers.GaussianProcess()
+    classifier.fit(train_features, train_Y)
 
     # Use the trained SVM classifier for prediction
     test_features = get_intermediate_output(model, 'max_pooling2d_1', test_X)
     test_features = test_features.reshape(test_features.shape[0], -1)
-    predictions = svm.predict(test_features)
+    
+    predictions = classifier.predict(test_features)
     accuracy = metrics.accuracy_score(np.argmax(test_Y, axis=1), predictions) * 100
     classification_report = metrics.classification_report(np.argmax(test_Y, axis=1), predictions)
     print(classification_report)
