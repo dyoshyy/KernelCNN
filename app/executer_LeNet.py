@@ -1,5 +1,3 @@
-from functions import calculate_average_accuracy_kernelCNN
-from main_KernelCNN import main_kernelCNN
 from main_LeNet import main_LeNet
 import os
 import numpy as np
