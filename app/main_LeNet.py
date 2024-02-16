@@ -98,14 +98,13 @@ def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5],
     train_Y_1d = np.argmax(train_Y, axis=1)
     svm.fit(flattened_output, train_Y_1d)
     '''
-    train_Y = np.argmax(train_Y, axis=1)
     #classifier = my_layers.SupportVectorsMachine()
+    #classifier = my_layers.RandomForest()
     classifier = my_layers.GaussianProcess()
     classifier.fit(train_features, train_Y)
 
     # Use the trained SVM classifier for prediction
     test_features = get_intermediate_output(model, 'max_pooling2d_1', test_X)
-    test_features = test_features.reshape(test_features.shape[0], -1)
     
     predictions = classifier.predict(test_features)
     accuracy = metrics.accuracy_score(np.argmax(test_Y, axis=1), predictions) * 100
