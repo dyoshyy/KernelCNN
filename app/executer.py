@@ -4,17 +4,19 @@ import os
 import numpy as np
 #import LeNet
 datasets_array = ['MNIST', 'FMNIST', 'CIFAR10']
+datasets_array2 = ['CIFAR10', 'FMNIST', 'MNIST']
 embedding_array = ['LE', 'PCA', 'LLE', 'TSNE']
 
 
 #ベースライン     
 if True:
-    for dataset in datasets_array:
+    #for dataset in datasets_array:
+    for dataset in datasets_array2:
         for n in [1000, 10000, 30000, 60000]:
             N = 1
             accuracy_list = []
             for _ in range(N):
-                accuracy = main_kernelCNN(n, 10000, dataset, B=500, embedding_method=["LE","LE"], block_size=[5,5])
+                accuracy = main_kernelCNN(n, 10000, dataset, B=1000, embedding_method=["LE","LE"], block_size=[5,5])
                 accuracy_list.append(accuracy)
             
             avg_accuracy = np.mean(accuracy_list)
