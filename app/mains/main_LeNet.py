@@ -12,6 +12,7 @@ from sklearn import metrics
 from functions import visualize_emb
 from functions import display_images, display_weights, make_unique_filename
 from functions import pad_images
+from functions import load_KTH_TIPS_dataset
 import layers as my_layers
 
 import sys
@@ -50,6 +51,9 @@ def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5],
         train_X = pad_images(train_X, image_size)
         test_X = pad_images(test_X, image_size)
         channel = 3
+    elif datasets == 'KTH':
+        train_X, train_Y, test_X, test_Y = load_KTH_TIPS_dataset()
+        channel = 1
     
     train_Y = to_categorical(train_Y, 10)
     test_Y = to_categorical(test_Y, 10)

@@ -1,19 +1,14 @@
 import cv2
 import numpy as np
 import os
-import statistics
-from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+import sys
+sys.path.append('/workspaces/KernelCNN/app/data')
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d.art3d import pathpatch_2d_to_3d
-from matplotlib.patches import PathPatch
-from matplotlib.path import Path
 import math
-import random
 from skimage import util
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
-from sklearn.preprocessing import MinMaxScaler
 from KSLE import SLE
 
 
@@ -483,60 +478,60 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
     return normalized_blocks
 
 
-def calculate_average_accuracy_kernelCNN(main_function, arguments, dataset_name, iterations=10):
-    accuracy_list = []
-    for i in range(iterations):
-        print(f"Executing {i+1}")
-        accuracy_list.append(main_function(arguments[0], arguments[1], arguments[2], arguments[3]))
+def load_KTH_TIPS_dataset():
+    file_dir = "/workspaces/KernelCNN/app/data/MNIST/raw/KTH_TIPS"
+    images = []
+    labels = []
+    label_to_number = {}
+    number = 0
+    for root, dirs, files in os.walk(file_dir):
+        for file in files:
+            if file.endswith(".png"):
+                image_path = os.path.join(root, file)
+                label = os.path.basename(root)
+                if label not in label_to_number:
+                    label_to_number[label] = number
+                    number += 1
+                images.append(cv2.imread(image_path))
+                labels.append(label_to_number[label])
+                
+                image = cv2.imread(image_path)
+                image = cv2.resize(image, (200, 200))
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).reshape(200, 200, 1)
+                images.append(image)
+                labels.append(label)
+    images = np.array(images)
+    labels = np.array(labels)
+
+    # データをシャッフルする
+    indices = np.arange(len(images))
+    np.random.shuffle(indices)
+    images = images[indices]
+    labels = labels[indices]
+
+    # データをトレーニングセットとテストセットに分割する
+    split_idx = int(len(images) * 0.8)
+    train_X = images[:split_idx]
+    train_Y = labels[:split_idx]
+    test_X = images[split_idx:]
+    test_Y = labels[split_idx:]
+
+    return train_X, train_Y, test_X, test_Y
+
+def check_dataset_loading():
+    train_X, train_Y, test_X, test_Y = load_KTH_TIPS_dataset()
     
-    num_train = arguments[0]
-    num_test = arguments[1]    
-    #dataset_name = arguments[2]
-    mean = statistics.mean(accuracy_list)  # 平均
-    pstdev = statistics.pstdev(accuracy_list)  # 母標準偏差
+    # Print the shape of the loaded data
+    print("Train X shape:", train_X.shape)
+    print("Train Y shape:", train_Y.shape)
+    print("Test X shape:", test_X.shape)
+    print("Test Y shape:", test_Y.shape)
     
-    # パラメータをテキストファイルに保存
-    with open("Accuracy_results.txt", "a") as param_file:
-        
-        param_file.write("================================================================================\n")
-
-        # 正解率を保存
-        param_file.write(f"Datasets: {dataset_name}\n")
-        param_file.write(f"Train samples: {num_train}\n")
-        param_file.write(f"Test samples: {num_test}\n")
-        param_file.write(f"Number of Iterations: {iterations}\n")
-
-        param_file.write(f"Accuracy mean: {mean}\n")
-        param_file.write(f"Accuracy stdev: {pstdev}\n")
-        param_file.write("================================================================================\n")
-
-    return mean, pstdev
-
-def calculate_average_accuracy_CNN(main_function, arguments, iterations=10):
-    accuracy_list = []
-    for i in range(iterations):
-        print(f"Executing {i+1}")
-        accuracy_list.append(main_function(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4]))
-    
-    num_train = arguments[0]
-    num_test = arguments[1]    
-    dataset_name = arguments[2]
-    mean = statistics.mean(accuracy_list)  # 平均
-    pstdev = statistics.pstdev(accuracy_list)  # 母標準偏差
-    
-    # パラメータをテキストファイルに保存
-    with open("Accuracy_results.txt", "a") as param_file:
-        
-        param_file.write("================================================================================\n")
-
-        # 正解率を保存
-        param_file.write(f"Datasets: {dataset_name}\n")
-        param_file.write(f"Train samples: {num_train}\n")
-        param_file.write(f"Test samples: {num_test}\n")
-        param_file.write(f"Number of Iterations: {iterations}\n")
-
-        param_file.write(f"Accuracy mean: {mean}\n")
-        param_file.write(f"Accuracy stdev: {pstdev}\n")
-        param_file.write("================================================================================\n")
-
-    return mean, pstdev
+    # Print a sample image and its corresponding label
+    sample_index = 0
+    sample_image = train_X[sample_index]
+    sample_label = train_Y[sample_index]
+    print("Sample Image:")
+    plt.imshow(sample_image)
+    plt.title("Label: " + sample_label)
+    plt.savefig("sample_image.png")
