@@ -8,8 +8,8 @@ import numpy as np
 
 def execute_each_datasets_each_samples(file_dir : str, model : str, datasets_array : list, sample_num_array : list):
     file_dir = file_dir
-    with open(file_dir, 'a') as file:
-        for dataset in datasets_array:
+    for dataset in datasets_array:
+        with open(file_dir, 'a') as file:
             file.write(f'{dataset}:\n') 
             accuracy_each_samples = []
             for n in sample_num_array:

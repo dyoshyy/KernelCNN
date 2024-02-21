@@ -62,8 +62,8 @@ def main_kernelCNN(num_train , num_test, datasets: str,  B=3000, embedding_metho
     
     #model.add_layer(layers.GaussianProcess())
     #model.add_layer(layers.SupportVectorsMachine())
-    model.add_layer(layers.RandomForest())
-    #model.add_layer(layers.kNearestNeighbors(num_neighbors=1))
+    #model.add_layer(layers.RandomForest())
+    model.add_layer(layers.kNearestNeighbors(n_neighbors=1))
     #model.add_layer(layers.QuadraticDiscriminantAnalysis())
     
     print("========================================")

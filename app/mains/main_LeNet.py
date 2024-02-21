@@ -104,13 +104,13 @@ def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5],
     predictions = classifier.predict(test_features)
     accuracy = metrics.accuracy_score(np.argmax(test_Y, axis=1), predictions) * 100
     classification_report = metrics.classification_report(np.argmax(test_Y, axis=1), predictions)
-    print(classification_report)
+    #print(classification_report)
     print(f"Accuracy: {accuracy:.4f}")
 
     if display:
         #学習後のモデルの出力
         block_outputs = []
-        for layer_idx in range(len(model.layers)-3):
+        for layer_idx in range(len(model.layers)-4):
             block_outputs.append(get_intermediate_output(model, layer_idx, train_X))
             print(f"Block {layer_idx+1} output shape:", block_outputs[layer_idx].shape)
 
@@ -119,22 +119,6 @@ def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5],
         display_images(block_outputs[0], 2, 'LeNet', datasets, f'LeNet Output layer 2 n={num_train}')
         display_weights(weights1, datasets, layer_idx=2)
         
-        if layers_BOOL[1]:
-            if block_outputs[1].shape[1] == block_outputs[2].shape[1]: #paddingしてるとき
-                block_outputs[1]=(pad_images(block_outputs[1],18))
-
-            weights2 = model.get_layer("conv2d_1").get_weights()[0]
-            visualize_emb(block_outputs[1], train_Y, block_outputs[2], block_size=block_size[1], stride=stride, B=None, embedding_method='LeNet', dataset_name=datasets)
-            display_images(block_outputs[2], 4, 'LeNet', datasets, f'LeNet Output layer 4 n={num_train}')
-            display_weights(weights2, datasets, layer_idx=4)
-            
-            if layers_BOOL[3]:
-                if block_outputs[3].shape[1] == block_outputs[4].shape[1]:
-                    block_outputs[3]=(pad_images(block_outputs[3],11))
-                weights3 = model.get_layer("conv2d_2").get_weights()[0]
-                visualize_emb(block_outputs[3], train_Y, block_outputs[4], block_size=block_size[1], stride=stride, B=None, embedding_method='LeNet', dataset_name=datasets)
-                display_images(block_outputs[4], 6, 'LeNet', datasets, f'LeNet Output layer 6 n={num_train}')
-                display_weights(weights3, datasets, layer_idx=6)
     
 
     epochs_to_check = [1, 5, 10, 20, 30, 40, 50]
