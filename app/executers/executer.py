@@ -1,3 +1,6 @@
+import sys
+sys.path.append('/workspaces/KernelCNN/app/mains')
+
 from main_KernelCNN import main_kernelCNN
 from main_LeNet import main_LeNet
 import os

@@ -10,4 +10,5 @@ __pycache__/
 *.log
 *.txt
 *.out
+*.png
 app/nohup.out
