@@ -230,8 +230,10 @@ class LabelLearningLayer:
         self.classifier = None
 
     def vectorize_standarize(self, X):
-        input_dim = X.shape[1] * X.shape[2] * X.shape[3]
-        X = X.reshape(X.shape[0], input_dim)
+        #if X.ndim == 4:
+        #    input_dim = X.shape[1] * X.shape[2] * X.shape[3]
+            
+        X = X.reshape(X.shape[0], -1)
         X = StandardScaler().fit_transform(X)
         #X = MinMaxScaler().fit_transform(X)
         return X
@@ -266,7 +268,8 @@ class RandomForest(LabelLearningLayer):
 
     def fit(self, X, Y):
         X = self.vectorize_standarize(X)
-        Y = np.argmax(Y, axis=1)
+        if len(Y.shape) > 1:
+            Y = np.argmax(Y, axis=1)
         if self.classifier is None:
             print('Learning labels')
             self.classifier = RandomForestClassifier(n_estimators=100, random_state=0)

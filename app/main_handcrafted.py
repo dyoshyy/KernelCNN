@@ -14,6 +14,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from matplotlib import pyplot as plt
 from skimage import feature
 from skimage.color import rgb2gray
+import layers as my_layers
 
 def select_dataset(datasets: str, imagesize: int):
     if (datasets == 'MNIST') or (datasets == 'FMNIST'):
@@ -51,16 +52,15 @@ def main_HOG(num_train=1000 , num_test=1000, datasets: str = "MNIST"):
     # Convert descriptors to numpy arrays
     descriptors_train = np.array(descriptors_train).reshape(len(descriptors_train), -1)
     descriptors_test = np.array(descriptors_test).reshape(len(descriptors_test), -1)
-    # Standardize and Normalize the descriptors
-    descriptors_train = StandardScaler().fit_transform(descriptors_train)
-    descriptors_test = StandardScaler().fit_transform(descriptors_test)
-    descriptors_train = MinMaxScaler().fit_transform(descriptors_train)
-    descriptors_test = MinMaxScaler().fit_transform(descriptors_test)
     
     # SVM classification
-    SVM = SVC(kernel='rbf', C=10.0, gamma='auto', probability=True, decision_function_shape='ovr')
-    SVM.fit(descriptors_train, Y_train)
-    Y_pred = SVM.predict(descriptors_test)
+    #classifier = my_layers.SupportVectorsMachine()
+    classifier = my_layers.RandomForest()
+    #classifier = my_layers.GaussianProcess()
+    #classifier = my_layers.kNearestNeighbors(n_neighbors=1)
+    classifier.fit(descriptors_train, Y_train)
+    
+    Y_pred = classifier.predict(descriptors_test)
     accuracy = metrics.accuracy_score(Y_test, Y_pred) * 100
     classification_report = metrics.classification_report(Y_test, Y_pred)
     print(classification_report)

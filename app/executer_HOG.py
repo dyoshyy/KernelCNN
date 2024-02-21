@@ -5,7 +5,7 @@ datasets_array = ['MNIST', 'FMNIST', 'CIFAR10']
 if True:
     
     for dataset in datasets_array:
-        for n in [1000, 10000, 30000, 50000, 60000]:
+        for n in [1000, 10000, 30000, 60000]:
             N=1 #iteration number
             accuracy_list = []
             for _ in range(N):
