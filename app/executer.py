@@ -11,24 +11,26 @@ embedding_array = ['LE', 'PCA', 'LLE', 'TSNE']
 #ベースライン     
 if True:
     #for dataset in datasets_array:
-    for dataset in datasets_array2:
-        for n in [1000, 10000, 30000, 60000]:
-        #for n in [100]:
-            N = 1
-            accuracy_list = []
-            for _ in range(N):
-                accuracy = main_kernelCNN(n, 10000, dataset, B=1000, embedding_method=["LE","LE"], block_size=[5,5])
-                accuracy_list.append(accuracy)
+    file_dir = './average_accuracy2.txt'
+    with open(file_dir, 'a') as file:
+        for dataset in datasets_array:
+            for n in [1000, 10000, 30000, 60000]:
+            #for n in [100]:
+                N = 1
+                accuracy_list = []
+                for _ in range(N):
+                    accuracy = main_kernelCNN(n, 10000, dataset, B=1000, embedding_method=["LE","LE"], block_size=[5,5])
+                    accuracy_list.append(accuracy)
+                
+                avg_accuracy = np.mean(accuracy_list)
+                variance_accuracy = np.var(accuracy_list)
             
-            avg_accuracy = np.mean(accuracy_list)
-            variance_accuracy = np.var(accuracy_list)
-            
-            file_dir = './average_accuracy2.txt'
-            with open(file_dir, 'a') as file:
                 file.write(f'{dataset}:\n') 
                 file.write(f'n={n}\n') 
                 file.write(f'Average Accuracy: {avg_accuracy}\n')
                 file.write(f'Variance: {variance_accuracy}\n')
+            file.write('----------------------------\n')
+            
     
 #ブロックサイズ変化
 if False:
