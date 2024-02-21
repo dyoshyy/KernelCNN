@@ -3,7 +3,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
 #import layers
-import layers
+import layers as layers
 import functions
 #import layers_originalGP as layers
 from functions import pad_images
