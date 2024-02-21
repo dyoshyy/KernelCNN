@@ -13,6 +13,7 @@ if True:
     #for dataset in datasets_array:
     for dataset in datasets_array2:
         for n in [1000, 10000, 30000, 60000]:
+        #for n in [100]:
             N = 1
             accuracy_list = []
             for _ in range(N):

@@ -272,7 +272,7 @@ class RandomForest(LabelLearningLayer):
             Y = np.argmax(Y, axis=1)
         if self.classifier is None:
             print('Learning labels')
-            self.classifier = RandomForestClassifier(n_estimators=100, random_state=0)
+            self.classifier = RandomForestClassifier(n_estimators=300, max_depth=30, random_state=0)
             self.classifier.fit(X, Y)
             print('Completed')
         else:
