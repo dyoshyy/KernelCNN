@@ -17,9 +17,9 @@ def execute_each_datasets_each_samples(file_dir : str, model : str, datasets_arr
                 accuracy_N_list = []
                 for _ in range(N):
                     if model == 'KernelCNN':
-                        accuracy = main_kernelCNN(n, 10000, dataset, B=1000, embedding_method=["LE","LE"], block_size=[5,5])
+                        accuracy = main_kernelCNN(n, 10000, dataset, B=1000, embedding_method=["LE","LE"], block_size=[5,5], layers_BOOL=[1,0,0,0])
                     elif model == 'LeNet':
-                        accuracy = main_LeNet(n, 10000, dataset, block_size=[5, 5], display=False, layers_BOOL=[1,1,1,0])
+                        accuracy = main_LeNet(n, 10000, dataset, block_size=[5, 5], display=True, layers_BOOL=[1,0,0,0])
                     elif model == 'HOG':
                         accuracy = main_HOG(n, 10000, dataset)
                     accuracy_N_list.append(accuracy)
@@ -28,5 +28,5 @@ def execute_each_datasets_each_samples(file_dir : str, model : str, datasets_arr
                 accuracy_each_samples.append(avg_accuracy)
                 file.write(f'n={n}\n') 
                 file.write(f'Average Accuracy: {avg_accuracy}\n')
-            file.write(accuracy_each_samples)
+            file.write(str(accuracy_each_samples)+'\n')
             file.write('----------------------------\n')

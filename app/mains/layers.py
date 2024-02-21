@@ -338,9 +338,9 @@ class GaussianProcess(LabelLearningLayer):
         return output
 
 class kNearestNeighbors(LabelLearningLayer):
-    def __init__(self, num_neighbors=1):
+    def __init__(self, n_neighbors=1):
         super().__init__()
-        self.num_neighbors = num_neighbors
+        self.num_neighbors = n_neighbors
         self.num_classes = 10
 
     def fit(self, X, Y):

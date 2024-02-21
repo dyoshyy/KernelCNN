@@ -20,8 +20,8 @@ import functions
 np.random.seed(0)
 # Define a function to get intermediate outputs for the convolutional layers
 
-def get_intermediate_output(model, layer_name, data):
-    intermediate_layer_model = models.Model(inputs=model.input, outputs=model.get_layer(layer_name).output)
+def get_intermediate_output(model, layer_index, data):
+    intermediate_layer_model = models.Model(inputs=model.input, outputs=model.layers[layer_index].output)
     return intermediate_layer_model.predict(data)
 
 
@@ -62,17 +62,18 @@ def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5],
     activation = 'relu'
     #activation = 'tanh'
     model = models.Sequential()
-    model.add(layers.Conv2D(30, kernel_size=(block_size[0], block_size[0]), activation=activation, strides= stride, input_shape=(image_size, image_size, channel)))
+    model.add(layers.Conv2D(40, kernel_size=(block_size[0], block_size[0]), activation=activation, strides= stride, input_shape=(image_size, image_size, channel)))
+    
     if layers_BOOL[0]:
         model.add(layers.MaxPooling2D((2, 2)))
         #model.add(layers.Activation('sigmoid'))
-    if layers_BOOL[1]:
-        model.add(layers.Conv2D(60, kernel_size=(block_size[1], block_size[1]),activation=activation, strides= stride, padding='valid'))
-    if layers_BOOL[2]:
-        model.add(layers.MaxPooling2D((2, 2)))
-        #model.add(layers.Activation('sigmoid'))
-    if layers_BOOL[3]:
-        model.add(layers.Conv2D(32, kernel_size=(block_size[1], block_size[1]),activation=activation, strides= stride, padding='valid'))
+        if layers_BOOL[1]:
+            model.add(layers.Conv2D(60, kernel_size=(block_size[1], block_size[1]),activation=activation, strides= stride, padding='valid'))
+            if layers_BOOL[2]:
+                model.add(layers.MaxPooling2D((2, 2)))
+                #model.add(layers.Activation('sigmoid'))
+                if layers_BOOL[3]:
+                    model.add(layers.Conv2D(32, kernel_size=(block_size[1], block_size[1]),activation=activation, strides= stride, padding='valid'))
     model.add(layers.Flatten())
     model.add(layers.Dense(120, activation=activation))
     model.add(layers.Dense(84, activation=activation))
@@ -87,27 +88,19 @@ def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5],
     es = EarlyStopping(monitor='val_loss', mode='auto', patience=5, verbose=0)
     cp = ModelCheckpoint("./weights/model_weights_epoch_{epoch:02d}.h5", save_weights_only=True, save_freq='epoch', period = 1)
     
-    history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[cp], validation_split=0.1)
+    history = model.fit(train_X, train_Y, batch_size=batch_size, verbose=0, epochs=epochs, callbacks=[es], validation_split=0.1)
 
     #SVMによる識別
-    train_features = get_intermediate_output(model, 'max_pooling2d_1', train_X)
+    train_features = get_intermediate_output(model, 1, train_X)
 
-    # Train an SVM classifier
-    '''
-    svm = SVC(kernel='rbf', C=10.0, gamma='auto', probability=True, decision_function_shape='ovr')
-    train_Y_1d = np.argmax(train_Y, axis=1)
-    svm.fit(flattened_output, train_Y_1d)
-    '''
+    # Train a classifier
     #classifier = my_layers.SupportVectorsMachine()
-    classifier = my_layers.RandomForest()
+    #classifier = my_layers.RandomForest()
     #classifier = my_layers.GaussianProcess()
-    #classifier = my_layers.kNearestNeighbors(n_neighbors=1)
-    
+    classifier = my_layers.kNearestNeighbors(n_neighbors=1)
     classifier.fit(train_features, train_Y)
 
-    # Use the trained SVM classifier for prediction
-    test_features = get_intermediate_output(model, 'max_pooling2d_1', test_X)
-    
+    test_features = get_intermediate_output(model, 1, test_X)
     predictions = classifier.predict(test_features)
     accuracy = metrics.accuracy_score(np.argmax(test_Y, axis=1), predictions) * 100
     classification_report = metrics.classification_report(np.argmax(test_Y, axis=1), predictions)
@@ -117,15 +110,11 @@ def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5],
     if display:
         #学習後のモデルの出力
         block_outputs = []
-        block_outputs.append(get_intermediate_output(model, 'conv2d', train_X))
-        if layers_BOOL[1]:
-            block_outputs.append(get_intermediate_output(model, 'max_pooling2d', train_X))
-            block_outputs.append(get_intermediate_output(model, 'conv2d_1', train_X))
-            if layers_BOOL[3]:
-                block_outputs.append(get_intermediate_output(model, 'max_pooling2d_1', train_X)) 
-                block_outputs.append(get_intermediate_output(model, 'conv2d_2', train_X))
+        for layer_idx in range(len(model.layers)-3):
+            block_outputs.append(get_intermediate_output(model, layer_idx, train_X))
+            print(f"Block {layer_idx+1} output shape:", block_outputs[layer_idx].shape)
 
-        weights1 = model.get_layer("conv2d").get_weights()[0]
+        weights1 = model.layers[0].get_weights()[0]
         visualize_emb(train_X, train_Y, block_outputs[0], block_size=block_size[0], stride=stride, B=None, embedding_method='LeNet', dataset_name=datasets)
         display_images(block_outputs[0], 2, 'LeNet', datasets, f'LeNet Output layer 2 n={num_train}')
         display_weights(weights1, datasets, layer_idx=2)
