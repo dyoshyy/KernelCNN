@@ -10,6 +10,8 @@ from sklearn.discriminant_analysis import StandardScaler
 from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
 from KSLE import SLE
+import pickle
+import os
 
 
 def make_unique_filename(preliminary_name: str, file_path: str):
@@ -479,9 +481,17 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
 
 
 def load_KTH_TIPS_dataset():
+    cache_file = "dataset_cache.pkl"
+    
+    # Check if cache file exists
+    if os.path.exists(cache_file):
+        # Load data from cache
+        with open(cache_file, "rb") as file:
+            return pickle.load(file)
+    
     file_dir = "/workspaces/KernelCNN/app/data/MNIST/raw/KTH_TIPS"
-    images = []
-    labels = []
+    images = np.ndarray((0, 200, 200, 1))
+    labels = np.ndarray(0)
     label_to_number = {}
     number = 0
     for root, dirs, files in os.walk(file_dir):
@@ -492,30 +502,33 @@ def load_KTH_TIPS_dataset():
                 if label not in label_to_number:
                     label_to_number[label] = number
                     number += 1
-                images.append(cv2.imread(image_path))
-                labels.append(label_to_number[label])
                 
                 image = cv2.imread(image_path)
                 image = cv2.resize(image, (200, 200))
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).reshape(200, 200, 1)
-                images.append(image)
-                labels.append(label)
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).reshape(1, 200, 200, 1)
+                images = np.append(images, image, axis=0)
+                labels = np.append(labels, label_to_number[label])
+    
     images = np.array(images)
     labels = np.array(labels)
 
-    # データをシャッフルする
+    # Shuffle the data
     indices = np.arange(len(images))
     np.random.shuffle(indices)
     images = images[indices]
     labels = labels[indices]
 
-    # データをトレーニングセットとテストセットに分割する
+    # Split the data into training and test sets
     split_idx = int(len(images) * 0.8)
     train_X = images[:split_idx]
     train_Y = labels[:split_idx]
     test_X = images[split_idx:]
     test_Y = labels[split_idx:]
-
+    
+    # Save data to cache
+    with open(cache_file, "wb") as file:
+        pickle.dump((train_X, train_Y, test_X, test_Y), file)
+    
     return train_X, train_Y, test_X, test_Y
 
 def check_dataset_loading():

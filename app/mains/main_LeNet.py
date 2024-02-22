@@ -52,6 +52,7 @@ def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5],
         test_X = pad_images(test_X, image_size)
         channel = 3
     elif datasets == 'KTH':
+        image_size = 200
         train_X, train_Y, test_X, test_Y = load_KTH_TIPS_dataset()
         channel = 1
     
@@ -153,7 +154,6 @@ def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5],
     return accuracy
 
 if __name__ == '__main__':
-
     args = sys.argv
     num_train = int(args[1])
     num_test = int(args[2])
