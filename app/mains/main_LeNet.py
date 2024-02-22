@@ -27,6 +27,7 @@ def get_intermediate_output(model, layer_index, data):
 
 
 def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5], display=True, layers_BOOL=[1,1,1,0]):
+    layers_BOOL = [1,1,1,0]
     backend.clear_session()
     print('Number of training samples:', num_train)
     #block_size = [7,3]
@@ -73,7 +74,7 @@ def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5],
         model.add(layers.MaxPooling2D((2, 2)))
         #model.add(layers.Activation('sigmoid'))
         if layers_BOOL[1]:
-            model.add(layers.Conv2D(60, kernel_size=(block_size[1], block_size[1]),activation=activation, strides= stride, padding='valid'))
+            model.add(layers.Conv2D(10, kernel_size=(block_size[1], block_size[1]),activation=activation, strides= stride, padding='valid'))
             if layers_BOOL[2]:
                 model.add(layers.MaxPooling2D((2, 2)))
                 #model.add(layers.Activation('sigmoid'))
@@ -109,7 +110,7 @@ def main_LeNet(num_train: int, test_num : int, datasets : str, block_size=[5,5],
     predictions = classifier.predict(test_features)
     accuracy = metrics.accuracy_score(np.argmax(test_Y, axis=1), predictions) * 100
     classification_report = metrics.classification_report(np.argmax(test_Y, axis=1), predictions)
-    #print(classification_report)
+    print(classification_report)
     print(f"Accuracy: {accuracy:.4f}")
 
     if display:
@@ -158,6 +159,6 @@ if __name__ == '__main__':
     num_train = int(args[1])
     num_test = int(args[2])
     datasets = args[3]
+    block_size = list(map(int, args[4].split(',')))
     arguments = [num_train, num_test, datasets, None]
-    #functions.calculate_average_accuracy(main, arguments, datasets, num_train, num_test, 10)
-    main_LeNet(num_train, num_test, datasets)
+    main_LeNet(num_train, num_test, datasets, block_size=block_size)

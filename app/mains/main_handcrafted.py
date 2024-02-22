@@ -70,8 +70,8 @@ def main_HOG(num_train=1000 , num_test=1000, datasets: str = "MNIST"):
 
 if __name__ == '__main__':
     args = sys.argv
-    if len(args) != 4:
-        print("Usage: python main_handcrafted.py <train> <test> <dataset>")
+    if len(args) != 5:
+        print("Usage: python main_handcrafted.py <train> <test> <dataset> <block_size_list>")
         sys.exit(1)
     else:
         n = int(args[1])  #train

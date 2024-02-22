@@ -12,6 +12,8 @@ from sklearn.decomposition import PCA, KernelPCA
 from KSLE import SLE
 import pickle
 import os
+from sklearn.model_selection import train_test_split
+
 
 
 def make_unique_filename(preliminary_name: str, file_path: str):
@@ -518,12 +520,8 @@ def load_KTH_TIPS_dataset():
     images = images[indices]
     labels = labels[indices]
 
-    # Split the data into training and test sets
-    split_idx = int(len(images) * 0.8)
-    train_X = images[:split_idx]
-    train_Y = labels[:split_idx]
-    test_X = images[split_idx:]
-    test_Y = labels[split_idx:]
+    # Split the data into training and test sets while maintaining class balance
+    train_X, test_X, train_Y, test_Y = train_test_split(images, labels, test_size=0.2, stratify=labels, random_state=42)
     
     # Save data to cache
     with open(cache_file, "wb") as file:
