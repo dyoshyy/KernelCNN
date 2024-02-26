@@ -12,9 +12,8 @@ import layers as my_layers
 
 
 def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
-    imagesize = 32
-    X_train, Y_train, X_test, Y_test = select_datasets(
-        num_train, num_test, datasets, imagesize
+    X_train, Y_train, X_test, Y_test, channel, image_size = select_datasets(
+        num_train, num_test, datasets
     )
 
     # HOG feature extraction
@@ -62,7 +61,6 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     # classifier = my_layers.GaussianProcess()
     classifier = my_layers.kNearestNeighbors(n_neighbors=1)
     classifier.fit(descriptors_train, Y_train)
-
     Y_pred = classifier.predict(descriptors_test)
     accuracy = metrics.accuracy_score(Y_test, Y_pred) * 100
     classification_report = metrics.classification_report(Y_test, Y_pred)
@@ -74,10 +72,8 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
 
 if __name__ == "__main__":
     args = sys.argv
-    if len(args) != 5:
-        print(
-            "Usage: python main_handcrafted.py <train> <test> <dataset> <block_size_list>"
-        )
+    if len(args) != 4:
+        print("Usage: python main_handcrafted.py <train> <test> <dataset>")
         sys.exit(1)
     else:
         n = int(args[1])  # train

@@ -435,7 +435,7 @@ class kNearestNeighbors(LabelLearningLayer):
 
     def fit(self, X, Y):
         X = self.vectorize_standarize(X)
-        Y = np.argmax(Y, axis=1)
+        # Y = np.argmax(Y, axis=1)
         if self.classifier is None:
             print("Learning labels")
             self.classifier = KNeighborsClassifier(n_neighbors=self.num_neighbors)
