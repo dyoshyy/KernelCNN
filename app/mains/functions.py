@@ -2,7 +2,8 @@ import cv2
 import numpy as np
 import os
 import sys
-sys.path.append('/workspaces/KernelCNN/app/data')
+
+sys.path.append("/workspaces/KernelCNN/app/data")
 import matplotlib.pyplot as plt
 import math
 from skimage import util
@@ -13,7 +14,6 @@ from KSLE import SLE
 import pickle
 import os
 from sklearn.model_selection import train_test_split
-
 
 
 def make_unique_filename(preliminary_name: str, file_path: str):
@@ -57,12 +57,14 @@ def scale_to_0_255(data):
         return scaled_data.astype(np.uint8)
 
 
-def display_images(data, layer_number, embedding_method: str, dataset_name: str, suptitle: str):
+def display_images(
+    data, layer_number, embedding_method: str, dataset_name: str, suptitle: str
+):
     num_data = 3
     img_idx = 1
-    for n in [0,1,7]:
+    for n in [0, 1, 7]:
         data_to_display = data[n]
-        #data_to_display = scale_to_0_255(data_to_display)
+        # data_to_display = scale_to_0_255(data_to_display)
         if data_to_display.shape[2] == 6:
             num_in_a_row = 6
         else:
@@ -71,7 +73,9 @@ def display_images(data, layer_number, embedding_method: str, dataset_name: str,
         Channels = data_to_display.shape[2]
         Rows = math.ceil(Channels / num_in_a_row)
 
-        fig, axes = plt.subplots(Rows, num_in_a_row, figsize=(num_in_a_row*1.5, 2 * Rows))
+        fig, axes = plt.subplots(
+            Rows, num_in_a_row, figsize=(num_in_a_row * 1.5, 2 * Rows)
+        )
         fig.subplots_adjust(hspace=0.4)
 
         for r in range(Rows):
@@ -87,25 +91,30 @@ def display_images(data, layer_number, embedding_method: str, dataset_name: str,
                     ax.imshow(image, cmap="gray")
                     ax.set_title("Channel {}".format(index + 1))
 
-        #fig.suptitle(suptitle)
+        # fig.suptitle(suptitle)
         filename = f"{layer_number}_{embedding_method}_{dataset_name}_{img_idx}"
         file_dir = "../results/results_output"
         if not os.path.exists(file_dir):
             os.makedirs(file_dir)
         filename = make_unique_filename(filename, file_dir)
         plt.tight_layout()
-        plt.savefig(file_dir +f"/{filename}.png")
+        plt.savefig(file_dir + f"/{filename}.png")
         plt.close()
         # plt.show()
-        img_idx+=1
+        img_idx += 1
 
 
 def display_weights(weights, dataset_name, layer_idx):
     num_input_channels = weights.shape[2]
     num_output_channels = weights.shape[3]
 
-    fig, axs = plt.subplots(num_input_channels, num_output_channels, figsize=(num_output_channels + 10, num_input_channels + 1), dpi=72)
-    #fig.suptitle(f"Layer{layer_idx} weights")
+    fig, axs = plt.subplots(
+        num_input_channels,
+        num_output_channels,
+        figsize=(num_output_channels + 10, num_input_channels + 1),
+        dpi=72,
+    )
+    # fig.suptitle(f"Layer{layer_idx} weights")
 
     for i in range(num_input_channels):
         for j in range(num_output_channels):
@@ -154,24 +163,31 @@ def visualize_emb(
         os.makedirs(file_dir)
     filename = f"{embedding_method}_{dataset_name}"
     filename = make_unique_filename(filename, file_dir)
-    
+
     input_data = input_data[:100]
     input_data_label = input_data_label[:100]
     convolved_data = convolved_data[:100]
 
     # 画像データからブロックに変換
-    blocks = np.empty((0,block_size,block_size,input_data.shape[3]))
+    blocks = np.empty((0, block_size, block_size, input_data.shape[3]))
     for img_idx in range(input_data.shape[0]):
         img = input_data[img_idx]
-        block = util.view_as_windows(img, (block_size, block_size, input_data.shape[3]), stride).reshape(-1, block_size, block_size, input_data.shape[3])
+        block = util.view_as_windows(
+            img, (block_size, block_size, input_data.shape[3]), stride
+        ).reshape(-1, block_size, block_size, input_data.shape[3])
         blocks = np.concatenate((blocks, block), axis=0)
-        
+
     input_data = blocks
-    input_data_label = np.repeat(np.argmax(input_data_label, axis=1), convolved_data.shape[1] * convolved_data.shape[2])  # １枚の画像のラベルをブロックの個数分繰り返す　（例：３のラベルを２８ｘ２８繰り返す）
+    input_data_label = np.repeat(
+        np.argmax(input_data_label, axis=1),
+        convolved_data.shape[1] * convolved_data.shape[2],
+    )  # １枚の画像のラベルをブロックの個数分繰り返す　（例：３のラベルを２８ｘ２８繰り返す）
     convolved_data = convolved_data.reshape(-1, convolved_data.shape[3])
 
     # convolved_dataの重複を削除
-    convolved_data, unique_indices = np.unique(convolved_data, axis=0, return_index=True)
+    convolved_data, unique_indices = np.unique(
+        convolved_data, axis=0, return_index=True
+    )
     input_data_label = input_data_label[unique_indices]
     input_data = input_data[unique_indices]
 
@@ -188,15 +204,19 @@ def visualize_emb(
     input_data = scale_to_0_255(input_data)
 
     # ２チャネルごとに列方向に描画
-    #num_images = int(convolved_data.shape[1] / 2)
+    # num_images = int(convolved_data.shape[1] / 2)
     num_images = 3
-    if int(input_data.shape[3])==1 or int(input_data.shape[3])==3:
+    if int(input_data.shape[3]) == 1 or int(input_data.shape[3]) == 3:
         num_input_channels = int(input_data.shape[3])
     else:
         num_input_channels = 6
-    #num_input_channels = int(input_data.shape[3])
+    # num_input_channels = int(input_data.shape[3])
     fig, axs = plt.subplots(num_images, 1, figsize=(8, num_images * 6 + 1))
-    fig2, axs2 = plt.subplots(num_blocks_to_display,num_input_channels + 1,figsize=(3 + 2 * num_input_channels / 3, num_blocks_to_display),)
+    fig2, axs2 = plt.subplots(
+        num_blocks_to_display,
+        num_input_channels + 1,
+        figsize=(3 + 2 * num_input_channels / 3, num_blocks_to_display),
+    )
 
     for img_idx in range(num_images):
         convolved_data_sep = convolved_data[:, (2 * img_idx) : (2 * (img_idx + 1))]
@@ -220,7 +240,7 @@ def visualize_emb(
             s=600,
             edgecolors="black",
         )
-        #plt.colorbar(sc, label="label") #凡例のプロット
+        # plt.colorbar(sc, label="label") #凡例のプロット
         # Annotationのプロット
         for dot_idx in range(len(convolved_data)):
             x, y = convolved_data_sep[dot_idx]
@@ -237,9 +257,9 @@ def visualize_emb(
         ax.set_box_aspect(1)
         ax.set_xlim(x_min - k, x_max + k)
         ax.set_ylim(y_min - l, y_max + l)
-        #ax.set_title(f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={block_size})")
+        # ax.set_title(f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={block_size})")
     for dot_idx in range(len(convolved_data)):
-        for channel_idx in range(num_input_channels+1):
+        for channel_idx in range(num_input_channels + 1):
             ax2 = axs2[dot_idx, channel_idx]
             ax2.axis("off")
             if channel_idx == 0:
@@ -264,8 +284,8 @@ def visualize_emb(
     # plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95)
     fig.tight_layout()
     fig2.tight_layout()
-    fig.savefig(file_dir +f"/{filename}.png")
-    fig2.savefig(file_dir +f"/{filename}_blocks.png")
+    fig.savefig(file_dir + f"/{filename}.png")
+    fig2.savefig(file_dir + f"/{filename}_blocks.png")
     plt.close()
 
     output_dots = False
@@ -369,6 +389,7 @@ def calculate_similarity(array1, array2):
     similarity = count / total
     return similarity
 
+
 def binarize_images(images):
     min_val = np.min(images)
     max_val = np.max(images)
@@ -434,7 +455,9 @@ def pad_images(images, out_size):
     return padded_images
 
 
-def select_embedding_method(embedding_method: str, Channels_next: int, data_to_embed, data_to_embed_label):
+def select_embedding_method(
+    embedding_method: str, Channels_next: int, data_to_embed, data_to_embed_label
+):
     if embedding_method == "PCA":
         pca = PCA(n_components=Channels_next, svd_solver="auto")
         embedded_blocks = pca.fit_transform(data_to_embed)
@@ -449,9 +472,11 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
         print(f"k for knn:{n}")
         LE = SpectralEmbedding(n_components=Channels_next, n_neighbors=n)
         embedded_blocks = LE.fit_transform(data_to_embed)
-    
+
     elif embedding_method == "SLE":
-        embedded_blocks, _ = SLE(X=data_to_embed,  Y=data_to_embed_label, la=0.5,map_d=Channels_next)
+        embedded_blocks, _ = SLE(
+            X=data_to_embed, Y=data_to_embed_label, la=0.5, map_d=Channels_next
+        )
 
     elif embedding_method == "TSNE":
         tsne = TSNE(
@@ -466,7 +491,7 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
         embedded_blocks = tsne.fit_transform(data_to_embed)
 
     elif embedding_method == "LLE":
-        
+
         lle = LocallyLinearEmbedding(n_components=Channels_next, n_neighbors=100)
         embedded_blocks = lle.fit_transform(data_to_embed)
     else:
@@ -475,7 +500,7 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
     normalized_blocks = []
     for channel in range(embedded_blocks.shape[1]):
         channel_data = embedded_blocks[:, channel]
-        #normalized_channel = MinMaxScaler().fit_transform(channel_data.reshape(-1, 1))
+        # normalized_channel = MinMaxScaler().fit_transform(channel_data.reshape(-1, 1))
         channel_data = StandardScaler().fit_transform(channel_data.reshape(-1, 1))
         normalized_blocks.append(channel_data)
     normalized_blocks = np.stack(normalized_blocks, axis=1).reshape(-1, Channels_next)
@@ -484,13 +509,13 @@ def select_embedding_method(embedding_method: str, Channels_next: int, data_to_e
 
 def load_KTH_TIPS_dataset():
     cache_file = "dataset_cache.pkl"
-    
+
     # Check if cache file exists
     if os.path.exists(cache_file):
         # Load data from cache
         with open(cache_file, "rb") as file:
             return pickle.load(file)
-    
+
     file_dir = "/workspaces/KernelCNN/app/data/MNIST/raw/KTH_TIPS"
     images = np.ndarray((0, 200, 200, 1))
     labels = np.ndarray(0)
@@ -504,13 +529,13 @@ def load_KTH_TIPS_dataset():
                 if label not in label_to_number:
                     label_to_number[label] = number
                     number += 1
-                
+
                 image = cv2.imread(image_path)
                 image = cv2.resize(image, (200, 200))
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).reshape(1, 200, 200, 1)
                 images = np.append(images, image, axis=0)
                 labels = np.append(labels, label_to_number[label])
-    
+
     images = np.array(images)
     labels = np.array(labels)
 
@@ -521,23 +546,26 @@ def load_KTH_TIPS_dataset():
     labels = labels[indices]
 
     # Split the data into training and test sets while maintaining class balance
-    train_X, test_X, train_Y, test_Y = train_test_split(images, labels, test_size=0.2, stratify=labels, random_state=42)
-    
+    train_X, test_X, train_Y, test_Y = train_test_split(
+        images, labels, test_size=0.2, stratify=labels, random_state=42
+    )
+
     # Save data to cache
     with open(cache_file, "wb") as file:
         pickle.dump((train_X, train_Y, test_X, test_Y), file)
-    
+
     return train_X, train_Y, test_X, test_Y
+
 
 def check_dataset_loading():
     train_X, train_Y, test_X, test_Y = load_KTH_TIPS_dataset()
-    
+
     # Print the shape of the loaded data
     print("Train X shape:", train_X.shape)
     print("Train Y shape:", train_Y.shape)
     print("Test X shape:", test_X.shape)
     print("Test Y shape:", test_Y.shape)
-    
+
     # Print a sample image and its corresponding label
     sample_index = 0
     sample_image = train_X[sample_index]
