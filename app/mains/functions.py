@@ -518,7 +518,7 @@ def load_KTH_TIPS_dataset():
         with open(cache_file, "rb") as file:
             return pickle.load(file)
 
-    file_dir = "/workspaces/KernelCNN/app/data/MNIST/raw/KTH_TIPS"
+    file_dir = "/workspaces/KernelCNN/app/data/KTH_TIPS"
     images = np.ndarray((0, 200, 200, 1))
     labels = np.ndarray(0)
     label_to_number = {}
