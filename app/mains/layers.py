@@ -184,18 +184,19 @@ class KIMLayer:
             batch_images = self.input_data[
                 batch_size * batch_index : batch_size * (batch_index + 1)
             ]
+            num_batch_images = batch_images.shape[0] #入力データがbatch_size未満の場合の対応
             blocks_to_convert = util.view_as_windows(
                 batch_images, (1, self.b, self.b, self.C_prev), self.stride
             )
             blocks_to_convert = blocks_to_convert.reshape(
-                batch_size * (self.H - self.b + 1) ** 2, self.b * self.b * self.C_prev
+                num_batch_images * (self.H - self.b + 1) ** 2, self.b * self.b * self.C_prev
             )  # ex) (10*784, 5*5*1)
             predictions, _ = self.GP.predict(blocks_to_convert)  # shape: (10*784, 6)
             predictions = predictions.reshape(
-                batch_size, self.H - self.b + 1, self.H - self.b + 1, self.C_next
+                num_batch_images, self.H - self.b + 1, self.H - self.b + 1, self.C_next
             )
             self.output_data[
-                batch_size * batch_index : batch_size * (batch_index + 1)
+                batch_size * batch_index : batch_size * batch_index + num_batch_images
             ] = predictions
 
     def calculate(self, input_X, input_Y):
