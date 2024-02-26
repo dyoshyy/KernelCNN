@@ -19,35 +19,7 @@ def main_kernelCNN(
     block_size=[5, 5],
     layers_BOOL=[1, 0, 0, 0],
 ):
-    # imagesize = 32
-    # if (datasets == "MNIST") or (datasets == "FMNIST"):
-    #     if datasets == "MNIST":
-    #         (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
-    #     if datasets == "FMNIST":
-    #         (X_train, Y_train), (X_test, Y_test) = fashion_mnist.load_data()
-
-    #     X_train = X_train.reshape(-1, 28, 28, 1)
-    #     X_test = X_test.reshape(-1, 28, 28, 1)
-    #     X_train = pad_images(X_train, 32)
-    #     X_test = pad_images(X_test, 32)
-    #     X_train = pad_images(X_train, imagesize)
-    #     X_test = pad_images(X_test, imagesize)
-    # elif datasets == "CIFAR10":
-    #     (X_train, Y_train), (X_test, Y_test) = cifar10.load_data()
-    #     X_train = X_train.reshape(-1, 32, 32, 3)
-    #     X_test = X_test.reshape(-1, 32, 32, 3)
-    #     if imagesize > 32:
-    #         X_train = pad_images(X_train, imagesize)
-    #         X_test = pad_images(X_test, imagesize)
-
-    # # データ整形
-    # Y_train = to_categorical(Y_train, 10)
-    # Y_test = to_categorical(Y_test, 10)
-
-    # X_train = X_train[:num_train]
-    # Y_train = Y_train[:num_train]
-    # X_test = X_test[:num_test]
-    # Y_test = Y_test[:num_test]
+    
     train_X, train_Y, test_X, test_Y, channel = functions.select_datasets(
         num_train, num_test, datasets, 32
     )
