@@ -578,8 +578,9 @@ def check_dataset_loading():
     plt.savefig("sample_image.png")
 
 
-def select_datasets(num_train: int, num_test: int, datasets: str, image_size: int):
+def select_datasets(num_train: int, num_test: int, datasets: str):
     if (datasets == "MNIST") or (datasets == "FMNIST"):
+        image_size = 32
         if datasets == "MNIST":
             (train_X, train_Y), (test_X, test_Y) = mnist.load_data()
         if datasets == "FMNIST":
@@ -591,6 +592,7 @@ def select_datasets(num_train: int, num_test: int, datasets: str, image_size: in
         test_X = pad_images(test_X, image_size)
         channel = 1
     elif datasets == "CIFAR10":
+        image_size = 32
         (train_X, train_Y), (test_X, test_Y) = cifar10.load_data()
         train_X = train_X.reshape(-1, 32, 32, 3)
         test_X = test_X.reshape(-1, 32, 32, 3)
@@ -609,4 +611,4 @@ def select_datasets(num_train: int, num_test: int, datasets: str, image_size: in
     test_X = test_X[:num_test] / 255
     test_Y = test_Y[:num_test]
 
-    return train_X, train_Y, test_X, test_Y, channel
+    return train_X, train_Y, test_X, test_Y, channel, image_size

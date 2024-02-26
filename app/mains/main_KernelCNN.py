@@ -19,9 +19,9 @@ def main_kernelCNN(
     block_size=[5, 5],
     layers_BOOL=[1, 0, 0, 0],
 ):
-    
-    train_X, train_Y, test_X, test_Y, channel = functions.select_datasets(
-        num_train, num_test, datasets, 32
+
+    train_X, train_Y, test_X, test_Y, channel, image_size = functions.select_datasets(
+        num_train, num_test, datasets
     )
 
     # モデル定義

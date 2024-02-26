@@ -31,15 +31,13 @@ def main_LeNet(
     display=True,
     layers_BOOL=[1, 1, 1, 0],
 ):
-    layers_BOOL = [1, 1, 1, 0]
     backend.clear_session()
     print("Number of training samples:", num_train)
     # block_size = [7,3]
     stride = 1
-    image_size = 32
 
-    train_X, train_Y, test_X, test_Y, channel = select_datasets(
-        num_train, num_test, datasets, image_size
+    train_X, train_Y, test_X, test_Y, channel, image_size = select_datasets(
+        num_train, num_test, datasets
     )
 
     # LeNet-5 model definition
@@ -225,5 +223,8 @@ if __name__ == "__main__":
     num_test = int(args[2])
     datasets = args[3]
     block_size = list(map(int, args[4].split(",")))
+    layers_BOOL = list(map(int, args[5].split(",")))
     arguments = [num_train, num_test, datasets, None]
-    main_LeNet(num_train, num_test, datasets, block_size=block_size)
+    main_LeNet(
+        num_train, num_test, datasets, block_size=block_size, layers_BOOL=layers_BOOL
+    )
