@@ -5,23 +5,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.keras import backend
 from tensorflow.keras import layers, models, losses
-from tensorflow.keras.datasets import mnist, fashion_mnist, cifar10
-from tensorflow.keras.utils import to_categorical
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from sklearn.svm import SVC
 from sklearn import metrics
 from functions import visualize_emb
 from functions import display_images, display_weights
-from functions import pad_images
-from functions import load_KTH_TIPS_dataset
+from functions import select_datasets
 import layers as my_layers
-
 import sys
 
-import functions
-
 np.random.seed(0)
-# Define a function to get intermediate outputs for the convolutional layers
 
 
 def get_intermediate_output(model, layer_index, data):
@@ -225,40 +217,6 @@ def main_LeNet(
                 dataset_name=datasets,
             )
     return accuracy
-
-
-def select_datasets(num_train: int, num_test: int, datasets: str, image_size: int):
-    if (datasets == "MNIST") or (datasets == "FMNIST"):
-        if datasets == "MNIST":
-            (train_X, train_Y), (test_X, test_Y) = mnist.load_data()
-        if datasets == "FMNIST":
-            (train_X, train_Y), (test_X, test_Y) = fashion_mnist.load_data()
-
-        train_X = train_X.reshape(-1, 28, 28, 1)
-        test_X = test_X.reshape(-1, 28, 28, 1)
-        train_X = pad_images(train_X, image_size)
-        test_X = pad_images(test_X, image_size)
-        channel = 1
-    elif datasets == "CIFAR10":
-        (train_X, train_Y), (test_X, test_Y) = cifar10.load_data()
-        train_X = train_X.reshape(-1, 32, 32, 3)
-        test_X = test_X.reshape(-1, 32, 32, 3)
-        train_X = pad_images(train_X, image_size)
-        test_X = pad_images(test_X, image_size)
-        channel = 3
-    elif datasets == "KTH":
-        image_size = 200
-        train_X, train_Y, test_X, test_Y = load_KTH_TIPS_dataset()
-        channel = 1
-
-    train_Y = to_categorical(train_Y, 10)
-    test_Y = to_categorical(test_Y, 10)
-    train_X = train_X[:num_train] / 255
-    train_Y = train_Y[:num_train]
-    test_X = test_X[:num_test] / 255
-    test_Y = test_Y[:num_test]
-
-    return train_X, train_Y, test_X, test_Y, channel
 
 
 if __name__ == "__main__":

@@ -4,49 +4,18 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 from tqdm import tqdm
-from keras.datasets import mnist, cifar10, fashion_mnist
-from keras.preprocessing import sequence
-from sklearn.svm import SVC
 from sklearn import metrics
-from functions import pad_images
+from functions import *
 import numpy as np
-import cv2
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from matplotlib import pyplot as plt
 from skimage import feature
-from skimage.color import rgb2gray
 import layers as my_layers
-
-
-def select_dataset(datasets: str, imagesize: int):
-    if (datasets == "MNIST") or (datasets == "FMNIST"):
-        if datasets == "MNIST":
-            (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
-        if datasets == "FMNIST":
-            (X_train, Y_train), (X_test, Y_test) = fashion_mnist.load_data()
-        X_train = X_train.reshape(-1, 28, 28, 1)
-        X_test = X_test.reshape(-1, 28, 28, 1)
-        X_train = pad_images(X_train, imagesize).astype(np.uint8)
-        X_test = pad_images(X_test, imagesize).astype(np.uint8)
-    elif datasets == "CIFAR10":
-        (X_train, Y_train), (X_test, Y_test) = cifar10.load_data()
-        X_train = X_train.reshape(-1, 32, 32, 3).astype(np.uint8)
-        X_test = X_test.reshape(-1, 32, 32, 3).astype(np.uint8)
-        if imagesize > 32:
-            X_train = pad_images(X_train, imagesize)
-            X_test = pad_images(X_test, imagesize)
-
-    return X_train, Y_train, X_test, Y_test
 
 
 def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     imagesize = 32
-    X_train, Y_train, X_test, Y_test = select_dataset(datasets, imagesize)
-
-    X_train = X_train[:num_train]
-    Y_train = Y_train[:num_train]
-    X_test = X_test[:num_test]
-    Y_test = Y_test[:num_test]
+    X_train, Y_train, X_test, Y_test = select_datasets(
+        num_train, num_test, datasets, imagesize
+    )
 
     # HOG feature extraction
     descriptors_train = [
