@@ -1,9 +1,9 @@
 # KernelCNN
 
-##概要
+##　概要
 KernelCNNの実験環境です。
 
-###実行方法
+###　実行方法
 
 1.KernelCNNのexecuter実行
 ```
