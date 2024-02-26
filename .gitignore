@@ -10,7 +10,6 @@ __pycache__/
 *.log
 *.txt
 *.out
-*.png
 *.pkl
 app/nohup.out
 .gitignore
