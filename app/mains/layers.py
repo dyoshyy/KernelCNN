@@ -22,9 +22,6 @@ from scipy import stats
 from skimage import util
 from tqdm import tqdm
 
-np.set_printoptions(precision=3, threshold=10000, linewidth=200, edgeitems=10)
-
-
 class KIMLayer:
     def __init__(
         self,
