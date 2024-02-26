@@ -1,18 +1,15 @@
+from typing import Any, Optional, Union
 import GPy
 import numpy as np
 import math
 import time
-from keras import layers, models
-from keras.callbacks import EarlyStopping
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
 from functions import (
-    calculate_similarity,
     display_images,
     binarize_images,
     visualize_emb,
-    visualize_emb_dots,
     select_embedding_method,
     pad_images,
 )
@@ -38,22 +35,22 @@ class KIMLayer:
         emb: str,
         num_blocks: int,
     ):
-        self.b = block_size
-        self.b_radius = int((self.b - 1) / 2)
-        self.stride = stride
-        self.C_next = channels_next
-        self.C_prev = None
-        self.H = None
-        self.W = None
-        self.output_data = None
-        self.input_data = None
-        self.embedding = emb
-        self.GP = None
-        self.B = num_blocks
-        self.dataset_name = None
-        self.padding = padding
-        self.X_for_KIM = None
-        self.Y_for_KIM = None
+        self.b: int = block_size
+        self.b_radius: int = int((self.b - 1) / 2)
+        self.stride: int = stride
+        self.C_next: int = channels_next
+        self.C_prev: int = 0
+        self.H: int = 0
+        self.W: int = 0
+        self.output_data: np.ndarray = np.array([])
+        self.input_data: np.ndarray = np.array([])
+        self.embedding: str = emb
+        self.GP: Optional[GPy.models.SparseGPRegression] = None 
+        self.B: int = num_blocks
+        self.dataset_name: str = ""
+        self.padding: bool = padding
+        self.X_for_KIM: np.ndarray = np.array([])
+        self.Y_for_KIM: np.ndarray = np.array([])
 
     def sample_and_embed_blocks(self):
         """
@@ -68,17 +65,33 @@ class KIMLayer:
         """
         n_images = self.X_for_KIM.shape[0]
         sampled_blocks = np.empty(
-            (n_images * (self.H - self.b + 1) ** 2, self.b, self.b, self.C_prev)
+            (n_images * int(np.ceil((self.H - self.b + 1)/ self.stride ))  ** 2, self.b, self.b, self.C_prev)
         )
         print("sampling...")
-        sampled_blocks = [
-            util.view_as_windows(
-                self.X_for_KIM[n, :, :, :], (self.b, self.b, self.C_prev), self.stride
-            ).reshape((self.H - self.b + 1) ** 2, self.b, self.b, self.C_prev)
-            for n in range(n_images)
-        ]
-        sampled_blocks = np.concatenate(sampled_blocks, axis=0)
 
+        # sampled_blocks = [
+        #   util.view_as_windows(
+        #     self.X_for_KIM[n, :, :, :], (self.b, self.b, self.C_prev), self.stride
+        #   )
+        #   for n in range(n_images)
+        # ]
+        # sampled_blocks = [
+        #   block.reshape(int(np.ceil((self.H - self.b + 1)/ self.stride )) ** 2, self.b, self.b, self.C_prev)
+        #   for block in sampled_blocks
+        # ]    
+        # sampled_blocks = np.concatenate(sampled_blocks, axis=0)
+
+        # sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
+        n_images = self.X_for_KIM.shape[0]
+        sampled_blocks = util.view_as_windows(
+          self.X_for_KIM, (n_images, self.b, self.b, self.C_prev), self.stride
+        )
+        sampled_blocks = sampled_blocks.reshape(
+          n_images * int(np.ceil((self.H - self.b + 1) / self.stride)) ** 2,
+          self.b,
+          self.b,
+          self.C_prev,
+        )
         sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
         sampled_blocks_label = np.repeat(
             np.argmax(self.Y_for_KIM, axis=1),
@@ -144,9 +157,9 @@ class KIMLayer:
             indices = np.where(train_Y == label)[0][:int(n_images/n_classes)]
             selected_X.extend(train_X[indices])
             selected_Y.extend(train_Y[indices])
-        
+
         selected_X = np.array(selected_X)
-        selected_Y = np.array(selected_Y) 
+        selected_Y = np.array(selected_Y)
         """
 
         if self.GP is None:
@@ -185,15 +198,25 @@ class KIMLayer:
                 batch_size * batch_index : batch_size * (batch_index + 1)
             ]
             num_batch_images = batch_images.shape[0] #入力データがbatch_size未満の場合の対応
-            blocks_to_convert = util.view_as_windows(
-                batch_images, (1, self.b, self.b, self.C_prev), self.stride
-            )
-            blocks_to_convert = blocks_to_convert.reshape(
-                num_batch_images * (self.H - self.b + 1) ** 2, self.b * self.b * self.C_prev
-            )  # ex) (10*784, 5*5*1)
+            
+            # blocks_to_convert = util.view_as_windows(
+            #     batch_images, (1, self.b, self.b, self.C_prev), self.stride
+            # )
+            # blocks_to_convert = blocks_to_convert.reshape(
+            #     num_batch_images * int(np.ceil((self.H - self.b + 1)/self.stride)) ** 2, self.b * self.b * self.C_prev
+            # )  # ex) (10*784, 5*5*1)
+            
+            blocks_to_convert = [
+                util.view_as_windows(
+                    batch_images[n, :, :, :], (self.b, self.b, self.C_prev), self.stride
+                ).reshape(int(np.ceil((self.H - self.b + 1)/self.stride)) ** 2, self.b, self.b, self.C_prev)
+                for n in range(num_batch_images)
+            ]
+            blocks_to_convert = np.concatenate(blocks_to_convert, axis=0).reshape(-1, self.b * self.b * self.C_prev)
+
             predictions, _ = self.GP.predict(blocks_to_convert)  # shape: (10*784, 6)
             predictions = predictions.reshape(
-                num_batch_images, self.H - self.b + 1, self.H - self.b + 1, self.C_next
+                num_batch_images, int(np.ceil((self.H - self.b + 1)/self.stride)), int(np.ceil((self.H - self.b + 1)/self.stride)), self.C_next
             )
             self.output_data[
                 batch_size * batch_index : batch_size * batch_index + num_batch_images
@@ -223,8 +246,8 @@ class KIMLayer:
         self.output_data = np.zeros(
             (
                 num_inputs,
-                int((self.H - self.b + 1) / self.stride),
-                int((self.W - self.b + 1) / self.stride),
+                int(np.ceil((self.H - self.b + 1) / self.stride)),
+                int(np.ceil((self.H - self.b + 1) / self.stride)),
                 self.C_next,
             )
         )
@@ -313,7 +336,6 @@ class SupportVectorsMachine(LabelLearningLayer):
 
     def fit(self, X, Y):
         X = self.vectorize_standarize(X)
-        Y = np.argmax(Y, axis=1)
         if self.classifier is None:
             print("Learning labels")
             self.classifier = SVC(
@@ -366,9 +388,9 @@ class RandomForest(LabelLearningLayer):
 class GaussianProcess(LabelLearningLayer):
     def __init__(self):
         super().__init__()
-        self.num_GP = None
-        self.OVER_threshold = False
-        self.threshold = 10000
+        self.num_GP: int = 0
+        self.OVER_threshold: bool = False
+        self.threshold: int = 10000
 
     def fit(self, X, Y):
         input_dim = X.shape[1] * X.shape[2] * X.shape[3]
@@ -554,7 +576,8 @@ class Model:
             else:  # プーリング層のとき
                 test_X = layer.calculate(test_X)
 
-        Y_answer = [np.argmax(test_Y[n, :]) for n in range(test_Y.shape[0])]
+        # Y_answer = [np.argmax(test_Y[n, :]) for n in range(test_Y.shape[0])]
+        Y_answer = test_Y
         # np.savetxt('test_Y.csv', Y_answer, delimiter=',')
         self.time_predicting = time.time() - start_time
         accuracy = metrics.accuracy_score(Y_answer, Y_predicted) * 100

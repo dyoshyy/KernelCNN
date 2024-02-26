@@ -3,9 +3,10 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import numpy as np
 import matplotlib.pyplot as plt
-from tensorflow.keras import backend
-from tensorflow.keras import layers, models, losses
-from keras.callbacks import EarlyStopping, ModelCheckpoint
+from keras import backend
+from keras import layers, models, losses
+from keras import optimizers
+from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from sklearn import metrics
 from functions import visualize_emb
 from functions import display_images, display_weights
@@ -22,7 +23,6 @@ def get_intermediate_output(model, layer_index, data):
     )
     return intermediate_layer_model.predict(data)
 
-
 def main_LeNet(
     num_train: int,
     num_test: int,
@@ -33,7 +33,6 @@ def main_LeNet(
 ):
     backend.clear_session()
     print("Number of training samples:", num_train)
-    # block_size = [7,3]
     stride = 1
 
     train_X, train_Y, test_X, test_Y, channel, image_size = select_datasets(
@@ -85,14 +84,18 @@ def main_LeNet(
     model.add(layers.Dense(84, activation=activation))
     model.add(layers.Dense(10, activation="softmax"))
     # model.summary()
-    # Compile the model
-    model.compile(
-        optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"]
-    )
 
-    # Train the model
+    #Model parameters    
     batch_size = 64
-    epochs = 50
+    epochs = 100
+    adam = optimizers.Adam(learning_rate=0.01)
+    
+    #Callbacks
+    lrr = ReduceLROnPlateau(monitor='val_accuracy',
+                                                patience=2,
+                                                verbose=1,
+                                                factor=0.5,
+                                                min_lr=0.0001)
     es = EarlyStopping(monitor="val_loss", mode="auto", patience=5, verbose=0)
     cp = ModelCheckpoint(
         "./weights/model_weights_epoch_{epoch:02d}.h5",
@@ -100,15 +103,18 @@ def main_LeNet(
         save_freq="epoch",
         period=1,
     )
-
+    
+    model.compile(
+        optimizer=adam, loss="categorical_crossentropy", metrics=["accuracy"]
+    )
     history = model.fit(
         train_X,
         train_Y,
         batch_size=batch_size,
-        verbose=0,
+        verbose=1,
         epochs=epochs,
-        callbacks=[es],
-        validation_split=0.1,
+        callbacks=[es, lrr],
+        validation_split=0.2,
     )
 
     # SVMによる識別
@@ -123,9 +129,9 @@ def main_LeNet(
 
     test_features = get_intermediate_output(model, 1, test_X)
     predictions = classifier.predict(test_features)
-    accuracy = metrics.accuracy_score(np.argmax(test_Y, axis=1), predictions) * 100
+    accuracy = metrics.accuracy_score(test_Y, predictions) * 100
     classification_report = metrics.classification_report(
-        np.argmax(test_Y, axis=1), predictions
+        test_Y, predictions
     )
     print(classification_report)
     print(f"Accuracy: {accuracy:.4f}")
@@ -144,7 +150,7 @@ def main_LeNet(
             block_outputs[0],
             block_size=block_size[0],
             stride=stride,
-            B=None,
+            B=0,
             embedding_method="LeNet",
             dataset_name=datasets,
         )

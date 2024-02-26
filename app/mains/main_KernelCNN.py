@@ -23,7 +23,7 @@ def main_kernelCNN(
     train_X, train_Y, test_X, test_Y, channel, image_size = functions.select_datasets(
         num_train, num_test, datasets
     )
-
+    stride = 2
     # モデル定義
     model = layers.Model(display=True)
     model.data_set_name = datasets
@@ -31,7 +31,7 @@ def main_kernelCNN(
         layers.KIMLayer(
             block_size=block_size[0],
             channels_next=40,
-            stride=1,
+            stride=stride,
             padding=False,
             emb=embedding_method[0],
             num_blocks=B,
@@ -44,7 +44,7 @@ def main_kernelCNN(
             layers.KIMLayer(
                 block_size=block_size[1],
                 channels_next=60,
-                stride=1,
+                stride=stride,
                 padding=False,
                 emb=embedding_method[1],
                 num_blocks=B,
@@ -57,7 +57,7 @@ def main_kernelCNN(
             layers.KIMLayer(
                 block_size=block_size[2],
                 channels_next=32,
-                stride=1,
+                stride=stride,
                 padding=False,
                 emb=embedding_method[2],
                 num_blocks=B,
