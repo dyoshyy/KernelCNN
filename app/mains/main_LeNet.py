@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import numpy as np
+import tensorflow as tf
 from keras import backend
 from keras import layers, models, losses
 from keras import optimizers
@@ -15,6 +16,7 @@ import layers as my_layers
 import sys
 
 np.random.seed(0)
+tf.random.set_seed(0)
 
 
 def get_intermediate_output(model, layer_index, data):
@@ -34,7 +36,7 @@ def main_LeNet(
 ):
     backend.clear_session()
     print("Number of training samples:", num_train)
-    stride = 1
+    stride = 5
 
     train_X, train_Y, test_X, test_Y, channel, image_size = select_datasets(
         num_train, num_test, datasets
