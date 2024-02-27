@@ -23,7 +23,7 @@ def main_kernelCNN(
     train_X, train_Y, test_X, test_Y, channel, image_size = functions.select_datasets(
         num_train, num_test, datasets
     )
-    stride = 1
+    stride = 5
     # モデル定義
     model = layers.Model(display=True)
     model.data_set_name = datasets
