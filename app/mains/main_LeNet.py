@@ -1,8 +1,8 @@
 import os
+from matplotlib import pyplot as plt
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 import numpy as np
-import matplotlib.pyplot as plt
 from keras import backend
 from keras import layers, models, losses
 from keras import optimizers
@@ -23,6 +23,7 @@ def get_intermediate_output(model, layer_index, data):
     )
     return intermediate_layer_model.predict(data)
 
+
 def main_LeNet(
     num_train: int,
     num_test: int,
@@ -38,7 +39,6 @@ def main_LeNet(
     train_X, train_Y, test_X, test_Y, channel, image_size = select_datasets(
         num_train, num_test, datasets
     )
-
     # LeNet-5 model definition
     activation = "relu"
     # activation = 'tanh'
@@ -59,7 +59,7 @@ def main_LeNet(
         if layers_BOOL[1]:
             model.add(
                 layers.Conv2D(
-                    10,
+                    8,
                     kernel_size=(block_size[1], block_size[1]),
                     activation=activation,
                     strides=stride,
@@ -85,36 +85,34 @@ def main_LeNet(
     model.add(layers.Dense(10, activation="softmax"))
     # model.summary()
 
-    #Model parameters    
-    batch_size = 64
-    epochs = 100
+    # Model parameters
+    batch_size = 128
+    epochs = 50
     adam = optimizers.Adam(learning_rate=0.01)
-    
-    #Callbacks
-    lrr = ReduceLROnPlateau(monitor='val_accuracy',
-                                                patience=2,
-                                                verbose=1,
-                                                factor=0.5,
-                                                min_lr=0.0001)
-    es = EarlyStopping(monitor="val_loss", mode="auto", patience=5, verbose=0)
+
+    # Callbacks
+    lrr = ReduceLROnPlateau(
+        monitor="val_accuracy", patience=2, verbose=1, factor=0.5, min_lr=0.0001
+    )
+    es = EarlyStopping(monitor="val_loss", mode="auto", patience=3, verbose=0)
     cp = ModelCheckpoint(
         "./weights/model_weights_epoch_{epoch:02d}.h5",
         save_weights_only=True,
         save_freq="epoch",
         period=1,
     )
-    
+
     model.compile(
-        optimizer=adam, loss="categorical_crossentropy", metrics=["accuracy"]
+        optimizer="sgd", loss="categorical_crossentropy", metrics=["accuracy"]
     )
-    history = model.fit(
+    result = model.fit(
         train_X,
         train_Y,
         batch_size=batch_size,
         verbose=1,
         epochs=epochs,
         callbacks=[es, lrr],
-        validation_split=0.2,
+        validation_data=(test_X, test_Y),
     )
 
     # SVMによる識別
@@ -130,11 +128,28 @@ def main_LeNet(
     test_features = get_intermediate_output(model, 1, test_X)
     predictions = classifier.predict(test_features)
     accuracy = metrics.accuracy_score(test_Y, predictions) * 100
-    classification_report = metrics.classification_report(
-        test_Y, predictions
-    )
+    classification_report = metrics.classification_report(test_Y, predictions)
     print(classification_report)
     print(f"Accuracy: {accuracy:.4f}")
+
+    if True:  # 学習の過程を可視化
+        plt.figure(figsize=[20, 8])
+        plt.plot(result.history["accuracy"])
+        plt.plot(result.history["val_accuracy"])
+        plt.title("Epoch VS Model Accuracy", size=25, pad=20)
+        plt.ylabel("Accuracy", size=15)
+        plt.xlabel("Epoch", size=15)
+        plt.legend(["train", "test"], loc="upper left")
+        plt.savefig("./learning_historyAccuracy.png")
+
+        plt.figure(figsize=[20, 8])
+        plt.plot(result.history["loss"])
+        plt.plot(result.history["val_loss"])
+        plt.title("Epoch VS Model Loss", size=25, pad=20)
+        plt.ylabel("Loss", size=15)
+        plt.xlabel("Epoch", size=15)
+        plt.legend(["train", "test"], loc="upper right")
+        plt.savefig("./learning_historyLoss.png")
 
     if display:
         # 学習後のモデルの出力

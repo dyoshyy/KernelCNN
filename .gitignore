@@ -13,3 +13,6 @@ __pycache__/
 *.pkl
 app/nohup.out
 .gitignore
+app/mains/learning_historyAccuracy.png
+app/mains/learning_historyLoss.png
+app/mains/KTH_test.py
