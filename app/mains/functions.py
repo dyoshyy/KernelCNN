@@ -519,7 +519,7 @@ def load_KTH_TIPS_dataset():
             return pickle.load(file)
 
     file_dir = "/workspaces/KernelCNN/app/data/KTH_TIPS"
-    images = np.ndarray((0, 200, 200, 1))
+    images = np.ndarray((0, 200, 200, 3))
     labels = np.ndarray(0)
     label_to_number = {}
     number = 0
@@ -533,8 +533,8 @@ def load_KTH_TIPS_dataset():
                     number += 1
 
                 image = cv2.imread(image_path)
-                image = cv2.resize(image, (200, 200))
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).reshape(1, 200, 200, 1)
+                image = cv2.resize(image, (200, 200)).reshape(1, 200, 200, 3)
+                # image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).reshape(1, 200, 200, 1)
                 images = np.append(images, image, axis=0)
                 labels = np.append(labels, label_to_number[label])
 
@@ -602,7 +602,7 @@ def select_datasets(num_train: int, num_test: int, datasets: str):
     elif datasets == "KTH":
         image_size = 200
         train_X, train_Y, test_X, test_Y = load_KTH_TIPS_dataset()
-        channel = 1
+        channel = train_X.shape[3]
 
     train_Y = to_categorical(train_Y, 10)
     test_Y = to_categorical(test_Y, 10)
