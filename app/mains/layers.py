@@ -505,7 +505,7 @@ class Model:
     def fit(self, X, Y):
         start_time = time.time()
         self.num_train = X.shape[0]
-
+        
         for n, layer in enumerate(self.layers):
             self.shapes.append(np.shape(X)[1:])
             layer.dataset_name = self.data_set_name

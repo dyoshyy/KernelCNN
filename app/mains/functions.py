@@ -1,3 +1,4 @@
+from turtle import pd
 import cv2
 import numpy as np
 import os
@@ -64,7 +65,7 @@ def display_images(
 ):
     num_data = 3
     img_idx = 1
-    for n in [0, 1, 7]:
+    for n in range(3):
         data_to_display = data[n]
         # data_to_display = scale_to_0_255(data_to_display)
         if data_to_display.shape[2] == 6:
@@ -508,6 +509,78 @@ def select_embedding_method(
     normalized_blocks = np.stack(normalized_blocks, axis=1).reshape(-1, Channels_next)
     return normalized_blocks
 
+def load_data():
+    data_dir = "/workspaces/KernelCNN/app/data/KTH_TIPS"
+
+    sandpaper_dir = data_dir /'sandpaper'
+    sponge_dir = data_dir / 'sponge'
+    brown_bread_dir = data_dir / 'brown_bread'
+    corduroy_dir = data_dir / 'corduroy'
+    styrofoam_dir = data_dir / 'styrofoam'
+    orange_peel_dir = data_dir / 'orange_peel'
+    linen_dir = data_dir / 'linen'
+    aluminium_foil_dir = data_dir / 'aluminium_foil'
+    cracker_dir = data_dir / 'cracker'
+    cotton_dir = data_dir / 'cotton'
+    
+    #Get list of all image
+    sandpaper = sandpaper_dir.glob('*.png')
+    sponge = sponge_dir.glob('*.png')
+    brown_bread = brown_bread_dir.glob('*.png')
+    corduroy = corduroy_dir.glob('*.png')
+    styrofoam = styrofoam_dir.glob('*.png')
+    orange_peel = orange_peel_dir.glob('*.png')
+    linen = linen_dir.glob('*.png')
+    aluminium_foil = aluminium_foil_dir.glob('*.png')
+    cracker = cracker_dir.glob('*.png')
+    cotton = cotton_dir.glob('*.png')
+    
+    img_data = []
+    img_label = []
+    for img in sandpaper:
+        img_data.append(img)
+        img_label.append('sandpaper')
+    for img in sponge:
+        img_data.append(img)
+        img_label.append('sponge')
+    for img in brown_bread:
+        img_data.append(img)
+        img_label.append('brown_bread')
+    for img in corduroy:
+        img_data.append(img)
+        img_label.append('corduroy')
+    for img in styrofoam:
+        img_data.append(img)
+        img_label.append('styrofoam')
+    for img in orange_peel:
+        img_data.append(img)
+        img_label.append('orange_peel')
+    for img in linen:
+        img_data.append(img)
+        img_label.append('linen')
+    for img in aluminium_foil:
+        img_data.append(img)
+        img_label.append('aluminium_foil')
+    for img in cracker:
+        img_data.append(img)
+        img_label.append('cracker')
+    for img in cotton:
+        img_data.append(img)
+        img_label.append('cotton')
+    
+    df = pd.DataFrame(img_data)
+    df.columns = ['Images']
+    df['Labels'] = img_label
+    df = df.sample(frac=1).reset_index(drop=True)
+    
+    # Convert dataframe to ndarrays
+    X = df['Images'].values
+    Y = df['Labels'].values
+    
+    # Split data into train and test sets
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+    
+    return X_train, Y_train, X_test, Y_test
 
 def load_KTH_TIPS_dataset():
     cache_file = "dataset_cache.pkl"
@@ -549,7 +622,7 @@ def load_KTH_TIPS_dataset():
 
     # Split the data into training and test sets while maintaining class balance
     train_X, test_X, train_Y, test_Y = train_test_split(
-        images, labels, test_size=0.2, stratify=labels, random_state=42
+        images, labels, test_size=0.2, stratify=labels, random_state=0
     )
 
     # Save data to cache
@@ -559,7 +632,7 @@ def load_KTH_TIPS_dataset():
     return train_X, train_Y, test_X, test_Y
 
 
-def check_dataset_loading():
+def check_KTH_loading():
     train_X, train_Y, test_X, test_Y = load_KTH_TIPS_dataset()
 
     # Print the shape of the loaded data
