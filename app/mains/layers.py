@@ -581,7 +581,7 @@ class Model:
         self.time_predicting = time.time() - start_time
         accuracy = metrics.accuracy_score(Y_answer, Y_predicted) * 100
         classification_report = metrics.classification_report(Y_answer, Y_predicted)
-        confusion_matrix = metrics.confusion_matrix(Y_answer, Y_predicted)
+        confusion_matrix = metrics.confusion_matrix(np.argmax(Y_answer, axis=1), np.argmax(Y_predicted, axis=1))
         print(classification_report)
         print(confusion_matrix)
 
