@@ -544,6 +544,7 @@ class Model:
                     )
                     display_images(
                         X,
+                        Y,
                         n + 2,
                         layer.embedding,
                         self.data_set_name,

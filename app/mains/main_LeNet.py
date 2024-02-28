@@ -41,7 +41,6 @@ def main_LeNet(
     train_X, train_Y, test_X, test_Y, channel, image_size = select_datasets(
         num_train, num_test, datasets
     )
-    display_images(train_X, 1, "LeNet_train", datasets, f"Input Layer1")
     # LeNet-5 model definition
     activation = "relu"
     # activation = 'tanh'
@@ -174,6 +173,7 @@ def main_LeNet(
         )
         display_images(
             block_outputs[0],
+            train_Y,
             2,
             "LeNet",
             datasets,
