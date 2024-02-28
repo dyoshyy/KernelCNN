@@ -82,15 +82,14 @@ def main_LeNet(
                         )
                     )
     model.add(layers.Flatten())
-    model.add(layers.Dense(120, activation=activation))
-    model.add(layers.Dense(84, activation=activation))
+    # model.add(layers.Dense(120, activation=activation))
+    # model.add(layers.Dense(84, activation=activation))
     model.add(layers.Dense(10, activation="softmax"))
     # model.summary()
 
     # Model parameters
-    batch_size = 128
+    batch_size = 64
     epochs = 50
-    adam = optimizers.Adam(learning_rate=0.01)
 
     # Callbacks
     lrr = ReduceLROnPlateau(
@@ -105,7 +104,7 @@ def main_LeNet(
     )
 
     model.compile(
-        optimizer="sgd", loss="categorical_crossentropy", metrics=["accuracy"]
+        optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"]
     )
     result = model.fit(
         train_X,
@@ -156,7 +155,7 @@ def main_LeNet(
     if display:
         # 学習後のモデルの出力
         block_outputs = []
-        for layer_idx in range(len(model.layers) - 4):
+        for layer_idx in range(len(model.layers) - 2):
             block_outputs.append(get_intermediate_output(model, layer_idx, train_X))
             print(f"Block {layer_idx+1} output shape:", block_outputs[layer_idx].shape)
 
