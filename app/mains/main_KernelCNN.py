@@ -5,6 +5,8 @@ import os
 import layers as layers
 import functions
 import numpy as np
+from collections import Counter
+
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 np.random.seed(0)
@@ -25,9 +27,16 @@ def main_kernelCNN(
     train_X, train_Y, test_X, test_Y, channel, image_size = functions.select_datasets(
         num_train, num_test, datasets
     )
-    display_images(train_X, 1, "Kernel_train", "KTH", f"Input Layer1")
-    print(train_Y[:10])
+    # # Count the occurrences of each label in train_Y
+    # train_counts = Counter(np.argmax(train_Y, axis=1).flatten().tolist())
+    # test_counts = Counter(np.argmax(test_Y, axis=1).flatten().tolist())
 
+    # # Print the label counts
+    # for label, count in train_counts.items():
+    #     print(f"train Label {label}: {count} occurrences")
+    # for label, count in test_counts.items():
+    #     print(f"test Label {label}: {count} occurrences")
+        
     stride = 1
     # モデル定義
     model = layers.Model(display=True)
@@ -48,7 +57,7 @@ def main_kernelCNN(
         model.add_layer(
             layers.KIMLayer(
                 block_size=block_size[1],
-                channels_next=60,
+                channels_next=8,
                 stride=stride,
                 padding=False,
                 emb=embedding_method[1],
