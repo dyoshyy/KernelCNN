@@ -66,30 +66,31 @@ class KIMLayer:
         )
         print("sampling...")
 
-        # sampled_blocks = [
-        #   util.view_as_windows(
-        #     self.X_for_KIM[n, :, :, :], (self.b, self.b, self.C_prev), self.stride
-        #   )
-        #   for n in range(n_images)
-        # ]
-        # sampled_blocks = [
-        #   block.reshape(int(np.ceil((self.H - self.b + 1)/ self.stride )) ** 2, self.b, self.b, self.C_prev)
-        #   for block in sampled_blocks
-        # ]    
-        # sampled_blocks = np.concatenate(sampled_blocks, axis=0)
+        sampled_blocks = [
+          util.view_as_windows(
+            self.X_for_KIM[n, :, :, :], (self.b, self.b, self.C_prev), self.stride
+          )
+          for n in range(n_images)
+        ]
+        sampled_blocks = [
+          block.reshape(int(np.ceil((self.H - self.b + 1)/ self.stride )) ** 2, self.b, self.b, self.C_prev)
+          for block in sampled_blocks
+        ]    
+        sampled_blocks = np.concatenate(sampled_blocks, axis=0)
 
-        # sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
-        n_images = self.X_for_KIM.shape[0]
-        sampled_blocks = util.view_as_windows(
-          self.X_for_KIM, (n_images, self.b, self.b, self.C_prev), self.stride
-        )
-        sampled_blocks = sampled_blocks.reshape(
-          n_images * int(np.ceil((self.H - self.b + 1) / self.stride)) ** 2,
-          self.b,
-          self.b,
-          self.C_prev,
-        )
         sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
+        
+        # n_images = self.X_for_KIM.shape[0]
+        # sampled_blocks = util.view_as_windows(
+        #   self.X_for_KIM, (n_images, self.b, self.b, self.C_prev), self.stride
+        # )
+        # sampled_blocks = sampled_blocks.reshape(
+        #   n_images * int(np.ceil((self.H - self.b + 1) / self.stride)) ** 2,
+        #   self.b,
+        #   self.b,
+        #   self.C_prev,
+        # )
+        # sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
         sampled_blocks_label = np.repeat(
             np.argmax(self.Y_for_KIM, axis=1),
             int(sampled_blocks.shape[0] / self.Y_for_KIM.shape[0]),

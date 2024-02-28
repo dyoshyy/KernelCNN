@@ -25,10 +25,8 @@ def main_kernelCNN(
     train_X, train_Y, test_X, test_Y, channel, image_size = functions.select_datasets(
         num_train, num_test, datasets
     )
-    display_images(train_X, 1, "Kernel_train", "KTH", f"Input Layer1")
-    print(train_Y[:10])
 
-    stride = 1
+    stride = 2
     # モデル定義
     model = layers.Model(display=True)
     model.data_set_name = datasets
