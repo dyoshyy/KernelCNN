@@ -1,8 +1,11 @@
+from pathlib import Path
 from turtle import pd
 import cv2
 import numpy as np
 import os
 import sys
+
+from sklearn.naive_bayes import LabelBinarizer
 
 sys.path.append("/workspaces/KernelCNN/app/data")
 import matplotlib.pyplot as plt
@@ -17,6 +20,7 @@ import os
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.datasets import mnist, fashion_mnist, cifar10
 from tensorflow.keras.utils import to_categorical
+import pandas as pd
 
 
 def make_unique_filename(preliminary_name: str, file_path: str):
@@ -509,78 +513,35 @@ def select_embedding_method(
     normalized_blocks = np.stack(normalized_blocks, axis=1).reshape(-1, Channels_next)
     return normalized_blocks
 
-def load_data():
-    data_dir = "/workspaces/KernelCNN/app/data/KTH_TIPS"
+def get_KTH_data():
+    w=200
+    h=200
+    folder = "/workspaces/KernelCNN/app/data/KTH_TIPS"
+    image_raw = []
+    label_raw = []
 
-    sandpaper_dir = data_dir /'sandpaper'
-    sponge_dir = data_dir / 'sponge'
-    brown_bread_dir = data_dir / 'brown_bread'
-    corduroy_dir = data_dir / 'corduroy'
-    styrofoam_dir = data_dir / 'styrofoam'
-    orange_peel_dir = data_dir / 'orange_peel'
-    linen_dir = data_dir / 'linen'
-    aluminium_foil_dir = data_dir / 'aluminium_foil'
-    cracker_dir = data_dir / 'cracker'
-    cotton_dir = data_dir / 'cotton'
+    for i in os.listdir(folder):
+        for j in os.listdir(os.path.join(folder,i)):
+            path = os.path.join(folder, i, j)
+            image = cv2.imread(path)
+            image = cv2.resize(image, (w, h), interpolation = cv2.INTER_AREA)
+            image = np.array(image)
+            image = image.astype('float32')
+            image /= 255
+            image_raw.append(image)
+            label_raw.append(i)
+    image_raw = np.array(image_raw)
+    label_names = np.unique(label_raw)
+    y_label = pd.get_dummies(label_raw)
+    one_hot = LabelBinarizer().fit(label_names)
+    y_label = one_hot.transform(label_raw)
+    y_label = np.argmax(y_label, axis=1)
     
-    #Get list of all image
-    sandpaper = sandpaper_dir.glob('*.png')
-    sponge = sponge_dir.glob('*.png')
-    brown_bread = brown_bread_dir.glob('*.png')
-    corduroy = corduroy_dir.glob('*.png')
-    styrofoam = styrofoam_dir.glob('*.png')
-    orange_peel = orange_peel_dir.glob('*.png')
-    linen = linen_dir.glob('*.png')
-    aluminium_foil = aluminium_foil_dir.glob('*.png')
-    cracker = cracker_dir.glob('*.png')
-    cotton = cotton_dir.glob('*.png')
+    train_X, test_X, train_Y, test_Y = train_test_split(
+        image_raw, y_label, test_size=0.2, random_state=0
+    )
     
-    img_data = []
-    img_label = []
-    for img in sandpaper:
-        img_data.append(img)
-        img_label.append('sandpaper')
-    for img in sponge:
-        img_data.append(img)
-        img_label.append('sponge')
-    for img in brown_bread:
-        img_data.append(img)
-        img_label.append('brown_bread')
-    for img in corduroy:
-        img_data.append(img)
-        img_label.append('corduroy')
-    for img in styrofoam:
-        img_data.append(img)
-        img_label.append('styrofoam')
-    for img in orange_peel:
-        img_data.append(img)
-        img_label.append('orange_peel')
-    for img in linen:
-        img_data.append(img)
-        img_label.append('linen')
-    for img in aluminium_foil:
-        img_data.append(img)
-        img_label.append('aluminium_foil')
-    for img in cracker:
-        img_data.append(img)
-        img_label.append('cracker')
-    for img in cotton:
-        img_data.append(img)
-        img_label.append('cotton')
-    
-    df = pd.DataFrame(img_data)
-    df.columns = ['Images']
-    df['Labels'] = img_label
-    df = df.sample(frac=1).reset_index(drop=True)
-    
-    # Convert dataframe to ndarrays
-    X = df['Images'].values
-    Y = df['Labels'].values
-    
-    # Split data into train and test sets
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
-    
-    return X_train, Y_train, X_test, Y_test
+    return train_X, train_Y, test_X, test_Y
 
 def load_KTH_TIPS_dataset():
     cache_file = "dataset_cache.pkl"
@@ -674,7 +635,8 @@ def select_datasets(num_train: int, num_test: int, datasets: str):
         channel = 3
     elif datasets == "KTH":
         image_size = 200
-        train_X, train_Y, test_X, test_Y = load_KTH_TIPS_dataset()
+        train_X, train_Y, test_X, test_Y = get_KTH_data()
+        # train_X, train_Y, test_X, test_Y = load_KTH_TIPS_dataset()
         channel = train_X.shape[3]
 
     train_Y = to_categorical(train_Y, 10)
