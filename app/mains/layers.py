@@ -581,7 +581,9 @@ class Model:
         self.time_predicting = time.time() - start_time
         accuracy = metrics.accuracy_score(Y_answer, Y_predicted) * 100
         classification_report = metrics.classification_report(Y_answer, Y_predicted)
+        confusion_matrix = metrics.confusion_matrix(Y_answer, Y_predicted)
         print(classification_report)
+        print(confusion_matrix)
 
         print("Layers shape:", self.shapes)
         print("Fitting time:", self.time_fitting)
