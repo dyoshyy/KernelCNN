@@ -130,7 +130,9 @@ def main_LeNet(
     predictions = classifier.predict(test_features)
     accuracy = metrics.accuracy_score(test_Y, predictions) * 100
     classification_report = metrics.classification_report(test_Y, predictions)
-    confusion_matrix = metrics.confusion_matrix(test_Y, predictions)
+    confusion_matrix = metrics.confusion_matrix(
+        np.argmax(test_Y, axis=1), np.argmax(predictions, axis=1)
+    )
     print(classification_report)
     print(confusion_matrix)
     print(f"Accuracy: {accuracy:.4f}")
