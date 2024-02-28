@@ -69,11 +69,10 @@ def display_images(
 ):
     num_data = 3
     label = np.argmax(label, axis=1)
-    indices = [np.where(label == i)[0][0] for i in [1, 2, 3]] # 1,2,3のラベルを持つデータの最初のインデックスを取得
+    indices = [np.where(label == i)[0][0] for i in [0, 1, 2, 3]] # 1,2,3のラベルを持つデータの最初のインデックスを取得
     
     img_idx = 1
     for n in indices:
-        print(n)
         data_to_display = data[n]
         # data_to_display = scale_to_0_255(data_to_display)
         if data_to_display.shape[2] == 6:
