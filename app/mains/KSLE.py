@@ -182,7 +182,6 @@ class KSLE_ML:
         Lambda, U = scipy.linalg.eigh(
             DWD, eigvals=(n - (m_dim + 1), n - 1)
         )  # Spectral Decomposition
-
         Lambda = Lambda[
             ::-1
         ]  # Choose from the largest eigenvalues except for the largest

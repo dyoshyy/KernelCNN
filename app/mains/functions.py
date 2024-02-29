@@ -15,13 +15,13 @@ from skimage import util
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
-from pkg.laplacianEigenmap import LaplacianEigenmap
+from laplacianEigenmap import LaplacianEigenmap
 from KSLE import SLE
 import pickle
 import os
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.datasets import mnist, fashion_mnist, cifar10
-from tensorflow.keras.utils import to_categorical
+from keras.datasets import mnist, fashion_mnist, cifar10
+from keras.utils import to_categorical
 import pandas as pd
 import networkx as nx
 
@@ -482,19 +482,21 @@ def select_embedding_method(
         embedded_blocks = kpca.fit_transform(data_to_embed)
 
     elif embedding_method == "LE":
-        n = int(data_to_embed.shape[0] / Channels_next)
+        k = int(data_to_embed.shape[0] / Channels_next)
         # n = k_for_knn
-        print(f"k for knn:{n}")
-        LE = SpectralEmbedding(n_components=Channels_next, n_neighbors=n, random_state=0, n_jobs=-1)
-        embedded_blocks = LE.fit_transform(data_to_embed)
-        print("LE params:", LE.affinity_matrix_)
-        G = nx.from_numpy_matrix(LE.affinity_matrix_)
-        L = nx.normalized_laplacian_matrix(G).A
+        print(f"k for knn:{k}")
+        # LE = SpectralEmbedding(n_components=Channels_next, n_neighbors=n, random_state=0, n_jobs=-1)
+        # embedded_blocks = LE.fit_transform(data_to_embed)
+        # print("LE params:", LE.affinity_matrix_)
+        embedded_blocks, _ = SLE(
+            X=data_to_embed, Y=data_to_embed_label, la=1.0, map_d=Channels_next, n_neighbors=k
+        )
 
     elif embedding_method == "SLE":
-        la = 1.0
+        la = 0.2
+        k = int(data_to_embed.shape[0] / Channels_next)
         embedded_blocks, _ = SLE(
-            X=data_to_embed, Y=data_to_embed_label, la=la, map_d=Channels_next
+            X=data_to_embed, Y=data_to_embed_label, la=la, map_d=Channels_next, n_neighbors=k
         )
         print(f'SLE parameter: {la}')
     elif embedding_method == "TSNE":

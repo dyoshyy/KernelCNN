@@ -6,7 +6,7 @@ import time
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
-from app.mains.pkg.functions import (
+from functions import (
     display_images,
     binarize_images,
     visualize_emb,
@@ -67,14 +67,14 @@ class KIMLayer:
         print("sampling...")
 
         sampled_blocks = [
-          util.view_as_windows(
+            util.view_as_windows(
             self.X_for_KIM[n, :, :, :], (self.b, self.b, self.C_prev), self.stride
-          )
-          for n in range(n_images)
+            )
+            for n in range(n_images)
         ]
         sampled_blocks = [
-          block.reshape(int(np.ceil((self.H - self.b + 1)/ self.stride )) ** 2, self.b, self.b, self.C_prev)
-          for block in sampled_blocks
+            block.reshape(int(np.ceil((self.H - self.b + 1)/ self.stride )) ** 2, self.b, self.b, self.C_prev)
+            for block in sampled_blocks
         ]    
         sampled_blocks = np.concatenate(sampled_blocks, axis=0)
 
@@ -259,9 +259,9 @@ class KIMLayer:
         print("completed")
         # ReLU
         # self.output_data = np.maximum(0, self.output_data)
-        # channel_use = 35
-        # print(channel_use)
-        # self.output_data[:,:,:,:channel_use] = 0
+        use_channels = 20
+        print(use_channels)
+        self.output_data[:,:,:,use_channels:] = 0
         return self.output_data
 
 

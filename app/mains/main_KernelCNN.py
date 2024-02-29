@@ -3,7 +3,7 @@ import os
 
 # import layers
 import layers as layers
-import app.mains.pkg.functions as functions
+import functions as functions
 import numpy as np
 from collections import Counter
 
@@ -11,7 +11,7 @@ from collections import Counter
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 np.random.seed(0)
 
-from app.mains.pkg.functions import display_images
+from functions import display_images
 
 
 def main_kernelCNN(

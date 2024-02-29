@@ -9,9 +9,9 @@ from keras import layers, models, losses
 from keras import optimizers
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from sklearn import metrics
-from app.mains.pkg.functions import visualize_emb
-from app.mains.pkg.functions import display_images, display_weights
-from app.mains.pkg.functions import select_datasets
+from functions import visualize_emb
+from functions import display_images, display_weights
+from functions import select_datasets
 import layers as my_layers
 import sys
 
