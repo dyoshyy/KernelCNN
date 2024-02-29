@@ -1,4 +1,5 @@
 from pathlib import Path
+import random
 from turtle import pd
 import cv2
 import numpy as np
@@ -14,6 +15,7 @@ from skimage import util
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
+from pkg.laplacianEigenmap import LaplacianEigenmap
 from KSLE import SLE
 import pickle
 import os
@@ -21,6 +23,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.datasets import mnist, fashion_mnist, cifar10
 from tensorflow.keras.utils import to_categorical
 import pandas as pd
+import networkx as nx
 
 
 def make_unique_filename(preliminary_name: str, file_path: str):
@@ -66,7 +69,7 @@ def scale_to_0_255(data):
 
 def display_images(
     data, label, layer_number, embedding_method: str, dataset_name: str, suptitle: str
-):
+):  
     num_data = 3
     label = np.argmax(label, axis=1)
     indices = [np.where(label == i)[0][0] for i in [0, 1, 2, 3]] # 1,2,3のラベルを持つデータの最初のインデックスを取得
@@ -76,10 +79,10 @@ def display_images(
         data_to_display = data[n]
         # data_to_display = scale_to_0_255(data_to_display)
         if data_to_display.shape[2] == 6:
-            num_in_a_row = 6
+            num_in_a_row = 10
         else:
-            data_to_display = data_to_display[:, :, :16]
-            num_in_a_row = 8  # default 4
+            # data_to_display = data_to_display[:, :, :16]
+            num_in_a_row = 10  # default 4
         Channels = data_to_display.shape[2]
         Rows = math.ceil(Channels / num_in_a_row)
 
@@ -204,7 +207,9 @@ def visualize_emb(
     # ランダムに一部の点にのみブロックの画像を表示
     num_samples = len(convolved_data)
     num_blocks_to_display = min(15, num_samples)
+    np.random.seed(0)  # Fix the seed for reproducibility
     random_indices = np.random.choice(num_samples, num_blocks_to_display, replace=False)
+    random_indices = [157222, 771083, 203848, 231814, 517608, 630900, 174863, 861036, 749684, 262324, 8638,  77385, 283762, 592353, 752354]
     print(random_indices)
     convolved_data = convolved_data[random_indices]
     input_data = input_data[random_indices]
@@ -480,14 +485,18 @@ def select_embedding_method(
         n = int(data_to_embed.shape[0] / Channels_next)
         # n = k_for_knn
         print(f"k for knn:{n}")
-        LE = SpectralEmbedding(n_components=Channels_next, n_neighbors=n)
+        LE = SpectralEmbedding(n_components=Channels_next, n_neighbors=n, random_state=0, n_jobs=-1)
         embedded_blocks = LE.fit_transform(data_to_embed)
+        print("LE params:", LE.affinity_matrix_)
+        G = nx.from_numpy_matrix(LE.affinity_matrix_)
+        L = nx.normalized_laplacian_matrix(G).A
 
     elif embedding_method == "SLE":
+        la = 1.0
         embedded_blocks, _ = SLE(
-            X=data_to_embed, Y=data_to_embed_label, la=0.5, map_d=Channels_next
+            X=data_to_embed, Y=data_to_embed_label, la=la, map_d=Channels_next
         )
-
+        print(f'SLE parameter: {la}')
     elif embedding_method == "TSNE":
         tsne = TSNE(
             n_components=Channels_next,

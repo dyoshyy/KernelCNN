@@ -6,7 +6,7 @@ import time
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
-from functions import (
+from app.mains.pkg.functions import (
     display_images,
     binarize_images,
     visualize_emb,
@@ -259,6 +259,9 @@ class KIMLayer:
         print("completed")
         # ReLU
         # self.output_data = np.maximum(0, self.output_data)
+        # channel_use = 35
+        # print(channel_use)
+        # self.output_data[:,:,:,:channel_use] = 0
         return self.output_data
 
 

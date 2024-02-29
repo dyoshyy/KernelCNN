@@ -9,9 +9,9 @@ from keras import layers, models, losses
 from keras import optimizers
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from sklearn import metrics
-from functions import visualize_emb
-from functions import display_images, display_weights
-from functions import select_datasets
+from app.mains.pkg.functions import visualize_emb
+from app.mains.pkg.functions import display_images, display_weights
+from app.mains.pkg.functions import select_datasets
 import layers as my_layers
 import sys
 
@@ -41,11 +41,13 @@ def main_LeNet(
     train_X, train_Y, test_X, test_Y, channel, image_size = select_datasets(
         num_train, num_test, datasets
     )
-    display_images(
-        train_X, train_Y, 2, "LeNettrain", datasets, f"LeNet Input n={num_train}"
-    )
-    print(train_Y[:10])
-    # LeNet-5 model definition
+    # 訓練データの表示
+    # display_images(
+    #     train_X, train_Y, 2, "LeNettrain", datasets, f"LeNet Input n={num_train}"
+    # )
+    # print(train_Y[:10])
+    
+    # model definition
     activation = "relu"
     # activation = None
     # activation = 'tanh'

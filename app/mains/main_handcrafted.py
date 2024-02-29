@@ -5,7 +5,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 from tqdm import tqdm
 from sklearn import metrics
-from functions import *
+from app.mains.pkg.functions import *
 import numpy as np
 from skimage import feature
 import layers as my_layers

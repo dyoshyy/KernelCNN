@@ -3,7 +3,7 @@ import os
 
 # import layers
 import layers as layers
-import functions
+import app.mains.pkg.functions as functions
 import numpy as np
 from collections import Counter
 
@@ -11,7 +11,7 @@ from collections import Counter
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 np.random.seed(0)
 
-from functions import display_images
+from app.mains.pkg.functions import display_images
 
 
 def main_kernelCNN(
@@ -27,6 +27,10 @@ def main_kernelCNN(
     train_X, train_Y, test_X, test_Y, channel, image_size = functions.select_datasets(
         num_train, num_test, datasets
     )
+    # 訓練データの表示
+    # display_images(train_X, train_Y, 1, "train_data", datasets, "")
+    # print(train_Y[:10])
+    
     # # Count the occurrences of each label in train_Y
     # train_counts = Counter(np.argmax(train_Y, axis=1).flatten().tolist())
     # test_counts = Counter(np.argmax(test_Y, axis=1).flatten().tolist())
@@ -37,8 +41,9 @@ def main_kernelCNN(
     # for label, count in test_counts.items():
     #     print(f"test Label {label}: {count} occurrences")
         
-    stride = 1
+
     # モデル定義
+    stride = 2
     model = layers.Model(display=True)
     model.data_set_name = datasets
     model.add_layer(
