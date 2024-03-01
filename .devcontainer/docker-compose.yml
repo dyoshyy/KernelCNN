@@ -1,10 +1,14 @@
 version: '3'
+volumes:
+  ssh_key:
+
 services:
   python3:
     restart: always
     build: .
     container_name: 'exp'
-    working_dir: '/root/'
+    working_dir: '/root/app'
     tty: true
     volumes:
       - ./app:/root/app
+      - ssh_key:/root/app/.ssh
