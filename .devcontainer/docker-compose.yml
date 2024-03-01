@@ -7,8 +7,8 @@ services:
     restart: always
     build: .
     container_name: 'exp'
-    working_dir: '/root/app'
+    working_dir: '/usr/src/app'
     tty: true
     volumes:
-      - ./app:/root/app
-      - ssh_key:/root/app/.ssh
+      - ./app:/usr/src/app
+      - ssh_key:/usr/src/app/.ssh
