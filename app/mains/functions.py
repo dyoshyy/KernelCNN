@@ -482,7 +482,8 @@ def select_embedding_method(
         embedded_blocks = kpca.fit_transform(data_to_embed)
 
     elif embedding_method == "LE":
-        k = int(data_to_embed.shape[0] / Channels_next)
+        # k = int(data_to_embed.shape[0] / Channels_next)
+        k = None
         # n = k_for_knn
         print(f"k for knn:{k}")
         # LE = SpectralEmbedding(n_components=Channels_next, n_neighbors=n, random_state=0, n_jobs=-1)
@@ -494,7 +495,8 @@ def select_embedding_method(
 
     elif embedding_method == "SLE":
         la = 0.2
-        k = int(data_to_embed.shape[0] / Channels_next)
+        # k = int(data_to_embed.shape[0] / Channels_next)
+        k = None
         embedded_blocks, _ = SLE(
             X=data_to_embed, Y=data_to_embed_label, la=la, map_d=Channels_next, n_neighbors=k
         )

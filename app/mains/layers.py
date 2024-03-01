@@ -190,6 +190,14 @@ class KIMLayer:
             batch_size (int, optional): The size of each batch. Defaults to 10.
         """
         num_batches = math.ceil(self.input_data.shape[0] / batch_size)
+        output_data = np.zeros(
+            (
+                self.input_data.shape[0],
+                int(np.ceil((self.H - self.b + 1) / self.stride)),
+                int(np.ceil((self.H - self.b + 1) / self.stride)),
+                self.C_next,
+            )
+        )
 
         for batch_index in tqdm(range(num_batches)):
             batch_images = self.input_data[
@@ -216,9 +224,10 @@ class KIMLayer:
             predictions = predictions.reshape(
                 num_batch_images, int(np.ceil((self.H - self.b + 1)/self.stride)), int(np.ceil((self.H - self.b + 1)/self.stride)), self.C_next
             )
-            self.output_data[
+            output_data[
                 batch_size * batch_index : batch_size * batch_index + num_batch_images
             ] = predictions
+        return output_data
 
     def calculate(self, input_X, input_Y):
         """
@@ -255,15 +264,15 @@ class KIMLayer:
 
         # 学習したKIMで変換
         print("[KIM] Converting the image...")
-        self.convert_image_batch(batch_size=100)
+        output_data = self.convert_image_batch(batch_size=100)
         print("completed")
         # ReLU
         # self.output_data = np.maximum(0, self.output_data)
-        use_channels = 20
-        print(use_channels)
-        self.output_data[:,:,:,use_channels:] = 0
+        use_channels = [1,40]
+        
+        print("use channels:", use_channels)
+        self.output_data[:,:,:, (use_channels[0]-1):use_channels[1]] = output_data[:,:,:, (use_channels[0]-1):use_channels[1]]
         return self.output_data
-
 
 class AvgPoolingLayer:
     def __init__(self, pool_size):
