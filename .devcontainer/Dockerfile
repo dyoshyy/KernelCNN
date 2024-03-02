@@ -17,8 +17,8 @@ RUN apt-get update && apt-get upgrade -y && \
     rm -rf /var/lib/apt/lists/*
 
 #👇Dockerコンテナの作業ルートディレクトリ(今回は'/usr/src/app/')へ秘密鍵をコピー
-WORKDIR /usr/src/app/
-COPY .ssh/ /usr/src/app/.ssh
+# WORKDIR /usr/src/app/
+COPY .ssh/ root/.ssh
 
 COPY requirements.txt /root/
 # RUN  pip install -r /root/requirements.txt
