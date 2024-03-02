@@ -20,14 +20,14 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     )
 
     orientations = 9
-    pixels_per_cell=(8, 8)
-    cells_per_block=(3, 3)
-    
+    pixels_per_cell = (8, 8)
+    cells_per_block = (3, 3)
+
     descriptors_train = []
     descriptors_test = []
     images_train = []
-    images_test = []  
-    
+    images_test = []
+
     for train_image in X_train:
         hog_feature, hog_image = feature.hog(
             train_image,
@@ -61,12 +61,16 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     descriptors_test = np.array(descriptors_test).reshape(len(descriptors_test), -1)
     images_train = np.array(images_train)
     images_test = np.array(images_test)
-    images_train = images_train.reshape(images_train.shape[0], images_train.shape[1], images_train.shape[2], 1)
-    images_test = images_test.reshape(images_test.shape[0], images_test.shape[1], images_test.shape[2], 1)
-    
+    images_train = images_train.reshape(
+        images_train.shape[0], images_train.shape[1], images_train.shape[2], 1
+    )
+    images_test = images_test.reshape(
+        images_test.shape[0], images_test.shape[1], images_test.shape[2], 1
+    )
+
     # Show HOG images
     display_images(images_train, Y_train, 1, "HOG", dataset_name, "")
-    
+
     # SVM classification
     # classifier = my_layers.SupportVectorsMachine()
     # classifier = my_layers.RandomForest()

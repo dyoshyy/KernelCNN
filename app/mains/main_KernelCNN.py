@@ -30,7 +30,7 @@ def main_kernelCNN(
     # 訓練データの表示
     # display_images(train_X, train_Y, 1, "train_data", datasets, "")
     # print(train_Y[:10])
-    
+
     # # Count the occurrences of each label in train_Y
     # train_counts = Counter(np.argmax(train_Y, axis=1).flatten().tolist())
     # test_counts = Counter(np.argmax(test_Y, axis=1).flatten().tolist())
@@ -40,7 +40,6 @@ def main_kernelCNN(
     #     print(f"train Label {label}: {count} occurrences")
     # for label, count in test_counts.items():
     #     print(f"test Label {label}: {count} occurrences")
-        
 
     # モデル定義
     stride = 2

@@ -46,7 +46,7 @@ def main_LeNet(
     #     train_X, train_Y, 2, "LeNettrain", datasets, f"LeNet Input n={num_train}"
     # )
     # print(train_Y[:10])
-    
+
     # model definition
     activation = "relu"
     # activation = None

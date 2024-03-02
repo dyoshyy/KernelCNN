@@ -22,6 +22,7 @@ from scipy import stats
 from skimage import util
 from tqdm import tqdm
 
+
 class KIMLayer:
     def __init__(
         self,
@@ -42,7 +43,7 @@ class KIMLayer:
         self.output_data: np.ndarray = np.array([])
         self.input_data: np.ndarray = np.array([])
         self.embedding: str = emb
-        self.GP: Optional[GPy.models.SparseGPRegression] = None 
+        self.GP: Optional[GPy.models.SparseGPRegression] = None
         self.B: int = num_blocks
         self.dataset_name: str = ""
         self.padding: bool = padding
@@ -62,24 +63,34 @@ class KIMLayer:
         """
         n_images = self.X_for_KIM.shape[0]
         sampled_blocks = np.empty(
-            (n_images * int(np.ceil((self.H - self.b + 1)/ self.stride ))  ** 2, self.b, self.b, self.C_prev)
+            (
+                n_images * int(np.ceil((self.H - self.b + 1) / self.stride)) ** 2,
+                self.b,
+                self.b,
+                self.C_prev,
+            )
         )
         print("sampling...")
 
         sampled_blocks = [
             util.view_as_windows(
-            self.X_for_KIM[n, :, :, :], (self.b, self.b, self.C_prev), self.stride
+                self.X_for_KIM[n, :, :, :], (self.b, self.b, self.C_prev), self.stride
             )
             for n in range(n_images)
         ]
         sampled_blocks = [
-            block.reshape(int(np.ceil((self.H - self.b + 1)/ self.stride )) ** 2, self.b, self.b, self.C_prev)
+            block.reshape(
+                int(np.ceil((self.H - self.b + 1) / self.stride)) ** 2,
+                self.b,
+                self.b,
+                self.C_prev,
+            )
             for block in sampled_blocks
-        ]    
+        ]
         sampled_blocks = np.concatenate(sampled_blocks, axis=0)
 
         sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
-        
+
         # n_images = self.X_for_KIM.shape[0]
         # sampled_blocks = util.view_as_windows(
         #   self.X_for_KIM, (n_images, self.b, self.b, self.C_prev), self.stride
@@ -203,26 +214,38 @@ class KIMLayer:
             batch_images = self.input_data[
                 batch_size * batch_index : batch_size * (batch_index + 1)
             ]
-            num_batch_images = batch_images.shape[0] #入力データがbatch_size未満の場合の対応
-            
+            num_batch_images = batch_images.shape[
+                0
+            ]  # 入力データがbatch_size未満の場合の対応
+
             # blocks_to_convert = util.view_as_windows(
             #     batch_images, (1, self.b, self.b, self.C_prev), self.stride
             # )
             # blocks_to_convert = blocks_to_convert.reshape(
             #     num_batch_images * int(np.ceil((self.H - self.b + 1)/self.stride)) ** 2, self.b * self.b * self.C_prev
             # )  # ex) (10*784, 5*5*1)
-            
+
             blocks_to_convert = [
                 util.view_as_windows(
                     batch_images[n, :, :, :], (self.b, self.b, self.C_prev), self.stride
-                ).reshape(int(np.ceil((self.H - self.b + 1)/self.stride)) ** 2, self.b, self.b, self.C_prev)
+                ).reshape(
+                    int(np.ceil((self.H - self.b + 1) / self.stride)) ** 2,
+                    self.b,
+                    self.b,
+                    self.C_prev,
+                )
                 for n in range(num_batch_images)
             ]
-            blocks_to_convert = np.concatenate(blocks_to_convert, axis=0).reshape(-1, self.b * self.b * self.C_prev)
+            blocks_to_convert = np.concatenate(blocks_to_convert, axis=0).reshape(
+                -1, self.b * self.b * self.C_prev
+            )
 
             predictions, _ = self.GP.predict(blocks_to_convert)  # shape: (10*784, 6)
             predictions = predictions.reshape(
-                num_batch_images, int(np.ceil((self.H - self.b + 1)/self.stride)), int(np.ceil((self.H - self.b + 1)/self.stride)), self.C_next
+                num_batch_images,
+                int(np.ceil((self.H - self.b + 1) / self.stride)),
+                int(np.ceil((self.H - self.b + 1) / self.stride)),
+                self.C_next,
             )
             output_data[
                 batch_size * batch_index : batch_size * batch_index + num_batch_images
@@ -268,11 +291,14 @@ class KIMLayer:
         print("completed")
         # ReLU
         # self.output_data = np.maximum(0, self.output_data)
-        use_channels = [1,40]
-        
+        use_channels = [1, 40]
+
         print("use channels:", use_channels)
-        self.output_data[:,:,:, (use_channels[0]-1):use_channels[1]] = output_data[:,:,:, (use_channels[0]-1):use_channels[1]]
+        self.output_data[:, :, :, (use_channels[0] - 1) : use_channels[1]] = (
+            output_data[:, :, :, (use_channels[0] - 1) : use_channels[1]]
+        )
         return self.output_data
+
 
 class AvgPoolingLayer:
     def __init__(self, pool_size):
@@ -518,7 +544,7 @@ class Model:
     def fit(self, X, Y):
         start_time = time.time()
         self.num_train = X.shape[0]
-        
+
         for n, layer in enumerate(self.layers):
             self.shapes.append(np.shape(X)[1:])
             layer.dataset_name = self.data_set_name
@@ -593,7 +619,9 @@ class Model:
         self.time_predicting = time.time() - start_time
         accuracy = metrics.accuracy_score(Y_answer, Y_predicted) * 100
         classification_report = metrics.classification_report(Y_answer, Y_predicted)
-        confusion_matrix = metrics.confusion_matrix(np.argmax(Y_answer, axis=1), np.argmax(Y_predicted, axis=1))
+        confusion_matrix = metrics.confusion_matrix(
+            np.argmax(Y_answer, axis=1), np.argmax(Y_predicted, axis=1)
+        )
         print(classification_report)
         print(confusion_matrix)
 
