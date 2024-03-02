@@ -2,6 +2,7 @@ from pathlib import Path
 import random
 from turtle import pd
 import cv2
+from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 import numpy as np
 import os
 import sys
@@ -69,11 +70,13 @@ def scale_to_0_255(data):
 
 def display_images(
     data, label, layer_number, embedding_method: str, dataset_name: str, suptitle: str
-):  
+):
     num_data = 3
     label = np.argmax(label, axis=1)
-    indices = [np.where(label == i)[0][0] for i in [0, 1, 2, 3]] # 1,2,3のラベルを持つデータの最初のインデックスを取得
-    
+    indices = [
+        np.where(label == i)[0][0] for i in [0, 1, 2, 3]
+    ]  # 1,2,3のラベルを持つデータの最初のインデックスを取得
+
     img_idx = 1
     for n in indices:
         data_to_display = data[n]
@@ -142,10 +145,180 @@ def display_weights(weights, dataset_name, layer_idx):
     # 横の余白を小さくし、縦の余白を大きくする
     plt.subplots_adjust(wspace=0.6, hspace=1.5)
     plt.tight_layout()
-    filename = f"{dataset_name}_LeNet_weights_layer{layer_idx}"
-    filename = make_unique_filename(filename, "./weights_results")
-    plt.savefig(f"../results/results_weights/{filename}.png")
+    file_dir = "../results/results_weights"
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
+    filename = f"{dataset_name}_LeNet_weights_layer_{layer_idx}"
+    filename = make_unique_filename(filename, file_dir)
+    plt.savefig(file_dir + f"/{filename}.png")
     plt.close()
+
+
+# def visualize_emb(
+#     input_data,
+#     input_data_label,
+#     convolved_data,
+#     block_size: int,
+#     stride: int,
+#     B: int,
+#     embedding_method: str,
+#     dataset_name: str,
+#     output_dots=True,
+# ):
+#     """
+#     埋め込み後の点を可視化
+#         input_data : 層の入力画像 (データ数, 高さ, 幅, 入力チャンネル数)
+#         input_data_label : ブロックのラベル (データ数, 高さ, 幅, 出力チャンネル数)
+#         convolved_data : 次元削減後のデータ
+#         block_size : ブロックのサイズ
+#         stride : ストライド
+#         embedding_method : 埋め込み手法
+#         dataset_name : データセットの名前
+#     """
+#     # ファイル名の重複を防ぐ処理
+
+#     file_dir = "../results/results_emb"
+#     if not os.path.exists(file_dir):
+#         os.makedirs(file_dir)
+#     filename = f"{embedding_method}_{dataset_name}"
+#     filename = make_unique_filename(filename, file_dir)
+
+#     input_data = input_data[:100]
+#     input_data_label = input_data_label[:100]
+#     convolved_data = convolved_data[:100]
+
+#     # 画像データからブロックに変換
+#     blocks = np.empty((0, block_size, block_size, input_data.shape[3]))
+#     for img_idx in range(input_data.shape[0]):
+#         img = input_data[img_idx]
+#         block = util.view_as_windows(
+#             img, (block_size, block_size, input_data.shape[3]), stride
+#         ).reshape(-1, block_size, block_size, input_data.shape[3])
+#         blocks = np.concatenate((blocks, block), axis=0)
+
+#     input_data = blocks
+#     input_data_label = np.repeat(
+#         np.argmax(input_data_label, axis=1),
+#         convolved_data.shape[1] * convolved_data.shape[2],
+#     )  # １枚の画像のラベルをブロックの個数分繰り返す　（例：３のラベルを２８ｘ２８繰り返す）
+#     convolved_data = convolved_data.reshape(-1, convolved_data.shape[3])
+
+#     # convolved_dataの重複を削除
+#     convolved_data, unique_indices = np.unique(
+#         convolved_data, axis=0, return_index=True
+#     )
+#     input_data_label = input_data_label[unique_indices]
+#     input_data = input_data[unique_indices]
+
+#     # ランダムに一部の点にのみブロックの画像を表示
+#     num_samples = len(convolved_data)
+#     num_blocks_to_display = min(15, num_samples)
+#     np.random.seed(0)  # Fix the seed for reproducibility
+#     random_indices = np.random.choice(num_samples, num_blocks_to_display, replace=False)
+#     # random_indices = [157222, 771083, 203848, 231814, 517608, 630900, 174863, 861036, 749684, 262324, 8638,  77385, 283762, 592353, 752354]
+#     print(random_indices)
+#     convolved_data = convolved_data[random_indices]
+#     input_data = input_data[random_indices]
+#     input_data_label = input_data_label[random_indices]
+
+#     # 0-255の範囲にスケール
+#     input_data = scale_to_0_255(input_data)
+
+#     # ２チャネルごとに列方向に描画
+#     # num_images = int(convolved_data.shape[1] / 2)
+#     num_images = 3
+#     if int(input_data.shape[3]) == 1 or int(input_data.shape[3]) == 3:
+#         num_input_channels = int(input_data.shape[3])
+#     else:
+#         num_input_channels = 6
+#     # num_input_channels = int(input_data.shape[3])
+#     fig, axs = plt.subplots(num_images, 1, figsize=(8, num_images * 6 + 1))
+#     fig2, axs2 = plt.subplots(
+#         num_blocks_to_display,
+#         num_input_channels + 1,
+#         figsize=(3 + 2 * num_input_channels / 3, num_blocks_to_display),
+#     )
+
+#     for img_idx in range(num_images):
+#         convolved_data_sep = convolved_data[:, (2 * img_idx) : (2 * (img_idx + 1))]
+#         ax = axs[img_idx]
+
+#         # 軸の範囲を設定
+#         x_min = np.min(convolved_data_sep[:, 0])
+#         x_max = np.max(convolved_data_sep[:, 0])
+#         y_min = np.min(convolved_data_sep[:, 1])
+#         y_max = np.max(convolved_data_sep[:, 1])
+#         k = 0.2 * (x_max - x_min) / 2
+#         l = 0.2 * (y_max - y_min) / 2
+
+#         # 散布図のプロット
+#         sc = ax.scatter(
+#             convolved_data_sep[:, 0],
+#             convolved_data_sep[:, 1],
+#             cmap="tab10",
+#             c=input_data_label,
+#             marker="o",
+#             s=600,
+#             edgecolors="black",
+#         )
+#         # plt.colorbar(sc, label="label") #凡例のプロット
+#         # Annotationのプロット
+#         for dot_idx in range(len(convolved_data)):
+#             x, y = convolved_data_sep[dot_idx]
+#             ax.annotate(
+#                 chr(dot_idx + 65),
+#                 (x, y),
+#                 weight="bold",
+#                 ha="center",
+#                 va="center",
+#                 size=20,
+#                 color="black",
+#             )
+
+#         ax.set_box_aspect(1)
+#         ax.set_xlim(x_min - k, x_max + k)
+#         ax.set_ylim(y_min - l, y_max + l)
+#         # ax.set_title(f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={block_size})")
+#     for dot_idx in range(len(convolved_data)):
+#         for channel_idx in range(num_input_channels + 1):
+#             ax2 = axs2[dot_idx, channel_idx]
+#             ax2.axis("off")
+#             if channel_idx == 0:
+#                 # ax2に文字を書く
+#                 ax2.text(
+#                     0.5,
+#                     0.5,
+#                     chr(dot_idx + 65),
+#                     horizontalalignment="center",
+#                     verticalalignment="center",
+#                     fontsize=20,
+#                 )
+#             else:
+#                 img = input_data[dot_idx, :, :, channel_idx - 1]
+#                 # print(input_data[dot_idx])
+#                 # print(img)
+#                 ax2.imshow(img, cmap="gray")  # vmin, vmaxの指定
+#                 if dot_idx == 0:
+#                     ax2.set_title(f"Channel{channel_idx}")
+
+#     # 画像として保存
+#     # plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95)
+#     fig.tight_layout()
+#     fig2.tight_layout()
+#     fig.savefig(file_dir + f"/{filename}.png")
+#     fig2.savefig(file_dir + f"/{filename}_blocks.png")
+#     plt.close()
+
+#     output_dots = False
+#     if output_dots:
+#         visualize_emb_dots(
+#             input_data_label,
+#             convolved_data,
+#             block_size,
+#             B,
+#             embedding_method,
+#             dataset_name,
+#         )
 
 
 def visualize_emb(
@@ -177,9 +350,10 @@ def visualize_emb(
     filename = f"{embedding_method}_{dataset_name}"
     filename = make_unique_filename(filename, file_dir)
 
-    input_data = input_data[:100]
-    input_data_label = input_data_label[:100]
-    convolved_data = convolved_data[:100]
+    # # 前１００データに制限
+    # input_data = input_data[:100]
+    # input_data_label = input_data_label[:100]
+    # convolved_data = convolved_data[:100]
 
     # 画像データからブロックに変換
     blocks = np.empty((0, block_size, block_size, input_data.shape[3]))
@@ -206,8 +380,8 @@ def visualize_emb(
 
     # ランダムに一部の点にのみブロックの画像を表示
     num_samples = len(convolved_data)
-    num_blocks_to_display = min(15, num_samples)
-    np.random.seed(0)  # Fix the seed for reproducibility
+    num_blocks_to_display = min(15, num_samples)  # 15個のデータを表示
+    np.random.seed(0)
     random_indices = np.random.choice(num_samples, num_blocks_to_display, replace=False)
     # random_indices = [157222, 771083, 203848, 231814, 517608, 630900, 174863, 861036, 749684, 262324, 8638,  77385, 283762, 592353, 752354]
     print(random_indices)
@@ -218,7 +392,7 @@ def visualize_emb(
     # 0-255の範囲にスケール
     input_data = scale_to_0_255(input_data)
 
-    # ２チャネルごとに列方向に描画
+    # ２チャネルごとに描画するfigを作成
     # num_images = int(convolved_data.shape[1] / 2)
     num_images = 3
     if int(input_data.shape[3]) == 1 or int(input_data.shape[3]) == 3:
@@ -227,14 +401,12 @@ def visualize_emb(
         num_input_channels = 6
     # num_input_channels = int(input_data.shape[3])
     fig, axs = plt.subplots(num_images, 1, figsize=(8, num_images * 6 + 1))
-    fig2, axs2 = plt.subplots(
-        num_blocks_to_display,
-        num_input_channels + 1,
-        figsize=(3 + 2 * num_input_channels / 3, num_blocks_to_display),
-    )
 
+    # ブロックの描画
     for img_idx in range(num_images):
-        convolved_data_sep = convolved_data[:, (2 * img_idx) : (2 * (img_idx + 1))]
+        convolved_data_sep = convolved_data[
+            :, (2 * img_idx) : (2 * (img_idx + 1))
+        ]  # ２チャネルごとに切り取った写像先の値
         ax = axs[img_idx]
 
         # 軸の範囲を設定
@@ -259,60 +431,32 @@ def visualize_emb(
         # Annotationのプロット
         for dot_idx in range(len(convolved_data)):
             x, y = convolved_data_sep[dot_idx]
-            ax.annotate(
-                chr(dot_idx + 65),
+            img = input_data[dot_idx]
+            imgbox = OffsetImage(
+                img, zoom=15 - block_size, cmap="gray"
+            )  # 解像度を上げるためにzoomパラメータを調整
+            ab = AnnotationBbox(
+                imgbox,
                 (x, y),
-                weight="bold",
-                ha="center",
-                va="center",
-                size=20,
-                color="black",
+                frameon=True,
+                xycoords="data",
+                boxcoords="offset points",
+                pad=0.0,
             )
+            ax.add_artist(ab)
 
         ax.set_box_aspect(1)
         ax.set_xlim(x_min - k, x_max + k)
         ax.set_ylim(y_min - l, y_max + l)
         # ax.set_title(f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={block_size})")
-    for dot_idx in range(len(convolved_data)):
-        for channel_idx in range(num_input_channels + 1):
-            ax2 = axs2[dot_idx, channel_idx]
-            ax2.axis("off")
-            if channel_idx == 0:
-                # ax2に文字を書く
-                ax2.text(
-                    0.5,
-                    0.5,
-                    chr(dot_idx + 65),
-                    horizontalalignment="center",
-                    verticalalignment="center",
-                    fontsize=20,
-                )
-            else:
-                img = input_data[dot_idx, :, :, channel_idx - 1]
-                # print(input_data[dot_idx])
-                # print(img)
-                ax2.imshow(img, cmap="gray")  # vmin, vmaxの指定
-                if dot_idx == 0:
-                    ax2.set_title(f"Channel{channel_idx}")
 
     # 画像として保存
     # plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95)
     fig.tight_layout()
-    fig2.tight_layout()
     fig.savefig(file_dir + f"/{filename}.png")
-    fig2.savefig(file_dir + f"/{filename}_blocks.png")
     plt.close()
 
-    output_dots = False
-    if output_dots:
-        visualize_emb_dots(
-            input_data_label,
-            convolved_data,
-            block_size,
-            B,
-            embedding_method,
-            dataset_name,
-        )
+    return None
 
 
 def visualize_emb_dots(
@@ -490,7 +634,11 @@ def select_embedding_method(
         # embedded_blocks = LE.fit_transform(data_to_embed)
         # print("LE params:", LE.affinity_matrix_)
         embedded_blocks, _ = SLE(
-            X=data_to_embed, Y=data_to_embed_label, la=1.0, map_d=Channels_next, n_neighbors=k
+            X=data_to_embed,
+            Y=data_to_embed_label,
+            la=1.0,
+            map_d=Channels_next,
+            n_neighbors=k,
         )
 
     elif embedding_method == "SLE":
@@ -498,9 +646,13 @@ def select_embedding_method(
         # k = int(data_to_embed.shape[0] / Channels_next)
         k = None
         embedded_blocks, _ = SLE(
-            X=data_to_embed, Y=data_to_embed_label, la=la, map_d=Channels_next, n_neighbors=k
+            X=data_to_embed,
+            Y=data_to_embed_label,
+            la=la,
+            map_d=Channels_next,
+            n_neighbors=k,
         )
-        print(f'SLE parameter: {la}')
+        print(f"SLE parameter: {la}")
     elif embedding_method == "TSNE":
         tsne = TSNE(
             n_components=Channels_next,
@@ -529,20 +681,21 @@ def select_embedding_method(
     normalized_blocks = np.stack(normalized_blocks, axis=1).reshape(-1, Channels_next)
     return normalized_blocks
 
+
 def get_KTH_data():
-    w=200
-    h=200
+    w = 200
+    h = 200
     folder = "/workspaces/KernelCNN/app/data/KTH_TIPS"
     image_raw = []
     label_raw = []
 
     for i in os.listdir(folder):
-        for j in os.listdir(os.path.join(folder,i)):
+        for j in os.listdir(os.path.join(folder, i)):
             path = os.path.join(folder, i, j)
             image = cv2.imread(path)
-            image = cv2.resize(image, (w, h), interpolation = cv2.INTER_AREA)
+            image = cv2.resize(image, (w, h), interpolation=cv2.INTER_AREA)
             image = np.array(image)
-            image = image.astype('float32')
+            image = image.astype("float32")
             image /= 255
             image_raw.append(image)
             label_raw.append(i)
@@ -552,12 +705,13 @@ def get_KTH_data():
     one_hot = LabelBinarizer().fit(label_names)
     y_label = one_hot.transform(label_raw)
     y_label = np.argmax(y_label, axis=1)
-    
+
     train_X, test_X, train_Y, test_Y = train_test_split(
         image_raw, y_label, test_size=0.2, random_state=0
     )
-    
+
     return train_X, train_Y, test_X, test_Y
+
 
 def select_datasets(num_train: int, num_test: int, datasets: str):
     if (datasets == "MNIST") or (datasets == "FMNIST"):
