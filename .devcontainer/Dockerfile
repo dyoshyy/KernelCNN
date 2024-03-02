@@ -21,4 +21,4 @@ RUN apt-get update && apt-get upgrade -y && \
 COPY .ssh/ root/.ssh
 
 COPY requirements.txt /root/
-# RUN  pip install -r /root/requirements.txt
+RUN  pip install -r /root/requirements.txt
