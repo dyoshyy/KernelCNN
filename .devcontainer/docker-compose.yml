@@ -5,7 +5,9 @@ volumes:
 services:
   python3:
     restart: always
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: 'exp'
     working_dir: '/usr/src/app'
     tty: true
