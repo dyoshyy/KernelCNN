@@ -9,6 +9,7 @@ from functions import *
 import numpy as np
 from skimage import feature
 import layers as my_layers
+from functions import *
 
 
 def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
@@ -17,44 +18,89 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     )
 
     # HOG feature extraction
-    descriptors_train = [
-        np.concatenate(
-            [
-                feature.hog(
-                    channel,
-                    orientations=8,
-                    pixels_per_cell=(4, 4),
-                    cells_per_block=(1, 1),
-                    transform_sqrt=True,
-                    block_norm="L2-Hys",
-                    visualize=False,
-                )
-                for channel in train_image.transpose((2, 0, 1))
-            ]
-        )
-        for train_image in X_train
-    ]
-    descriptors_test = [
-        np.concatenate(
-            [
-                feature.hog(
-                    channel,
-                    orientations=8,
-                    pixels_per_cell=(4, 4),
-                    cells_per_block=(1, 1),
-                    transform_sqrt=True,
-                    block_norm="L2-Hys",
-                    visualize=False,
-                )
-                for channel in test_image.transpose((2, 0, 1))
-            ]
-        )
-        for test_image in X_test
-    ]
+    # descriptors_train = [
+    #     np.concatenate(
+    #         [
+    #             feature.hog(
+    #                 channel,
+    #                 orientations=8,
+    #                 pixels_per_cell=(4, 4),
+    #                 cells_per_block=(1, 1),
+    #                 transform_sqrt=True,
+    #                 block_norm="L2-Hys",
+    #                 visualize=False,
+    #             )
+    #             for channel in train_image.transpose((2, 0, 1))
+    #         ]
+    #     )
+    #     for train_image in X_train
+    # ]
+    # descriptors_test = [
+    #     # np.concatenate(
+    #         [
+    #             feature.hog(
+    #                 channel,
+    #                 orientations=8,
+    #                 pixels_per_cell=(4, 4),
+    #                 cells_per_block=(1, 1),
+    #                 transform_sqrt=True,
+    #                 block_norm="L2-Hys",
+    #                 visualize=True,
+    #             )
+    #             for channel in test_image.transpose((2, 0, 1))
+    #         ]
+    #     # )
+    #     for test_image in X_test
+    # ]
+    descriptors_train = []
+    images_train = []
+    for train_image in X_train:
+        hog_features = []
+        hog_images = []
+        for channel in train_image.transpose((2, 0, 1)):
+            hog_feature, hog_image = feature.hog(
+                channel,
+                orientations=8,
+                pixels_per_cell=(4, 4),
+                cells_per_block=(1, 1),
+                transform_sqrt=True,
+                block_norm="L2-Hys",
+                visualize=True,
+            )
+            hog_features.append(hog_feature)
+            hog_images.append(hog_image)
+        descriptors_train.append(hog_features)
+        images_train.append(hog_images)
+        
+    descriptors_test = []
+    images_test = []
+    for test_image in X_test:
+        hog_features = []
+        hog_images = []
+        for channel in test_image.transpose((2, 0, 1)):
+            hog_feature, hog_image = feature.hog(
+                channel,
+                orientations=8,
+                pixels_per_cell=(4, 4),
+                cells_per_block=(1, 1),
+                transform_sqrt=True,
+                block_norm="L2-Hys",
+                visualize=True,
+            )
+            hog_features.append(hog_feature)
+            hog_images.append(hog_image)
+        descriptors_test.append(hog_features)
+        images_test.append(hog_images)
+    
     # Convert descriptors to numpy arrays
     descriptors_train = np.array(descriptors_train).reshape(len(descriptors_train), -1)
     descriptors_test = np.array(descriptors_test).reshape(len(descriptors_test), -1)
-
+    images_train = np.array(images_train).transpose((0, 2, 3, 1))
+    images_test = np.array(images_test).transpose((0, 2, 3, 1))
+    
+    # Show HOG images
+    display_images(images_train, Y_train, 1, "HOG", dataset_name, "")
+    
     # SVM classification
     # classifier = my_layers.SupportVectorsMachine()
     # classifier = my_layers.RandomForest()
