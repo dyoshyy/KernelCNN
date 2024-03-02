@@ -1,5 +1,7 @@
+from email.mime import image
 import sys
 import os
+from matplotlib.pylab import multi_dot
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
@@ -17,86 +19,50 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
         num_train, num_test, datasets
     )
 
-    # HOG feature extraction
-    # descriptors_train = [
-    #     np.concatenate(
-    #         [
-    #             feature.hog(
-    #                 channel,
-    #                 orientations=8,
-    #                 pixels_per_cell=(4, 4),
-    #                 cells_per_block=(1, 1),
-    #                 transform_sqrt=True,
-    #                 block_norm="L2-Hys",
-    #                 visualize=False,
-    #             )
-    #             for channel in train_image.transpose((2, 0, 1))
-    #         ]
-    #     )
-    #     for train_image in X_train
-    # ]
-    # descriptors_test = [
-    #     # np.concatenate(
-    #         [
-    #             feature.hog(
-    #                 channel,
-    #                 orientations=8,
-    #                 pixels_per_cell=(4, 4),
-    #                 cells_per_block=(1, 1),
-    #                 transform_sqrt=True,
-    #                 block_norm="L2-Hys",
-    #                 visualize=True,
-    #             )
-    #             for channel in test_image.transpose((2, 0, 1))
-    #         ]
-    #     # )
-    #     for test_image in X_test
-    # ]
-    descriptors_train = []
-    images_train = []
-    for train_image in X_train:
-        hog_features = []
-        hog_images = []
-        for channel in train_image.transpose((2, 0, 1)):
-            hog_feature, hog_image = feature.hog(
-                channel,
-                orientations=8,
-                pixels_per_cell=(4, 4),
-                cells_per_block=(1, 1),
-                transform_sqrt=True,
-                block_norm="L2-Hys",
-                visualize=True,
-            )
-            hog_features.append(hog_feature)
-            hog_images.append(hog_image)
-        descriptors_train.append(hog_features)
-        images_train.append(hog_images)
-        
-    descriptors_test = []
-    images_test = []
-    for test_image in X_test:
-        hog_features = []
-        hog_images = []
-        for channel in test_image.transpose((2, 0, 1)):
-            hog_feature, hog_image = feature.hog(
-                channel,
-                orientations=8,
-                pixels_per_cell=(4, 4),
-                cells_per_block=(1, 1),
-                transform_sqrt=True,
-                block_norm="L2-Hys",
-                visualize=True,
-            )
-            hog_features.append(hog_feature)
-            hog_images.append(hog_image)
-        descriptors_test.append(hog_features)
-        images_test.append(hog_images)
+    orientations = 9
+    pixels_per_cell=(8, 8)
+    cells_per_block=(3, 3)
     
+    descriptors_train = []
+    descriptors_test = []
+    images_train = []
+    images_test = []  
+    
+    for train_image in X_train:
+        hog_feature, hog_image = feature.hog(
+            train_image,
+            orientations=orientations,
+            pixels_per_cell=pixels_per_cell,
+            cells_per_block=cells_per_block,
+            transform_sqrt=True,
+            block_norm="L2-Hys",
+            visualize=True,
+            channel_axis=-1,
+        )
+        descriptors_train.append(hog_feature)
+        images_train.append(hog_image)
+
+    for test_image in X_test:
+        hog_feature, hog_image = feature.hog(
+            test_image,
+            orientations=orientations,
+            pixels_per_cell=pixels_per_cell,
+            cells_per_block=cells_per_block,
+            transform_sqrt=True,
+            block_norm="L2-Hys",
+            visualize=True,
+            channel_axis=-1,
+        )
+        descriptors_test.append(hog_feature)
+        images_test.append(hog_image)
+
     # Convert descriptors to numpy arrays
     descriptors_train = np.array(descriptors_train).reshape(len(descriptors_train), -1)
     descriptors_test = np.array(descriptors_test).reshape(len(descriptors_test), -1)
-    images_train = np.array(images_train).transpose((0, 2, 3, 1))
-    images_test = np.array(images_test).transpose((0, 2, 3, 1))
+    images_train = np.array(images_train)
+    images_test = np.array(images_test)
+    images_train = images_train.reshape(images_train.shape[0], images_train.shape[1], images_train.shape[2], 1)
+    images_test = images_test.reshape(images_test.shape[0], images_test.shape[1], images_test.shape[2], 1)
     
     # Show HOG images
     display_images(images_train, Y_train, 1, "HOG", dataset_name, "")

@@ -209,7 +209,7 @@ def visualize_emb(
     num_blocks_to_display = min(15, num_samples)
     np.random.seed(0)  # Fix the seed for reproducibility
     random_indices = np.random.choice(num_samples, num_blocks_to_display, replace=False)
-    random_indices = [157222, 771083, 203848, 231814, 517608, 630900, 174863, 861036, 749684, 262324, 8638,  77385, 283762, 592353, 752354]
+    # random_indices = [157222, 771083, 203848, 231814, 517608, 630900, 174863, 861036, 749684, 262324, 8638,  77385, 283762, 592353, 752354]
     print(random_indices)
     convolved_data = convolved_data[random_indices]
     input_data = input_data[random_indices]
