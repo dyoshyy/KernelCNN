@@ -71,11 +71,10 @@ def scale_to_0_255(data):
 def display_images(
     data, label, layer_number, embedding_method: str, dataset_name: str, suptitle: str
 ):
-    num_data = 3
     label = np.argmax(label, axis=1)
     indices = [
-        np.where(label == i)[0][0] for i in [0, 1, 2, 3]
-    ]  # 1,2,3のラベルを持つデータの最初のインデックスを取得
+        np.where(label == i)[0][0] for i in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    ]  # 1,2,3,4,5のラベルを持つデータの最初のインデックスを取得
 
     img_idx = 1
     for n in indices:
@@ -108,7 +107,9 @@ def display_images(
                     ax.set_title("Channel {}".format(index + 1))
 
         # fig.suptitle(suptitle)
-        filename = f"{layer_number}_{embedding_method}_{dataset_name}_{img_idx}"
+        filename = (
+            f"{embedding_method}_layer{layer_number}_{dataset_name}_class{img_idx}"
+        )
         file_dir = "../results/results_output"
         if not os.path.exists(file_dir):
             os.makedirs(file_dir)
@@ -351,9 +352,9 @@ def visualize_emb(
     filename = make_unique_filename(filename, file_dir)
 
     # # 前１００データに制限
-    # input_data = input_data[:100]
-    # input_data_label = input_data_label[:100]
-    # convolved_data = convolved_data[:100]
+    input_data = input_data[:100]
+    input_data_label = input_data_label[:100]
+    convolved_data = convolved_data[:100]
 
     # 画像データからブロックに変換
     blocks = np.empty((0, block_size, block_size, input_data.shape[3]))
@@ -380,7 +381,7 @@ def visualize_emb(
 
     # ランダムに一部の点にのみブロックの画像を表示
     num_samples = len(convolved_data)
-    num_blocks_to_display = min(15, num_samples)  # 15個のデータを表示
+    num_blocks_to_display = min(10, num_samples)  # 15個のデータを表示
     np.random.seed(0)
     random_indices = np.random.choice(num_samples, num_blocks_to_display, replace=False)
     # random_indices = [157222, 771083, 203848, 231814, 517608, 630900, 174863, 861036, 749684, 262324, 8638,  77385, 283762, 592353, 752354]

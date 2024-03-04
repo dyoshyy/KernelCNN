@@ -570,25 +570,25 @@ class Model:
                 X_temp = X
                 X = layer.calculate(X, Y)
                 # displayが有効の場合は中間層の出力と埋め込みを可視化
-                if self.display:
-                    visualize_emb(
-                        X_temp,
-                        Y,
-                        X,
-                        layer.b,
-                        layer.stride,
-                        layer.B,
-                        layer.embedding,
-                        self.data_set_name,
-                    )
-                    display_images(
-                        X,
-                        Y,
-                        n + 2,
-                        layer.embedding,
-                        self.data_set_name,
-                        f"KernelCNN train output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})",
-                    )
+                # if self.display:
+                #     visualize_emb(
+                #         X_temp,
+                #         Y,
+                #         X,
+                #         layer.b,
+                #         layer.stride,
+                #         layer.B,
+                #         layer.embedding,
+                #         self.data_set_name,
+                #     )
+                #     display_images(
+                #         X,
+                #         Y,
+                #         n + 2,
+                #         layer.embedding,
+                #         self.data_set_name,
+                #         f"KernelCNN train output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})",
+                #     )
             elif isinstance(layer, LabelLearningLayer):  # 識別層のとき
                 layer.fit(X, Y)
             else:  # プーリング層
@@ -604,10 +604,27 @@ class Model:
                 if layer.padding:
                     out_size = test_X.shape[1] + layer.b - 1  # 28 + 5 - 1
                     test_X = pad_images(test_X, out_size)
+                test_X_temp = test_X
                 test_X = layer.calculate(test_X, None)
                 if self.display:
-                    continue
-                    # display_images(test_X, n+7, layer.embedding, self.data_set_name, f'KernelCNN test output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})')
+                    visualize_emb(
+                        test_X_temp,
+                        test_Y,
+                        test_X,
+                        layer.b,
+                        layer.stride,
+                        layer.B,
+                        layer.embedding,
+                        self.data_set_name,
+                    )
+                    display_images(
+                        test_X,
+                        test_Y,
+                        n + 2,
+                        layer.embedding,
+                        self.data_set_name,
+                        f"KernelCNN test output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})",
+                    )
             elif isinstance(layer, LabelLearningLayer):
                 Y_predicted = self.layers[-1].predict(test_X)
             else:  # プーリング層のとき

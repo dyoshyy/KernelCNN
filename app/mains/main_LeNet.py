@@ -36,7 +36,7 @@ def main_LeNet(
 ):
     backend.clear_session()
     print("Number of training samples:", num_train)
-    stride = 2
+    stride = 1
 
     train_X, train_Y, test_X, test_Y, channel, image_size = select_datasets(
         num_train, num_test, datasets
@@ -54,7 +54,7 @@ def main_LeNet(
     model = models.Sequential()
     model.add(
         layers.Conv2D(
-            40,
+            6,
             kernel_size=(block_size[0], block_size[0]),
             activation=activation,
             strides=stride,
@@ -96,7 +96,7 @@ def main_LeNet(
 
     # Model parameters
     batch_size = 64
-    epochs = 50
+    epochs = 100
 
     # Callbacks
     lrr = ReduceLROnPlateau(
@@ -124,7 +124,8 @@ def main_LeNet(
     )
 
     # SVMによる識別
-    train_features = get_intermediate_output(model, 1, train_X)
+    train_features = get_intermediate_output(model, 2, train_X)
+    # print("train_features.shape:", train_features.shape)
 
     # Train a classifier
     # classifier = my_layers.SupportVectorsMachine()
@@ -133,7 +134,7 @@ def main_LeNet(
     classifier = my_layers.kNearestNeighbors(n_neighbors=1)
     classifier.fit(train_features, train_Y)
 
-    test_features = get_intermediate_output(model, 1, test_X)
+    test_features = get_intermediate_output(model, 2, test_X)
     predictions = classifier.predict(test_features)
     accuracy = metrics.accuracy_score(test_Y, predictions) * 100
     classification_report = metrics.classification_report(test_Y, predictions)
@@ -167,13 +168,13 @@ def main_LeNet(
         # 学習後のモデルの出力
         block_outputs = []
         for layer_idx in range(len(model.layers) - 2):
-            block_outputs.append(get_intermediate_output(model, layer_idx, train_X))
+            block_outputs.append(get_intermediate_output(model, layer_idx, test_X))
             print(f"Block {layer_idx+1} output shape:", block_outputs[layer_idx].shape)
 
         weights1 = model.layers[0].get_weights()[0]
         visualize_emb(
-            train_X,
-            train_Y,
+            test_X,
+            test_Y,
             block_outputs[0],
             block_size=block_size[0],
             stride=stride,
@@ -183,7 +184,7 @@ def main_LeNet(
         )
         display_images(
             block_outputs[0],
-            train_Y,
+            test_Y,
             2,
             "LeNet",
             datasets,
