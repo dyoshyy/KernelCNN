@@ -419,16 +419,17 @@ def visualize_emb(
         l = 0.2 * (y_max - y_min) / 2
 
         # 散布図のプロット
-        sc = ax.scatter(
-            convolved_data_sep[:, 0],
-            convolved_data_sep[:, 1],
-            cmap="tab10",
-            c=input_data_label,
-            marker="o",
-            s=600,
-            edgecolors="black",
-        )
+        # sc = ax.scatter(
+        #     convolved_data_sep[:, 0],
+        #     convolved_data_sep[:, 1],
+        #     cmap="tab10",
+        #     c=input_data_label,
+        #     marker="o",
+        #     s=600,
+        #     edgecolors="black",
+        # )
         # plt.colorbar(sc, label="label") #凡例のプロット
+        
         # Annotationのプロット
         for dot_idx in range(len(convolved_data)):
             x, y = convolved_data_sep[dot_idx]
@@ -623,7 +624,7 @@ def select_embedding_method(
         return pca.fit(data_to_embed)
     elif embedding_method == "LDA":
         lda = LinearDiscriminantAnalysis(n_components=Channels_next)
-        return lda.fit(data_to_embed)
+        return lda.fit(data_to_embed, data_to_embed_label)
 
     elif embedding_method == "KPCA":
         kpca = KernelPCA(n_components=Channels_next, kernel="rbf")
