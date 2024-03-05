@@ -69,7 +69,7 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     )
 
     # Show HOG images
-    display_images(images_train, Y_train, 1, "HOG", datasets, "")
+    display_images(images_test, Y_test, 1, "HOG", datasets, "")
 
     # SVM classification
     # classifier = my_layers.SupportVectorsMachine()
