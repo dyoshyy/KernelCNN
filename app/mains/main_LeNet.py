@@ -31,12 +31,13 @@ def main_LeNet(
     num_test: int,
     datasets: str,
     block_size=[5, 5],
+    stride = 1,
     display=True,
     layers_BOOL=[1, 1, 1, 0],
 ):
     backend.clear_session()
     print("Number of training samples:", num_train)
-    stride = 1
+    # stride = 1
 
     train_X, train_Y, test_X, test_Y, channel, image_size = select_datasets(
         num_train, num_test, datasets
@@ -54,7 +55,7 @@ def main_LeNet(
     model = models.Sequential()
     model.add(
         layers.Conv2D(
-            6,
+            30,
             kernel_size=(block_size[0], block_size[0]),
             activation=activation,
             strides=stride,
@@ -163,6 +164,7 @@ def main_LeNet(
         plt.xlabel("Epoch", size=15)
         plt.legend(["train", "test"], loc="upper right")
         plt.savefig("./learning_historyLoss.png")
+        plt.close()
 
     if display:
         # 学習後のモデルの出力

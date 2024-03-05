@@ -1,4 +1,5 @@
 import dis
+import os
 import sys
 
 sys.path.append("/workspaces/KernelCNN/app/mains")
@@ -12,7 +13,9 @@ import numpy as np
 def execute_each_datasets_each_samples(
     file_dir: str, model: str, datasets_array: list, sample_num_array: list
 ):
-    file_dir = file_dir
+    if os.path.exists(file_dir):
+        os.makedirs(file_dir, exist_ok=True)    
+    
     for dataset in datasets_array:
         with open(file_dir, "a") as file:
             file.write(f"{dataset}:\n")

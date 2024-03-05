@@ -21,6 +21,7 @@ def main_kernelCNN(
     B=3000,
     embedding_method=["LE", "LE"],
     block_size=[5, 5],
+    stride = 1,
     layers_BOOL=[1, 0, 0, 0],
 ):
 
@@ -48,7 +49,7 @@ def main_kernelCNN(
     model.add_layer(
         layers.KIMLayer(
             block_size=block_size[0],
-            channels_next=6,
+            channels_next=30,
             stride=stride,
             padding=False,
             emb=embedding_method[0],
