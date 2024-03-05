@@ -36,7 +36,7 @@ def execute_each_datasets_each_samples(
                             B=1000,
                             embedding_method=["LE", "LE"],
                             block_size=[5, 5],
-                            stride = stride
+                            stride = stride,
                             layers_BOOL=[1, 0, 0, 0],
                         )
                     elif model == "LeNet":
@@ -45,7 +45,7 @@ def execute_each_datasets_each_samples(
                             10000,
                             dataset,
                             block_size=[5, 5],
-                            stride = stride
+                            stride = stride,
                             display=True,
                             layers_BOOL=[1, 0, 0, 0],
                         )
