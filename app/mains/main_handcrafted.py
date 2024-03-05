@@ -20,8 +20,12 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     )
 
     orientations = 9
-    pixels_per_cell = (8, 8)
     cells_per_block = (3, 3)
+    if datasets == "MNIST" or datasets == "CIFAR10":
+        pixels_per_cell = (4, 4)
+    elif datasets == "KTH":
+        print("KTH")
+        pixels_per_cell = (25, 25)
 
     descriptors_train = []
     descriptors_test = []
@@ -67,7 +71,7 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     images_test = images_test.reshape(
         images_test.shape[0], images_test.shape[1], images_test.shape[2], 1
     )
-
+    print(descriptors_train.shape)
     # Show HOG images
     display_images(images_test, Y_test, 1, "HOG", datasets, "")
 

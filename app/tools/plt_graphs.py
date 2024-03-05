@@ -9,7 +9,7 @@ import pandas as pd
 plt.rcParams["font.family"] = "Times New Roman"  # font familyの設定
 plt.rcParams["mathtext.fontset"] = "stix"  # math fontの設定
 plt.rcParams["font.size"] = 30  # 全体のフォントサイズが変更されます。
-plt.rcParams["legend.fontsize"] = 10  # 凡例のフォントサイズ
+plt.rcParams["legend.fontsize"] = 8  # 凡例のフォントサイズ
 plt.rcParams["xtick.labelsize"] = 25  # 軸だけ変更されます。
 plt.rcParams["ytick.labelsize"] = 25  # 軸だけ変更されます
 plt.rcParams["xtick.direction"] = "in"  # x axis in
@@ -28,26 +28,25 @@ plt.rcParams["legend.borderaxespad"] = 0.0  # 凡例の端とグラフの端を�
 # Sample data
 data1 = {
     "dataset": "MNIST",
-    "x": [1000, 10000, 30000, 60000],
-    "y_kernelCNN": [88.31, 89.88, 94.62, 95.26],
-    "y_LeNet": [89.76, 94.54, 98.68, 98.82],
-    "y_HOG": [92.72, 95.8, 97.01, 97.21],
+    "x": [10, 100, 300, 1000, 10000],
+    "y_kernelCNN": [32.72, 60.099999999999994, 72.96000000000001, 82.19, 91.93],
+    "y_LeNet": [35.449999999999996, 62.49, 74.87, 84.50999999999999, 92.86],
+    "y_HOG": [46.17, 69.89999999999999, 77.62, 85.15, 91.5],
 }
 data2 = {
-    "dataset": "FMNIST",
-    "x": [1000, 10000, 30000, 60000],
-    "y_kernelCNN": [80.80, 86.25, 88.07, 88.81],
-    "y_LeNet": [80.71, 86.19, 88.52, 89.03],
-    "y_HOG": [79.91, 84.23, 85.16, 85.86],
+    "dataset": "CIFAR10",
+    "x": [10, 100, 300, 1000, 10000],
+    "y_kernelCNN": [14.84, 18.54, 21.88, 23.84, 29.65],
+    "y_LeNet": [15.67, 16.61, 23.94, 26.88, 34.489999999999995],
+    "y_HOG": [17.86, 24.51, 31.380000000000003, 36.66, 44.72],
 }
 data3 = {
-    "dataset": "CIFAR10",
-    "x": [1000, 10000, 30000, 60000],
-    "y_kernelCNN": [39.44, 47.85, 50.58, 52.56],
-    "y_LeNet": [39.11, 51.83, 57.64, 60.54],
-    "y_HOG": [10, 10, 10, 10],
+    "dataset": "KTH",
+    "x": [10, 100, 300, 648],
+    "y_kernelCNN": [9.25925925925926, 24.074074074074073, 35.18518518518518, 41.358024691358025],
+    "y_LeNet": [30.246913580246915, 53.086419753086425, 65.4320987654321, 74.07407407407408],
+    "y_HOG": [13.580246913580247, 30.864197530864196, 33.33333333333333, 43.20987654320987],
 }
-
 # Convert data to DataFrame
 df = pd.DataFrame(data1)
 dataset = df["dataset"][0]
@@ -180,9 +179,11 @@ fig_1.plot(
 
 fig_1.set_xlabel(r"Number of training samples $n$")
 fig_1.set_ylabel(r"Accuracy(%)")
+fig_1.set_ylim([0, 95])
 
-fig_1.set_xticks(range(len(df["x"])))
-fig_1.set_xticklabels(df["x"])
+x_labels = [10, 100, 300, 1000, 10000]
+fig_1.set_xticks(range(len(x_labels)))
+fig_1.set_xticklabels(x_labels)
 
 fig_1.legend(ncol=3, bbox_to_anchor=(0.95, 0.05), loc="lower right")
 
