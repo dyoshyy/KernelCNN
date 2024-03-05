@@ -146,7 +146,8 @@ def main_LeNet(
     print(confusion_matrix)
     print(f"Accuracy: {accuracy:.4f}")
 
-    if True:  # 学習の過程を可視化
+    # 学習の過程を可視化
+    if False:  
         plt.figure(figsize=[20, 8])
         plt.plot(result.history["accuracy"])
         plt.plot(result.history["val_accuracy"])

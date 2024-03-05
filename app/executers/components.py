@@ -17,6 +17,10 @@ def execute_each_datasets_each_samples(
         os.makedirs(file_dir, exist_ok=True)    
     
     for dataset in datasets_array:
+        if dataset == "KTH":
+            stride = 2
+        else:
+            stride = 1
         with open(file_dir, "a") as file:
             file.write(f"{dataset}:\n")
             accuracy_each_samples = []
@@ -32,6 +36,7 @@ def execute_each_datasets_each_samples(
                             B=1000,
                             embedding_method=["LE", "LE"],
                             block_size=[5, 5],
+                            stride = stride
                             layers_BOOL=[1, 0, 0, 0],
                         )
                     elif model == "LeNet":
@@ -40,6 +45,7 @@ def execute_each_datasets_each_samples(
                             10000,
                             dataset,
                             block_size=[5, 5],
+                            stride = stride
                             display=True,
                             layers_BOOL=[1, 0, 0, 0],
                         )
