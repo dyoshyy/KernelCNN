@@ -13,7 +13,7 @@ sys.path.append("/workspaces/KernelCNN/app/data")
 import matplotlib.pyplot as plt
 import math
 from skimage import util
-from sklearn.discriminant_analysis import StandardScaler
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, StandardScaler
 from sklearn.manifold import SpectralEmbedding, TSNE, LocallyLinearEmbedding
 from sklearn.decomposition import PCA, KernelPCA
 from laplacianEigenmap import LaplacianEigenmap
@@ -620,7 +620,10 @@ def select_embedding_method(
 ):
     if embedding_method == "PCA":
         pca = PCA(n_components=Channels_next, svd_solver="auto")
-        embedded_blocks = pca.fit_transform(data_to_embed)
+        return pca.fit(data_to_embed)
+    elif embedding_method == "LDA":
+        lda = LinearDiscriminantAnalysis(n_components=Channels_next)
+        return lda.fit(data_to_embed)
 
     elif embedding_method == "KPCA":
         kpca = KernelPCA(n_components=Channels_next, kernel="rbf")
@@ -643,7 +646,7 @@ def select_embedding_method(
         )
 
     elif embedding_method == "SLE":
-        la = 0.2
+        la = 0.2 # 値が高いほど近傍点の重みが大きくなる(小さいほどラベルの情報が使われる)
         # k = int(data_to_embed.shape[0] / Channels_next)
         k = None
         embedded_blocks, _ = SLE(

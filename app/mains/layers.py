@@ -3,9 +3,10 @@ import GPy
 import numpy as np
 import math
 import time
+from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis as QDA
 from functions import (
     display_images,
     binarize_images,
@@ -133,9 +134,17 @@ class KIMLayer:
 
         # 埋め込み
         print("embedding...")
-        embedded_blocks = select_embedding_method(
-            self.embedding, self.C_next, sampled_blocks, sampled_blocks_label
-        )
+        
+        # 線形の場合は変換モデル自体を受け取り、返す
+        if self.embedding == "PCA" or self.embedding == "LDA":
+            model = select_embedding_method(
+                self.embedding, self.C_next, sampled_blocks, sampled_blocks_label
+            )
+            return model
+        else:
+            embedded_blocks = select_embedding_method(
+                self.embedding, self.C_next, sampled_blocks, sampled_blocks_label
+            )
         print("embedding completed")
 
         # B個だけランダムに取り出す
@@ -170,7 +179,10 @@ class KIMLayer:
         selected_X = np.array(selected_X)
         selected_Y = np.array(selected_Y)
         """
-
+        # embeddingが線形の場合はself.GPに線形のモデルをいれる
+        if (self.GP is None) and (self.embedding == "PCA" or self.embedding == "LDA"):
+            self.GP = select_embedding_method()
+        
         if self.GP is None:
             sampled_blocks, embedded_blocks = self.sample_and_embed_blocks()
             # kernel = GPy.kern.RBF(input_dim = self.b * self.b * self.C_prev, variance=0.001, lengthscale=1.0) + GPy.kern.Bias(input_dim = self.b * self.b * self.C_prev, variance=60000) + GPy.kern.Linear(input_dim = self.b * self.b * self.C_prev, variances=0.05)
@@ -209,7 +221,7 @@ class KIMLayer:
                 self.C_next,
             )
         )
-
+        
         for batch_index in tqdm(range(num_batches)):
             batch_images = self.input_data[
                 batch_size * batch_index : batch_size * (batch_index + 1)
@@ -240,7 +252,10 @@ class KIMLayer:
                 -1, self.b * self.b * self.C_prev
             )
 
-            predictions, _ = self.GP.predict(blocks_to_convert)  # shape: (10*784, 6)
+            if self.embedding == "PCA" or self.embedding == "LDA":
+                predictions = self.GP.transform(blocks_to_convert) # 線形モデルの場合はself.GPは線形モデルが入っているのでtransform
+            else:
+                predictions, _ = self.GP.predict(blocks_to_convert)  # shape: (10*784, 6)
             predictions = predictions.reshape(
                 num_batch_images,
                 int(np.ceil((self.H - self.b + 1) / self.stride)),
