@@ -181,7 +181,7 @@ class KIMLayer:
         """
         # embeddingが線形の場合はself.GPに線形のモデルをいれる
         if (self.GP is None) and (self.embedding == "PCA" or self.embedding == "LDA"):
-            self.GP = select_embedding_method()
+            self.GP = self.sample_and_embed_blocks()
         
         if self.GP is None:
             sampled_blocks, embedded_blocks = self.sample_and_embed_blocks()
