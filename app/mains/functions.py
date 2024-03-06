@@ -419,15 +419,15 @@ def visualize_emb(
         l = 0.2 * (y_max - y_min) / 2
 
         # 散布図のプロット
-        # sc = ax.scatter(
-        #     convolved_data_sep[:, 0],
-        #     convolved_data_sep[:, 1],
-        #     cmap="tab10",
-        #     c=input_data_label,
-        #     marker="o",
-        #     s=600,
-        #     edgecolors="black",
-        # )
+        sc = ax.scatter(
+            convolved_data_sep[:, 0],
+            convolved_data_sep[:, 1],
+            cmap="tab10",
+            c=input_data_label,
+            marker="o",
+            s=600,
+            edgecolors="black",
+        )
         # plt.colorbar(sc, label="label") #凡例のプロット
         
         # Annotationのプロット
@@ -439,10 +439,10 @@ def visualize_emb(
             )  # 解像度を上げるためにzoomパラメータを調整
             ab = AnnotationBbox(
                 imgbox,
-                (x, y),
+                xy=(x, y),
                 frameon=True,
                 xycoords="data",
-                boxcoords="offset points",
+                boxcoords="data",
                 pad=0.0,
             )
             ax.add_artist(ab)
@@ -450,6 +450,7 @@ def visualize_emb(
         ax.set_box_aspect(1)
         ax.set_xlim(x_min - k, x_max + k)
         ax.set_ylim(y_min - l, y_max + l)
+
         # ax.set_title(f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={block_size})")
 
     # 画像として保存
@@ -676,15 +677,17 @@ def select_embedding_method(
         embedded_blocks = lle.fit_transform(data_to_embed)
     else:
         print("Error: No embedding selected.")
+        exit()
 
-    normalized_blocks = []
-    for channel in range(embedded_blocks.shape[1]):
-        channel_data = embedded_blocks[:, channel]
-        # normalized_channel = MinMaxScaler().fit_transform(channel_data.reshape(-1, 1))
-        channel_data = StandardScaler().fit_transform(channel_data.reshape(-1, 1))
-        normalized_blocks.append(channel_data)
-    normalized_blocks = np.stack(normalized_blocks, axis=1).reshape(-1, Channels_next)
-    return normalized_blocks
+    # normalized_blocks = []
+    # for channel in range(embedded_blocks.shape[1]):
+    #     channel_data = embedded_blocks[:, channel]
+    #     # normalized_channel = MinMaxScaler().fit_transform(channel_data.reshape(-1, 1))
+    #     channel_data = StandardScaler().fit_transform(channel_data.reshape(-1, 1))
+    #     normalized_blocks.append(channel_data)
+    # normalized_blocks = np.stack(normalized_blocks, axis=1).reshape(-1, Channels_next)
+    
+    return embedded_blocks
 
 
 def get_KTH_data():
@@ -747,9 +750,35 @@ def select_datasets(num_train: int, num_test: int, datasets: str):
 
     train_Y = to_categorical(train_Y, 10)
     test_Y = to_categorical(test_Y, 10)
-    train_X = train_X[:num_train] / 255
-    train_Y = train_Y[:num_train]
-    test_X = test_X[:num_test] / 255
+    train_X = train_X / 255
+    test_X = test_X[:num_test]/ 255
     test_Y = test_Y[:num_test]
 
-    return train_X, train_Y, test_X, test_Y, channel, image_size
+    # Select equal number of images from each class
+    train_X_selected = []
+    train_Y_selected = []
+    # test_X_selected = []
+    # test_Y_selected = []
+
+    num_classes = train_Y.shape[1]
+    num_images_per_class = num_train // num_classes
+
+    for class_label in range(num_classes):
+        class_indices = np.where(train_Y[:, class_label] == 1)[0]
+        selected_indices = np.random.choice(class_indices, num_images_per_class, replace=False)
+        train_X_selected.extend(train_X[selected_indices])
+        train_Y_selected.extend(train_Y[selected_indices])
+
+        # class_indices = np.where(test_Y[:, class_label] == 1)[0]
+        # selected_indices = np.random.choice(class_indices, num_images_per_class, replace=False)
+        # test_X_selected.extend(test_X[selected_indices])
+        # test_Y_selected.extend(test_Y[selected_indices])
+
+    train_X_selected = np.array(train_X_selected)
+    train_Y_selected = np.array(train_Y_selected)
+    # test_X_selected = np.array(test_X_selected)
+    # test_Y_selected = np.array(test_Y_selected)
+    
+    return train_X_selected, train_Y_selected, test_X, test_Y, channel, image_size
+
+    # return train_X, train_Y, test_X, test_Y, channel, image_size

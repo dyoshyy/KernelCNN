@@ -57,3 +57,34 @@ def execute_each_datasets_each_samples(
                 file.write(f"Average Accuracy: {avg_accuracy}\n")
             file.write(str(accuracy_each_samples) + "\n")
             file.write("----------------------------\n")
+
+def embedding_method_comparison(
+    file_dir: str, datasets_array: list, sample_num_array: list
+):
+
+    for dataset in datasets_array:
+        if dataset == "KTH":
+            stride = 2
+        else:
+            stride = 1
+        with open(file_dir, "a") as file:
+            file.write(f"{dataset}:\n")
+            for embedding in ["PCA", "LDA", "LE", "SLE"]:
+                accuracy_each_samples = []
+                file.write(f"{embedding}:\n")
+                for n in sample_num_array:
+                    accuracy = main_kernelCNN(
+                            n,
+                            10000,
+                            dataset,
+                            B=1000,
+                            embedding_method=[embedding],
+                            block_size=[5, 5],
+                            stride = stride,
+                            layers_BOOL=[1, 0, 0, 0],
+                    )
+                    accuracy_each_samples.append(accuracy)
+                    file.write(f"n={n}\n")
+                    file.write(f"Accuracy: {accuracy}\n")
+                file.write(str(accuracy_each_samples) + "\n")
+            file.write("----------------------------\n")
