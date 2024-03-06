@@ -43,13 +43,13 @@ def main_kernelCNN(
     #     print(f"test Label {label}: {count} occurrences")
 
     # モデル定義
-    stride = 1
+    # stride = 1
     model = layers.Model(display=True)
     model.data_set_name = datasets
     model.add_layer(
         layers.KIMLayer(
             block_size=block_size[0],
-            channels_next=30,
+            channels_next=9,
             stride=stride,
             padding=False,
             emb=embedding_method[0],
@@ -62,7 +62,7 @@ def main_kernelCNN(
         model.add_layer(
             layers.KIMLayer(
                 block_size=block_size[1],
-                channels_next=8,
+                channels_next=18,
                 stride=stride,
                 padding=False,
                 emb=embedding_method[1],
@@ -129,7 +129,7 @@ if __name__ == "__main__":
         num_train=num_train,
         num_test=num_test,
         datasets=dataset_name,
-        B=100,
+        B=1000,
         embedding_method=embedding_method,
         block_size=block_size,
         layers_BOOL=layers_BOOL,

@@ -4,7 +4,7 @@ import numpy as np
 # import LeNet
 datasets_array = ["MNIST", "CIFAR10", "KTH"]
 embedding_array = ["LE", "PCA", "LLE", "TSNE"]
-num_samples_array = [10, 100, 300, 1000, 10000]
+num_samples_array = [10, 100, 300, 648]
 from components import execute_each_datasets_each_samples
 
 # ベースライン

@@ -19,8 +19,8 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
         num_train, num_test, datasets
     )
 
-    orientations = 9
-    cells_per_block = (3, 3)
+    orientations = 8
+    cells_per_block = (2, 2)
     if datasets == "MNIST" or datasets == "CIFAR10":
         pixels_per_cell = (4, 4)
     elif datasets == "KTH":

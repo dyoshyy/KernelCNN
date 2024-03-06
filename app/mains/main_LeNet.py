@@ -9,6 +9,7 @@ from keras import layers, models, losses
 from keras import optimizers
 from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from sklearn import metrics
+from sklearn.decomposition import PCA
 from functions import visualize_emb
 from functions import display_images, display_weights
 from functions import select_datasets
@@ -55,7 +56,7 @@ def main_LeNet(
     model = models.Sequential()
     model.add(
         layers.Conv2D(
-            30,
+            9,
             kernel_size=(block_size[0], block_size[0]),
             activation=activation,
             strides=stride,
@@ -69,7 +70,7 @@ def main_LeNet(
         if layers_BOOL[1]:
             model.add(
                 layers.Conv2D(
-                    8,
+                    9,
                     kernel_size=(block_size[1], block_size[1]),
                     activation=activation,
                     strides=stride,

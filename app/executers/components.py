@@ -13,8 +13,6 @@ import numpy as np
 def execute_each_datasets_each_samples(
     file_dir: str, model: str, datasets_array: list, sample_num_array: list
 ):
-    if os.path.exists(file_dir):
-        os.makedirs(file_dir, exist_ok=True)    
     
     for dataset in datasets_array:
         if dataset == "KTH":

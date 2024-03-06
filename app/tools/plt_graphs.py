@@ -9,7 +9,7 @@ import pandas as pd
 plt.rcParams["font.family"] = "Times New Roman"  # font familyの設定
 plt.rcParams["mathtext.fontset"] = "stix"  # math fontの設定
 plt.rcParams["font.size"] = 30  # 全体のフォントサイズが変更されます。
-plt.rcParams["legend.fontsize"] = 8  # 凡例のフォントサイズ
+plt.rcParams["legend.fontsize"] = 10  # 凡例のフォントサイズ
 plt.rcParams["xtick.labelsize"] = 25  # 軸だけ変更されます。
 plt.rcParams["ytick.labelsize"] = 25  # 軸だけ変更されます
 plt.rcParams["xtick.direction"] = "in"  # x axis in
@@ -19,33 +19,33 @@ plt.rcParams["axes.grid"] = True  # make grid
 plt.rcParams["legend.fancybox"] = False  # 丸角
 plt.rcParams["legend.framealpha"] = 1  # 透明度の指定、0で塗りつぶしなし
 plt.rcParams["legend.edgecolor"] = "black"  # edgeの色を変更
-plt.rcParams["legend.handlelength"] = 1.2  # 凡例の線の長さを調節
-plt.rcParams["legend.labelspacing"] = 2.0  # 垂直方向の距離の各凡例の距離
-plt.rcParams["legend.handletextpad"] = 2.0  # 凡例の線と文字の距離の長さ
-plt.rcParams["legend.markerscale"] = 1.2  # 点がある場合のmarker scale
+plt.rcParams["legend.handlelength"] = 2.5  # 凡例の線の長さを調節
+plt.rcParams["legend.labelspacing"] = 1.5  # 垂直方向の距離の各凡例の距離
+plt.rcParams["legend.handletextpad"] = 1.5  # 凡例の線と文字の距離の長さ
+plt.rcParams["legend.markerscale"] = 1.0  # 点がある場合のmarker scale
 plt.rcParams["legend.borderaxespad"] = 0.0  # 凡例の端とグラフの端を合わせる
 
 # Sample data
 data1 = {
     "dataset": "MNIST",
-    "x": [10, 100, 300, 1000, 10000],
-    "y_kernelCNN": [32.72, 60.099999999999994, 72.96000000000001, 82.19, 91.93],
-    "y_LeNet": [35.449999999999996, 62.49, 74.87, 84.50999999999999, 92.86],
-    "y_HOG": [46.17, 69.89999999999999, 77.62, 85.15, 91.5],
+    "x": [10, 100, 300, 648],
+    "y_kernelCNN": [34.12, 61.47, 72.09, 79.46],
+    "y_LeNet": [36.84, 63.06, 74.38, 82.15],
+    "y_HOG": [44.529999999999994, 66.67999999999999, 76.67, 80.82000000000001],
 }
 data2 = {
     "dataset": "CIFAR10",
-    "x": [10, 100, 300, 1000, 10000],
-    "y_kernelCNN": [14.84, 18.54, 21.88, 23.84, 29.65],
-    "y_LeNet": [15.67, 16.61, 23.94, 26.88, 34.489999999999995],
-    "y_HOG": [17.86, 24.51, 31.380000000000003, 36.66, 44.72],
+    "x": [10, 100, 300, 648],
+    "y_kernelCNN": [15.28, 18.360000000000003, 22.400000000000002, 23.78],
+    "y_LeNet": [15.740000000000002, 16.7, 24.44, 24.89],
+    "y_HOG": [16.72, 21.5, 28.01, 31.85],
 }
 data3 = {
     "dataset": "KTH",
     "x": [10, 100, 300, 648],
-    "y_kernelCNN": [9.25925925925926, 24.074074074074073, 35.18518518518518, 41.358024691358025],
-    "y_LeNet": [30.246913580246915, 53.086419753086425, 65.4320987654321, 74.07407407407408],
-    "y_HOG": [13.580246913580247, 30.864197530864196, 33.33333333333333, 43.20987654320987],
+    "y_kernelCNN": [6.172839506172839, 40.123456790123456, 43.82716049382716, 59.876543209876544],
+    "y_LeNet": [16.666666666666664, 48.148148148148145, 58.64197530864198, 63.580246913580254],
+    "y_HOG": [13.580246913580247, 45.06172839506173, 62.96296296296296, 70.98765432098766],
 }
 # Convert data to DataFrame
 df = pd.DataFrame(data1)
@@ -69,7 +69,7 @@ fig_1.plot(
     markeredgewidth=markeredgewidth,
     markeredgecolor="none",
     color=main_color,
-    label=f"KernelCNN({dataset})",
+    label=f"KernelCNN w/LE({dataset})",
     linewidth=linewidth,
 )
 fig_1.plot(
@@ -107,7 +107,7 @@ fig_1.plot(
     markeredgewidth=markeredgewidth,
     markeredgecolor="none",
     color=main_color,
-    label=f"KernelCNN({dataset})",
+    label=f"KernelCNN w/LE({dataset})",
     linewidth=linewidth,
 )
 fig_1.plot(
@@ -145,7 +145,7 @@ fig_1.plot(
     markeredgewidth=markeredgewidth,
     markeredgecolor="none",
     color=main_color,
-    label=f"KernelCNN({dataset})",
+    label=f"KernelCNN w/LE({dataset})",
     linewidth=linewidth,
 )
 fig_1.plot(
@@ -179,13 +179,12 @@ fig_1.plot(
 
 fig_1.set_xlabel(r"Number of training samples $n$")
 fig_1.set_ylabel(r"Accuracy(%)")
-fig_1.set_ylim([0, 95])
+fig_1.set_ylim([0, 85])
 
-x_labels = [10, 100, 300, 1000, 10000]
-fig_1.set_xticks(range(len(x_labels)))
-fig_1.set_xticklabels(x_labels)
+fig_1.set_xticks(range(len(df["x"])))
+fig_1.set_xticklabels(df["x"])
 
-fig_1.legend(ncol=3, bbox_to_anchor=(0.95, 0.05), loc="lower right")
+fig_1.legend(ncol=3, bbox_to_anchor=(0.975, 0.025), loc="lower right")
 
 # save
 fig.savefig("graph.png", bbox_inches="tight", pad_inches=0.05)

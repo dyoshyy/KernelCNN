@@ -123,7 +123,7 @@ class KIMLayer:
         sampled_blocks_label = sampled_blocks_label[unique_index]
         print("unique samples shape:", np.shape(sampled_blocks))
 
-        # サンプル数が5000を超える場合は5000にする
+        # サンプル数を閾値に制限する
         embedding_samples_threshold = 5000
         if sampled_blocks.shape[0] > embedding_samples_threshold:
             selected_indices = np.random.choice(
@@ -141,6 +141,7 @@ class KIMLayer:
                 self.embedding, self.C_next, sampled_blocks, sampled_blocks_label
             )
             return model
+        # それ以外の場合は埋め込みを学習
         else:
             embedded_blocks = select_embedding_method(
                 self.embedding, self.C_next, sampled_blocks, sampled_blocks_label
