@@ -761,11 +761,12 @@ def select_datasets(num_train: int, num_test: int, datasets: str):
     # test_Y_selected = []
 
     num_classes = train_Y.shape[1]
+    num_train = min(num_train, train_X.shape[0])
     num_images_per_class = num_train // num_classes
 
     for class_label in range(num_classes):
         class_indices = np.where(train_Y[:, class_label] == 1)[0]
-        selected_indices = np.random.choice(class_indices, num_images_per_class, replace=False)
+        selected_indices = np.random.choice(class_indices, num_images_per_class, replace=True)
         train_X_selected.extend(train_X[selected_indices])
         train_Y_selected.extend(train_Y[selected_indices])
 

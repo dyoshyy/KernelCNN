@@ -35,5 +35,6 @@ if True:
     embedding_method_comparison(
         file_dir="../results/average_accuracy_embedding_method_comparison.txt",
         datasets_array=datasets_array,
+        # datasets_array=["KTH"],
         sample_num_array=num_samples_array,
     )
