@@ -88,3 +88,35 @@ def embedding_method_comparison(
                     file.write(f"Accuracy: {accuracy}\n")
                 file.write(str(accuracy_each_samples) + "\n")
             file.write("----------------------------\n")
+            
+def features_selection_comparison(
+    file_dir: str, datasets_array: list, sample_num_array: list, use_channels_array: list
+):
+
+    for dataset in datasets_array:
+        if dataset == "KTH":
+            stride = 2
+        else:
+            stride = 1
+        with open(file_dir, "a") as file:
+            file.write(f"{dataset}:\n")
+            for embedding in ["LE", "SLE"]:
+                accuracy_each_samples = []
+                file.write(f"{embedding}:\n")
+                for use_channels in use_channels_array:
+                    accuracy = main_kernelCNN(
+                            648,
+                            10000,
+                            dataset,
+                            B=1000,
+                            embedding_method=[embedding],
+                            block_size=[5, 5],
+                            stride = stride,
+                            layers_BOOL=[1, 0, 0, 0],
+                            use_channels = use_channels
+                    )
+                    accuracy_each_samples.append(accuracy)
+                    file.write(f"use channels:{use_channels}\n")
+                    file.write(f"Accuracy: {accuracy}\n")
+                file.write(str(accuracy_each_samples) + "\n")
+            file.write("----------------------------\n")

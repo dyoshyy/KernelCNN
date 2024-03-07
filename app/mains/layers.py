@@ -29,6 +29,7 @@ class KIMLayer:
         self,
         block_size: int,
         channels_next: int,
+        use_channels: list,
         stride: int,
         padding: bool,
         emb: str,
@@ -39,6 +40,7 @@ class KIMLayer:
         self.stride: int = stride
         self.C_next: int = channels_next
         self.C_prev: int = 0
+        self.use_channels = use_channels
         self.H: int = 0
         self.W: int = 0
         self.output_data: np.ndarray = np.array([])
@@ -307,10 +309,12 @@ class KIMLayer:
         print("completed")
         # ReLU
         # self.output_data = np.maximum(0, self.output_data)
-        use_channels = [1, 40]
+        # use_channels = [1, 9]
+        use_channels = self.use_channels
 
         print("use channels:", use_channels)
-        self.output_data[:, :, :, (use_channels[0] - 1) : use_channels[1]] = (
+        # self.output_data[:, :, :, (use_channels[0] - 1) : use_channels[1]] = (　# 黒いチャネルを残す　出力次元はC_nextになる
+        self.output_data = ( # 黒いチャネルを残さない　出力次元はuse_channelｓの幅になる
             output_data[:, :, :, (use_channels[0] - 1) : use_channels[1]]
         )
         return self.output_data
@@ -566,7 +570,7 @@ class Model:
             layer.dataset_name = self.data_set_name
             if isinstance(layer, KIMLayer):
                 # クラスの偏りがないようにサンプルを選ぶ
-                n_train = 300  # 埋め込みの学習に用いる画像枚数
+                n_train = 100  # 埋め込みの学習に用いる画像枚数
                 n_classes = 10
                 selected_X = []
                 selected_Y = []
