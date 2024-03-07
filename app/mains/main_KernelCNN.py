@@ -23,6 +23,7 @@ def main_kernelCNN(
     block_size=[5, 5],
     stride = 1,
     layers_BOOL=[1, 0, 0, 0],
+    use_channels = [1,9]
 ):
 
     train_X, train_Y, test_X, test_Y, channel, image_size = functions.select_datasets(
@@ -49,7 +50,8 @@ def main_kernelCNN(
     model.add_layer(
         layers.KIMLayer(
             block_size=block_size[0],
-            channels_next=9,
+            channels_next=25,
+            use_channels = use_channels,
             stride=stride,
             padding=False,
             emb=embedding_method[0],
