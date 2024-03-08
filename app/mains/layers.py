@@ -197,7 +197,7 @@ class KIMLayer:
                 )
             )
             self.GP = GPy.models.SparseGPRegression(
-                sampled_blocks, embedded_blocks, num_inducing=100, kernel=kernel
+                sampled_blocks, embedded_blocks, num_inducing=1000, kernel=kernel
             )
             self.GP.Gaussian_noise.variance = 0.001
             print("optimizing the GP model")

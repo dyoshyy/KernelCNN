@@ -21,7 +21,7 @@ def execute_each_datasets_each_samples(
             stride = 1
         with open(file_dir, "a") as file:
             file.write(f"{dataset}:\n")
-            accuracy_each_samples = []
+            accuracy_each_samples = []        
             for n in sample_num_array:
                 N = 1  # iteration number
                 accuracy_N_list = []
@@ -59,7 +59,7 @@ def execute_each_datasets_each_samples(
             file.write("----------------------------\n")
 
 def embedding_method_comparison(
-    file_dir: str, datasets_array: list, sample_num_array: list
+    file_dir: str, datasets_array: list, sample_num_array: list, embedding_methods_array: list
 ):
 
     for dataset in datasets_array:
@@ -69,7 +69,7 @@ def embedding_method_comparison(
             stride = 1
         with open(file_dir, "a") as file:
             file.write(f"{dataset}:\n")
-            for embedding in ["PCA", "LDA", "LE", "SLE"]:
+            for embedding in embedding_methods_array:
                 accuracy_each_samples = []
                 file.write(f"{embedding}:\n")
                 for n in sample_num_array:
@@ -77,7 +77,7 @@ def embedding_method_comparison(
                             n,
                             10000,
                             dataset,
-                            B=1000,
+                            B=3000,
                             embedding_method=[embedding],
                             block_size=[5, 5],
                             stride = stride,

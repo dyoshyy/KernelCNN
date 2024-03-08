@@ -44,13 +44,13 @@ def main_kernelCNN(
     #     print(f"test Label {label}: {count} occurrences")
 
     # モデル定義
-    # stride = 1
+    # stride = 2
     model = layers.Model(display=True)
     model.data_set_name = datasets
     model.add_layer(
         layers.KIMLayer(
             block_size=block_size[0],
-            channels_next=25,
+            channels_next=9,
             use_channels = use_channels,
             stride=stride,
             padding=False,

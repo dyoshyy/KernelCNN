@@ -38,7 +38,7 @@ def main_LeNet(
 ):
     backend.clear_session()
     print("Number of training samples:", num_train)
-    # stride = 1
+    stride = 2
 
     train_X, train_Y, test_X, test_Y, channel, image_size = select_datasets(
         num_train, num_test, datasets
