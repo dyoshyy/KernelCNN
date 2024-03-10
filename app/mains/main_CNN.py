@@ -1,4 +1,5 @@
 import os
+from typing import Literal
 from matplotlib import pyplot as plt
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
@@ -27,7 +28,7 @@ def get_intermediate_output(model, layer_index, data):
     return intermediate_layer_model.predict(data)
 
 
-def main_LeNet(
+def main_CNN(
     num_train: int,
     num_test: int,
     datasets: str,
@@ -35,66 +36,80 @@ def main_LeNet(
     stride = 1,
     display=True,
     layers_BOOL=[1, 1, 1, 0],
+    model_type: Literal["2LayerCNN", "LeNet"] = "2LayerCNN",
 ):
     backend.clear_session()
     print("Number of training samples:", num_train)
-    stride = 2
 
     train_X, train_Y, test_X, test_Y, channel, image_size = select_datasets(
         num_train, num_test, datasets
     )
-    # 訓練データの表示
-    # display_images(
-    #     train_X, train_Y, 2, "LeNettrain", datasets, f"LeNet Input n={num_train}"
-    # )
-    # print(train_Y[:10])
 
     # model definition
+    
     activation = "relu"
     # activation = None
     # activation = 'tanh'
     model = models.Sequential()
-    model.add(
-        layers.Conv2D(
-            9,
-            kernel_size=(block_size[0], block_size[0]),
-            activation=activation,
-            strides=stride,
-            input_shape=(image_size, image_size, channel),
-        )
-    )
-
-    if layers_BOOL[0]:
-        model.add(layers.MaxPooling2D((2, 2)))
-        # model.add(layers.Activation('sigmoid'))
-        if layers_BOOL[1]:
-            model.add(
-                layers.Conv2D(
-                    9,
-                    kernel_size=(block_size[1], block_size[1]),
-                    activation=activation,
-                    strides=stride,
-                    padding="valid",
-                )
+    
+    if model_type == "2LayerCNN":
+        model = models.Sequential()
+        model.add(
+            layers.Conv2D(
+                9,
+                kernel_size=(block_size[0], block_size[0]),
+                activation=activation,
+                strides=stride,
+                input_shape=(image_size, image_size, channel),
             )
-            if layers_BOOL[2]:
-                model.add(layers.MaxPooling2D((2, 2)))
-                # model.add(layers.Activation('sigmoid'))
-                if layers_BOOL[3]:
-                    model.add(
-                        layers.Conv2D(
-                            32,
-                            kernel_size=(block_size[1], block_size[1]),
-                            activation=activation,
-                            strides=stride,
-                            padding="valid",
-                        )
+        )
+
+        model.add(layers.MaxPooling2D((2, 2)))
+        model.add(layers.Flatten())
+        model.add(layers.Dense(10, activation="softmax"))
+        # model.summary()
+
+    if model_type == "LeNet":
+        model.add(
+            layers.Conv2D(
+                9,
+                kernel_size=(block_size[0], block_size[0]),
+                activation=activation,
+                strides=stride,
+                input_shape=(image_size, image_size, channel),
+            )
+        )
+        if layers_BOOL[0]:
+            model.add(layers.MaxPooling2D((2, 2)))
+            # model.add(layers.Activation('sigmoid'))
+            if layers_BOOL[1]:
+                model.add(
+                    layers.Conv2D(
+                        18,
+                        kernel_size=(block_size[1], block_size[1]),
+                        activation=activation,
+                        strides=stride,
+                        padding="valid",
                     )
-    model.add(layers.Flatten())
-    # model.add(layers.Dense(120, activation=activation))
-    # model.add(layers.Dense(84, activation=activation))
-    model.add(layers.Dense(10, activation="softmax"))
-    # model.summary()
+                )
+                if layers_BOOL[2]:
+                    model.add(layers.MaxPooling2D((2, 2)))
+                    # model.add(layers.Activation('sigmoid'))
+                    if layers_BOOL[3]:
+                        model.add(
+                            layers.Conv2D(
+                                18,
+                                kernel_size=(block_size[1], block_size[1]),
+                                activation=activation,
+                                strides=stride,
+                                padding="valid",
+                            )
+                        )
+        model.add(layers.Flatten())
+        model.add(layers.Dense(120, activation=activation))
+        model.add(layers.Dense(84, activation=activation))
+        model.add(layers.Dense(10, activation="softmax"))
+        model.summary()
 
     # Model parameters
     batch_size = 64

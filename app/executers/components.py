@@ -5,13 +5,13 @@ import sys
 sys.path.append("/workspaces/KernelCNN/app/mains")
 # print(sys.path)
 from main_KernelCNN import main_kernelCNN
-from main_LeNet import main_LeNet
+from main_CNN import main_CNN
 from main_handcrafted import main_HOG
 import numpy as np
 
 
 def execute_each_datasets_each_samples(
-    file_dir: str, model: str, datasets_array: list, sample_num_array: list
+    file_dir: str, model: str, datasets_array: list, sample_num_array: list, model_type: str
 ):
     
     for dataset in datasets_array:
@@ -37,8 +37,8 @@ def execute_each_datasets_each_samples(
                             stride = stride,
                             layers_BOOL=[1, 0, 0, 0],
                         )
-                    elif model == "LeNet":
-                        accuracy = main_LeNet(
+                    elif model == "CNN":
+                        accuracy = main_CNN(
                             n,
                             10000,
                             dataset,
@@ -46,6 +46,7 @@ def execute_each_datasets_each_samples(
                             stride = stride,
                             display=True,
                             layers_BOOL=[1, 0, 0, 0],
+                            model_type=model_type,
                         )
                     elif model == "HOG":
                         accuracy = main_HOG(n, 10000, dataset)

@@ -10,38 +10,47 @@ from components import execute_each_datasets_each_samples, embedding_method_comp
 
 # ベースライン
 
-# if True:
-#         execute_each_datasets_each_samples(
-#             file_dir="../results/average_accuracy_kernel.txt",
-#             model="KernelCNN",
-#             datasets_array=datasets_array,
-#             # sample_num_array=num_samples_array,
-#             sample_num_array = [10, 100, 300, 648, 1000, 5000, 10000],
-#         )
-#         execute_each_datasets_each_samples(
-#             file_dir="../results/average_accuracy_LeNet.txt",
-#             model="LeNet",
-#             datasets_array=datasets_array,
-#             # sample_num_array=num_samples_array,
-#             sample_num_array = [10, 100, 300, 648, 1000, 5000, 10000],
-#         )
-#         execute_each_datasets_each_samples(
-#             file_dir="../results/average_accuracy_HOG.txt",
-#             model="HOG",
-#             datasets_array=datasets_array,
-#             # sample_num_array=num_samples_array,
-#             sample_num_array = [10, 100, 300, 648, 1000, 5000, 10000],
-#         )
+if True:
+        # execute_each_datasets_each_samples(
+        #     file_dir="../results/average_accuracy_kernel.txt",
+        #     model="KernelCNN",
+        #     datasets_array=datasets_array,
+        #     # sample_num_array=num_samples_array,
+        #     sample_num_array = [10, 100, 300, 648, 1000, 5000, 10000],
+        # )
+        execute_each_datasets_each_samples(
+            file_dir="../results/average_accuracy_LeNet.txt",
+            model="CNN",
+            datasets_array=datasets_array,
+            # sample_num_array=num_samples_array,
+            sample_num_array = [10, 100, 300, 648, 1000, 5000, 10000],
+            model_type="2LayerCNN"
+        )
+        execute_each_datasets_each_samples(
+            file_dir="../results/average_accuracy_LeNet.txt",
+            model="CNN",
+            datasets_array=datasets_array,
+            # sample_num_array=num_samples_array,
+            sample_num_array = [10, 100, 300, 648, 1000, 5000, 10000],
+            model_type="LeNet"
+        )
+        # execute_each_datasets_each_samples(
+        #     file_dir="../results/average_accuracy_HOG.txt",
+        #     model="HOG",
+        #     datasets_array=datasets_array,
+        #     # sample_num_array=num_samples_array,
+        #     sample_num_array = [10, 100, 300, 648, 1000, 5000, 10000],
+        # )
 
 # 埋め込み手法の比較
-embedding_method_comparison(
-    file_dir="../results/average_accuracy_embedding_method_comparison.txt",
-    datasets_array=datasets_array,
-    # datasets_array=["KTH"],
-    sample_num_array=[10, 100, 300, 648, 1000, 5000, 10000],
-    # embedding_methods_array= ["PCA", "LDA", "LE", "SLE"],
-    embedding_methods_array=["SLE"]
-)
+# embedding_method_comparison(
+#     file_dir="../results/average_accuracy_embedding_method_comparison.txt",
+#     datasets_array=datasets_array,
+#     # datasets_array=["KTH"],
+#     sample_num_array=[10, 100, 300, 648, 1000, 5000, 10000],
+#     # embedding_methods_array= ["PCA", "LDA", "LE", "SLE"],
+#     embedding_methods_array=["SLE"]
+# )
 
 # # 特徴選択の比較
 # features_selection_comparison(
