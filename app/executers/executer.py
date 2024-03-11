@@ -25,14 +25,14 @@ if True:
         #     sample_num_array = [10, 100, 300, 648, 1000, 5000, 10000],
         #     model_type="2LayerCNN"
         # )
-        execute_each_datasets_each_samples(
-            file_dir="../results/average_accuracy_LeNet.txt",
-            model="CNN",
-            datasets_array=datasets_array,
-            # sample_num_array=num_samples_array,
-            sample_num_array = [10, 100, 300, 648, 1000, 5000, 10000],
-            model_type="LeNet"
-        )
+        # execute_each_datasets_each_samples(
+        #     file_dir="../results/average_accuracy_LeNet.txt",
+        #     model="CNN",
+        #     datasets_array=datasets_array,
+        #     # sample_num_array=num_samples_array,
+        #     sample_num_array = [10, 100, 300, 648, 1000, 5000, 10000],
+        #     model_type="LeNet"
+        # )
         execute_each_datasets_each_samples(
             file_dir="../results/average_accuracy_HOG.txt",
             model="HOG",

@@ -82,6 +82,7 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     # classifier = my_layers.kNearestNeighbors(n_neighbors=1)
     classifier.fit(descriptors_train, Y_train)
     Y_pred = classifier.predict(descriptors_test)
+    Y_test = np.argmax(Y_test, axis=1)
     accuracy = metrics.accuracy_score(Y_test, Y_pred) * 100
     classification_report = metrics.classification_report(Y_test, Y_pred)
     print(classification_report)
