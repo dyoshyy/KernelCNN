@@ -153,10 +153,10 @@ def main_CNN(
 
     test_features = get_intermediate_output(model, 2, test_X)
     predictions = classifier.predict(test_features)
-    accuracy = metrics.accuracy_score(test_Y, predictions) * 100
-    classification_report = metrics.classification_report(test_Y, predictions)
+    accuracy = metrics.accuracy_score(np.argmax(test_Y, axis=1), predictions) * 100
+    classification_report = metrics.classification_report(np.argmax(test_Y, axis=1), predictions)
     confusion_matrix = metrics.confusion_matrix(
-        np.argmax(test_Y, axis=1), np.argmax(predictions, axis=1)
+        np.argmax(test_Y, axis=1), predictions
     )
     print(classification_report)
     print(confusion_matrix)

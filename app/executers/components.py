@@ -32,7 +32,7 @@ def execute_each_datasets_each_samples(
                             10000,
                             dataset,
                             B=1000,
-                            embedding_method=["LE", "LE"],
+                            embedding_method=["SLE", "SLE"],
                             block_size=[5, 5],
                             stride = stride,
                             layers_BOOL=[1, 0, 0, 0],

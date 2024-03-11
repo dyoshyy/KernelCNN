@@ -648,7 +648,7 @@ def select_embedding_method(
         )
 
     elif embedding_method == "SLE":
-        la = 0.3 # 値が高いほど近傍点の重みが大きくなる(小さいほどラベルの情報が使われる)
+        la = 0.2 # 値が高いほど近傍点の重みが大きくなる(小さいほどラベルの情報が使われる)
         # k = int(data_to_embed.shape[0] / Channels_next)
         k = None
         embedded_blocks, _ = SLE(

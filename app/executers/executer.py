@@ -10,13 +10,13 @@ from components import execute_each_datasets_each_samples, embedding_method_comp
 
 # ベースライン
 if True:
-        execute_each_datasets_each_samples(
-            file_dir="../results/average_accuracy_kernel.txt",
-            model="KernelCNN",
-            datasets_array=datasets_array,
-            # sample_num_array=num_samples_array,
-            sample_num_array = [10, 100, 300, 648, 1000, 5000, 10000],
-        )
+        # execute_each_datasets_each_samples(
+        #     file_dir="../results/average_accuracy_kernel.txt",
+        #     model="KernelCNN",
+        #     datasets_array=datasets_array,
+        #     # sample_num_array=num_samples_array,
+        #     sample_num_array = [10, 100, 300, 648, 1000, 5000, 10000],
+        # )
         # execute_each_datasets_each_samples(
         #     file_dir="../results/average_accuracy_LeNet.txt",
         #     model="CNN",
