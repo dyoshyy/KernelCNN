@@ -659,7 +659,8 @@ class Model:
         accuracy = metrics.accuracy_score(Y_answer, Y_predicted) * 100
         classification_report = metrics.classification_report(Y_answer, Y_predicted)
         confusion_matrix = metrics.confusion_matrix(
-            np.argmax(Y_answer, axis=1), np.argmax(Y_predicted, axis=1)
+            # np.argmax(Y_answer, axis=1), np.argmax(Y_predicted, axis=1)
+            Y_answer, Y_predicted
         )
         print(classification_report)
         print(confusion_matrix)
