@@ -148,7 +148,7 @@ for j in range(len(dataFrames)):
         dataset = df["dataset"][0]
         fig_1.plot(
             df.iloc[:, i+2],
-            marker=marker_styles[i],
+            marker="o",
             markersize=markersize,
             markeredgewidth=markeredgewidth,
             markeredgecolor="none",
