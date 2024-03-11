@@ -8,20 +8,20 @@ import pandas as pd
 
 plt.rcParams["font.family"] = "Times New Roman"  # font familyの設定
 plt.rcParams["mathtext.fontset"] = "stix"  # math fontの設定
-plt.rcParams["font.size"] = 30  # 全体のフォントサイズが変更されます。
-plt.rcParams["legend.fontsize"] = 10  # 凡例のフォントサイズ
-plt.rcParams["xtick.labelsize"] = 25  # 軸だけ変更されます。
-plt.rcParams["ytick.labelsize"] = 25  # 軸だけ変更されます
+plt.rcParams["font.size"] = 45  # 全体のフォントサイズが変更されます。
+plt.rcParams["xtick.labelsize"] = 30  # 軸だけ変更されます。
+plt.rcParams["ytick.labelsize"] = 30  # 軸だけ変更されます
 plt.rcParams["xtick.direction"] = "in"  # x axis in
 plt.rcParams["ytick.direction"] = "in"  # y axis in
 plt.rcParams["axes.linewidth"] = 1.0  # axis line width
 plt.rcParams["axes.grid"] = True  # make grid
+plt.rcParams["legend.fontsize"] = 15  # 凡例のフォントサイズ
 plt.rcParams["legend.fancybox"] = False  # 丸角
 plt.rcParams["legend.framealpha"] = 1  # 透明度の指定、0で塗りつぶしなし
 plt.rcParams["legend.edgecolor"] = "black"  # edgeの色を変更
-plt.rcParams["legend.handlelength"] = 2.5  # 凡例の線の長さを調節
+plt.rcParams["legend.handlelength"] = 3  # 凡例の線の長さを調節
 plt.rcParams["legend.labelspacing"] = 1.5  # 垂直方向の距離の各凡例の距離
-plt.rcParams["legend.handletextpad"] = 1.5  # 凡例の線と文字の距離の長さ
+plt.rcParams["legend.handletextpad"] = 1.0  # 凡例の線と文字の距離の長さ
 plt.rcParams["legend.markerscale"] = 1.0  # 点がある場合のmarker scale
 plt.rcParams["legend.borderaxespad"] = 0.0  # 凡例の端とグラフの端を合わせる
 
@@ -29,28 +29,28 @@ marker_styles = ['o', 's', 'v', 'p', '^', '<', '>', '*', 'h', 'H', '+', 'x', 'D'
 line_styles = ['-', '--', '-.', ':']
 main_color_list = ["r", "g", "b", "c", "m", "y", "k", "w"]
 
-# # baseline data
-data1 = {
-    "dataset": "MNIST",
-    "x": [10, 100, 300, 648],
-    "kernelCNN": [41.49, 65.94, 77.07000000000001, 82.28],
-    "LeNet": [33.39, 70.97, 79.59, 85.34],
-    "HOG": [58.98, 70.47, 79.31, 85.22],
-}
-data2 = {
-    "dataset": "CIFAR10",
-    "x": [10, 100, 300, 648],
-    "kernelCNN": [15.75, 15.72, 21.16, 23.330000000000002],
-    "LeNet": [13.139999999999999, 17.24, 21.02, 24.58],
-    "HOG": [16.74, 23.54, 29.580000000000002, 31.759999999999998],
-}
-data3 = {
-    "dataset": "KTH",
-    "x": [10, 100, 300, 648],
-    "kernelCNN": [26.543209876543212, 40.74074074074074, 48.76543209876543, 48.76543209876543],
-    "LeNet": [29.01234567901235, 58.0246913580247, 66.66666666666666, 71.60],
-    "HOG": [17.901234567901234, 43.20987654320987, 57.407407407407405, 60.49382716049383],
-}
+# # # baseline data
+# data1 = {
+#     "dataset": "MNIST",
+#     "x": [10, 100, 300, 648, 1000, 5000, 10000],
+#     "kernelCNN w/PCA": [32.4, 67.75999999999999, 75.31, 81.13, 83.8, 89.85, 90.84],
+#     "LeNet": [43.309999999999995, 70.59, 79.53, 84.06, 85.55, 91.7, 93.42],
+#     "HOG": [35.93, 73.49, 78.97, 83.54, 85.11, 90.38000000000001, 91.59],
+# }
+# data2 = {
+#     "dataset": "CIFAR10",
+#     "x": [10, 100, 300, 648, 1000, 5000, 10000],
+#     "kernelCNN w/LDA)": [17.39, 17.71, 22.43, 23.05, 24.959999999999997, 30.43, 33.800000000000004],
+#     "LeNet": [16.03, 18.64, 21.84, 23.45, 24.54, 32.16, 34.11],
+#     "HOG": [19.27, 25.019999999999996, 28.599999999999998, 29.98, 31.419999999999998, 38.61, 41.13],
+# }
+# data3 = {
+#     "dataset": "KTH",
+#     "x": [10, 100, 300, 648],
+#     "kernelCNN w/SLE": [51.85185185185185, 65.4320987654321, 70.9876, 74.07407407407408],
+#     "LeNet": [40.74074074074074, 58.0246913580247, 68.086419753086425, 76.5432098765432],
+#     "HOG": [36.41975308641975, 41.9753086419753, 54.93827160493827, 64.19753086419753],
+# }
 
 # # embedding data
 # data1 = {
@@ -78,6 +78,49 @@ data3 = {
 #     "SLE": [49.382716049382715, 64.19753086419753, 70.9876, 74.07407407407408],
 # }
 
+# # number of layers comaprison
+# data1 = {
+#     "dataset": "MNIST",
+#     "x": [10, 100, 300, 648, 1000, 5000, 10000],
+#     "LeNet": [43.309999999999995, 70.59, 79.53, 84.06, 85.55, 91.7, 93.42],
+#     "3LayersCNN": [32.54, 70.7, 79.94, 84.5, 85.64, 91.81, 93.04],
+# }
+# data2 = {
+#     "dataset": "CIFAR10",
+#     "x": [10, 100, 300, 648, 1000, 5000, 10000],
+#     "LeNet": [16.03, 18.64, 21.84, 23.45, 24.54, 32.16, 34.11],
+#     "3LayersCNN": [14.030000000000001, 18.88, 21.19, 24.0, 26.26, 33.410000000000004, 34.88],
+# }
+# data3 = {
+#     "dataset": "KTH",
+#     "x": [10, 100, 300, 648],
+#     "LeNet": [40.74074074074074, 58.0246913580247, 68.086419753086425, 76.5432098765432],
+#     "3LayersCNN": [34.5679012345679, 53.70370370370371, 61.111111111111114, 67.90123456790124],
+# }
+
+# CNN vs LE vs SLE
+data1 = {
+    "dataset": "MNIST",
+    "x": [10, 100, 300, 648, 1000, 5000, 10000],
+    "LeNet": [43.309999999999995, 70.59, 79.53, 84.06, 85.55, 91.7, 93.42],
+    "KernelCNN w/LE": [32.54, 70.7, 79.94, 84.5, 85.64, 91.81, 93.04],
+    "KernelCNN w/SLE": [32.54, 70.7, 79.94, 84.5, 85.64, 91.81, 93.04],
+}
+data2 = {
+    "dataset": "CIFAR10",
+    "x": [10, 100, 300, 648, 1000, 5000, 10000],
+    "LeNet": [43.309999999999995, 70.59, 79.53, 84.06, 85.55, 91.7, 93.42],
+    "KernelCNN w/LE": [32.54, 70.7, 79.94, 84.5, 85.64, 91.81, 93.04],
+    "KernelCNN w/SLE": [32.54, 70.7, 79.94, 84.5, 85.64, 91.81, 93.04],
+}
+data3 = {
+    "dataset": "KTH",
+    "x": [10, 100, 300, 648],
+    "LeNet": [43.309999999999995, 70.59, 79.53, 84.06],
+    "KernelCNN w/LE": [32.54, 70.7, 79.94, 84.5],
+    "KernelCNN w/SLE": [32.54, 70.7, 79.94, 84.5],
+}
+
 df1 = pd.DataFrame(data1)
 df2 = pd.DataFrame(data2)
 df3 = pd.DataFrame(data3)
@@ -88,7 +131,7 @@ dataFrames = [df1, df2, df3]
 df = pd.DataFrame(data1)
 dataset = df["dataset"][0]
 
-fig = plt.figure(figsize=(10, 10))
+fig = plt.figure(figsize=(15, 15))
 fig_1 = fig.add_subplot(111)
 # parameters
 markersize = 10
@@ -117,10 +160,10 @@ for j in range(len(dataFrames)):
 
 fig_1.set_xlabel(r"Number of training samples $n$")
 fig_1.set_ylabel(r"Accuracy(%)")
-fig_1.set_ylim([0, 85])
+fig_1.set_ylim([0, 95])
 
-fig_1.set_xticks(range(len(df["x"])))
-fig_1.set_xticklabels(df["x"])
+fig_1.set_xticks(range(len(df1["x"])))
+fig_1.set_xticklabels(df1["x"])
 
 fig_1.legend(ncol=3, bbox_to_anchor=(0.975, 0.025), loc="lower right")
 

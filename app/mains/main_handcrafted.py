@@ -76,10 +76,10 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     display_images(images_test, Y_test, 1, "HOG", datasets, "")
 
     # SVM classification
-    # classifier = my_layers.SupportVectorsMachine()
+    classifier = my_layers.SupportVectorsMachine()
     # classifier = my_layers.RandomForest()
     # classifier = my_layers.GaussianProcess()
-    classifier = my_layers.kNearestNeighbors(n_neighbors=1)
+    # classifier = my_layers.kNearestNeighbors(n_neighbors=1)
     classifier.fit(descriptors_train, Y_train)
     Y_pred = classifier.predict(descriptors_test)
     accuracy = metrics.accuracy_score(Y_test, Y_pred) * 100

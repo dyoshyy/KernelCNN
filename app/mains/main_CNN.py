@@ -145,10 +145,10 @@ def main_CNN(
     # print("train_features.shape:", train_features.shape)
 
     # Train a classifier
-    # classifier = my_layers.SupportVectorsMachine()
+    classifier = my_layers.SupportVectorsMachine()
     # classifier = my_layers.RandomForest()
     # classifier = my_layers.GaussianProcess()
-    classifier = my_layers.kNearestNeighbors(n_neighbors=1)
+    # classifier = my_layers.kNearestNeighbors(n_neighbors=1)
     classifier.fit(train_features, train_Y)
 
     test_features = get_intermediate_output(model, 2, test_X)

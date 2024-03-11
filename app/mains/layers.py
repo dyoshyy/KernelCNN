@@ -392,6 +392,8 @@ class SupportVectorsMachine(LabelLearningLayer):
 
     def fit(self, X, Y):
         X = self.vectorize_standarize(X)
+        if len(Y.shape) > 1:
+            Y = np.argmax(Y, axis=1)
         if self.classifier is None:
             print("Learning labels")
             self.classifier = SVC(
@@ -650,8 +652,8 @@ class Model:
             else:  # プーリング層のとき
                 test_X = layer.calculate(test_X)
 
-        # Y_answer = [np.argmax(test_Y[n, :]) for n in range(test_Y.shape[0])]
-        Y_answer = test_Y
+        Y_answer = [np.argmax(test_Y[n, :]) for n in range(test_Y.shape[0])]
+        # Y_answer = test_Y
         # np.savetxt('test_Y.csv', Y_answer, delimiter=',')
         self.time_predicting = time.time() - start_time
         accuracy = metrics.accuracy_score(Y_answer, Y_predicted) * 100

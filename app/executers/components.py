@@ -11,7 +11,7 @@ import numpy as np
 
 
 def execute_each_datasets_each_samples(
-    file_dir: str, model: str, datasets_array: list, sample_num_array: list, model_type: str
+    file_dir: str, model: str, datasets_array: list, sample_num_array: list, model_type: str = "LeNet"
 ):
     
     for dataset in datasets_array:

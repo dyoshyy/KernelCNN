@@ -89,9 +89,9 @@ def main_kernelCNN(
     # model.add_layer(layers.KIMLayer(block_size=5, channels_next = 120, stride = 1, emb=emb))
 
     # model.add_layer(layers.GaussianProcess())
-    # model.add_layer(layers.SupportVectorsMachine())
+    model.add_layer(layers.SupportVectorsMachine())
     # model.add_layer(layers.RandomForest())
-    model.add_layer(layers.kNearestNeighbors(n_neighbors=1))
+    # model.add_layer(layers.kNearestNeighbors(n_neighbors=1))
     # model.add_layer(layers.QuadraticDiscriminantAnalysis())
 
     print("========================================")
