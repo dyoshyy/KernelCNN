@@ -431,21 +431,22 @@ def visualize_emb(
         # plt.colorbar(sc, label="label") #凡例のプロット
         
         # Annotationのプロット
-        for dot_idx in range(len(convolved_data)):
-            x, y = convolved_data_sep[dot_idx]
-            img = input_data[dot_idx]
-            imgbox = OffsetImage(
-                img, zoom=15 - block_size, cmap="gray"
-            )  # 解像度を上げるためにzoomパラメータを調整
-            ab = AnnotationBbox(
-                imgbox,
-                xy=(x, y),
-                frameon=True,
-                xycoords="data",
-                boxcoords="data",
-                pad=0.0,
-            )
-            ax.add_artist(ab)
+        if input_data.shape[3] == 1:
+            for dot_idx in range(len(convolved_data)):
+                x, y = convolved_data_sep[dot_idx]
+                img = input_data[dot_idx]
+                imgbox = OffsetImage(
+                    img, zoom=15 - block_size, cmap="gray"
+                )  # 解像度を上げるためにzoomパラメータを調整
+                ab = AnnotationBbox(
+                    imgbox,
+                    xy=(x, y),
+                    frameon=True,
+                    xycoords="data",
+                    boxcoords="data",
+                    pad=0.0,
+                )
+                ax.add_artist(ab)
 
         ax.set_box_aspect(1)
         ax.set_xlim(x_min - k, x_max + k)

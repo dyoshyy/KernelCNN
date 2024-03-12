@@ -15,15 +15,17 @@ def execute_each_datasets_each_samples(
 ):
     
     for dataset in datasets_array:
-        if dataset == "KTH":
-            stride = 2
-        else:
-            stride = 1
         with open(file_dir, "a") as file:
             file.write(f"{dataset}:\n")
             accuracy_each_samples = []        
             for n in sample_num_array:
                 N = 1  # iteration number
+                if dataset == "KTH":
+                    stride = 2
+                    if n > 648:
+                        break
+                else:
+                    stride = 1
                 accuracy_N_list = []
                 for _ in range(N):
                     if model == "KernelCNN":
@@ -35,7 +37,7 @@ def execute_each_datasets_each_samples(
                             embedding_method=["SLE", "SLE"],
                             block_size=[5, 5],
                             stride = stride,
-                            layers_BOOL=[1, 0, 0, 0],
+                            layers_BOOL=model_type,
                         )
                     elif model == "CNN":
                         accuracy = main_CNN(

@@ -24,8 +24,8 @@ plt.rcParams["legend.labelspacing"] = 1.5  # 垂直方向の距離の各凡例�
 plt.rcParams["legend.handletextpad"] = 1.0  # 凡例の線と文字の距離の長さ
 plt.rcParams["legend.markerscale"] = 1.0  # 点がある場合のmarker scale
 plt.rcParams["legend.borderaxespad"] = 0.0  # 凡例の端とグラフの端を合わせる
+plt.rcParams['figure.dpi'] = 300
 
-marker_styles = ['o', 's', 'v', 'p', '^', '<', '>', '*', 'h', 'H', '+', 'x', 'D', 'd', '|', '_']
 line_styles = ['-', '--', '-.', ':']
 main_color_list = ["r", "g", "b", "c", "m", "y", "k", "w"]
 
@@ -169,3 +169,5 @@ fig_1.legend(ncol=3, bbox_to_anchor=(0.975, 0.025), loc="lower right")
 
 # save
 fig.savefig("graph.png", bbox_inches="tight", pad_inches=0.05)
+# fig.savefig("graph.eps", bbox_inches="tight", pad_inches=0.05)
+

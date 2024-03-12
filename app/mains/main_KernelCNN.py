@@ -65,6 +65,7 @@ def main_kernelCNN(
             layers.KIMLayer(
                 block_size=block_size[1],
                 channels_next=18,
+                use_channels = [1,18],
                 stride=stride,
                 padding=False,
                 emb=embedding_method[1],
