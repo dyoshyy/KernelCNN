@@ -101,7 +101,7 @@ class KIMLayer:
         print("sampling completed")
 
         # 画像を二値化
-        sampled_blocks = binarize_images(sampled_blocks)
+        # sampled_blocks = binarize_images(sampled_blocks)
         sampled_blocks = sampled_blocks.reshape(
             sampled_blocks.shape[0], self.b * self.b * self.C_prev
         )
@@ -294,7 +294,7 @@ class KIMLayer:
 
         # 学習したKIMで変換
         print("[KIM] Converting the image...")
-        output_data = self.convert_image_batch(batch_size=10)
+        output_data = self.convert_image_batch(batch_size=100)
         print("completed")
         # ReLU
         # self.output_data = np.maximum(0, self.output_data)
