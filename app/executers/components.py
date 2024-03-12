@@ -11,9 +11,12 @@ import numpy as np
 
 
 def execute_each_datasets_each_samples(
-    file_dir: str, model: str, datasets_array: list, sample_num_array: list, model_type: str = "LeNet"
+    file_dir: str, model: str, datasets_array: list, sample_num_array: list, model_type: str = "NO_MODEL"
 ):
-    
+    with open(file_dir, "a") as file:
+        file.write(f"Model: {model}\n")
+        file.write(f"Model Type: {model_type}\n")
+        
     for dataset in datasets_array:
         with open(file_dir, "a") as file:
             file.write(f"{dataset}:\n")
@@ -54,7 +57,6 @@ def execute_each_datasets_each_samples(
                         accuracy = main_HOG(n, 10000, dataset)
                     accuracy_N_list.append(accuracy)
                 avg_accuracy = np.mean(accuracy_N_list)
-                variance_accuracy = np.var(accuracy_N_list)
                 accuracy_each_samples.append(avg_accuracy)
                 file.write(f"n={n}\n")
                 file.write(f"Average Accuracy: {avg_accuracy}\n")
