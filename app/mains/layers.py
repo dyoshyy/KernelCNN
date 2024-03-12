@@ -94,17 +94,6 @@ class KIMLayer:
 
         sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
 
-        # n_images = self.X_for_KIM.shape[0]
-        # sampled_blocks = util.view_as_windows(
-        #   self.X_for_KIM, (n_images, self.b, self.b, self.C_prev), self.stride
-        # )
-        # sampled_blocks = sampled_blocks.reshape(
-        #   n_images * int(np.ceil((self.H - self.b + 1) / self.stride)) ** 2,
-        #   self.b,
-        #   self.b,
-        #   self.C_prev,
-        # )
-        # sampled_blocks = sampled_blocks.reshape(-1, self.b, self.b, self.C_prev)
         sampled_blocks_label = np.repeat(
             np.argmax(self.Y_for_KIM, axis=1),
             int(sampled_blocks.shape[0] / self.Y_for_KIM.shape[0]),
@@ -125,7 +114,7 @@ class KIMLayer:
         sampled_blocks_label = sampled_blocks_label[unique_index]
         print("unique samples shape:", np.shape(sampled_blocks))
 
-        # サンプル数を閾値に制限する
+        # サンプル数を閾値で制限する
         embedding_samples_threshold = 5000
         if sampled_blocks.shape[0] > embedding_samples_threshold:
             selected_indices = np.random.choice(
@@ -137,13 +126,13 @@ class KIMLayer:
         # 埋め込み
         print("embedding...")
         
-        # 線形の場合は変換モデル自体を受け取り、返す
+        ## 線形の場合は変換モデル自体を受け取り、返す
         if self.embedding == "PCA" or self.embedding == "LDA":
             model = select_embedding_method(
                 self.embedding, self.C_next, sampled_blocks, sampled_blocks_label
             )
             return model
-        # それ以外の場合は埋め込みを学習
+        ## それ以外の場合は埋め込みを学習
         else:
             embedded_blocks = select_embedding_method(
                 self.embedding, self.C_next, sampled_blocks, sampled_blocks_label
@@ -305,7 +294,7 @@ class KIMLayer:
 
         # 学習したKIMで変換
         print("[KIM] Converting the image...")
-        output_data = self.convert_image_batch(batch_size=100)
+        output_data = self.convert_image_batch(batch_size=10)
         print("completed")
         # ReLU
         # self.output_data = np.maximum(0, self.output_data)
@@ -550,7 +539,6 @@ class QuadraticDiscriminantAnalysis(LabelLearningLayer):
         output = self.classifier.predict(X)
         return output
 
-
 class Model:
     def __init__(self, display):
         self.layers = []
@@ -572,7 +560,9 @@ class Model:
             layer.dataset_name = self.data_set_name
             if isinstance(layer, KIMLayer):
                 # クラスの偏りがないようにサンプルを選ぶ
-                n_train = 100  # 埋め込みの学習に用いる画像枚数
+                if n == 2:
+                    n_train = 500
+                else: n_train = 100 # 埋め込みの学習に用いる画像枚数
                 n_classes = 10
                 selected_X = []
                 selected_Y = []
