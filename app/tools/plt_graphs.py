@@ -33,7 +33,10 @@ data = "baseline"
 # data = "embedding_comparison"
 # data = "number_of_layers_comparison"
 
-with open('data/' + data + '.json', 'r') as f:
+classifier = "1NN"
+# classifier = "SVM"
+
+with open('data/' + classifier + '/' + data + '.json', 'r') as f:
     data = json.load(f)
 
 dataFrames = []
