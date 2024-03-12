@@ -1,8 +1,10 @@
+import os
 from typing import Any, Optional, Union
 import GPy
 import numpy as np
 import math
 import time
+import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
@@ -602,7 +604,12 @@ class Model:
                 #         f"KernelCNN train output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})",
                 #     )
             elif isinstance(layer, LabelLearningLayer):  # 識別層のとき
+                X_flattened = X.reshape(X.shape[0], -1)
+                data = pd.DataFrame(np.concatenate([X_flattened, np.argmax(Y, axis=1).reshape(-1, 1)], axis=1))
+                filename = f"train_data_{self.layers[0].dataset_name}_{self.layers[0].embedding}_{self.layers[0].input_data.shape[0]}.csv"
+                data.to_csv("featureValues/" + filename, index=False)
                 layer.fit(X, Y)
+                
             else:  # プーリング層
                 X = layer.calculate(X)
 
@@ -638,6 +645,10 @@ class Model:
                         f"KernelCNN test output Layer{n+2} (b={layer.b}, B={layer.B}, Embedding:{layer.embedding})",
                     )
             elif isinstance(layer, LabelLearningLayer):
+                X_flattened = test_X.reshape(test_X.shape[0], -1)
+                data = pd.DataFrame(np.concatenate([X_flattened, np.argmax(test_Y, axis=1).reshape(-1, 1)], axis=1))
+                filename = f"test_data_{self.layers[0].dataset_name}_{self.layers[0].embedding}_{self.layers[0].input_data.shape[0]}.csv"
+                data.to_csv("featureValues/" + filename, index=False)
                 Y_predicted = self.layers[-1].predict(test_X)
             else:  # プーリング層のとき
                 test_X = layer.calculate(test_X)
