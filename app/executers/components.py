@@ -16,6 +16,7 @@ def execute_each_datasets_each_samples(
     with open(file_dir, "a") as file:
         file.write(f"Model: {model}\n")
         file.write(f"Model Type: {model_type}\n")
+        file.write("================================\n")
         
     for dataset in datasets_array:
         with open(file_dir, "a") as file:
