@@ -431,7 +431,7 @@ def visualize_emb(
         # plt.colorbar(sc, label="label") #凡例のプロット
         
         # Annotationのプロット
-        if input_data.shape[3] == 1:
+        if input_data.shape[3] <= 3:
             for dot_idx in range(len(convolved_data)):
                 x, y = convolved_data_sep[dot_idx]
                 img = input_data[dot_idx]
