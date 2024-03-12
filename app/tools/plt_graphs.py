@@ -22,19 +22,19 @@ plt.rcParams["legend.edgecolor"] = "black"  # edgeの色を変更
 plt.rcParams["legend.handlelength"] = 3  # 凡例の線の長さを調節
 plt.rcParams["legend.labelspacing"] = 1.5  # 垂直方向の距離の各凡例の距離
 plt.rcParams["legend.handletextpad"] = 1.0  # 凡例の線と文字の距離の長さ
-plt.rcParams["legend.markerscale"] = 1.0  # 点がある場合のmarker scale
+plt.rcParams["legend.markerscale"] = 0.8  # 点がある場合のmarker scale
 plt.rcParams["legend.borderaxespad"] = 0.0  # 凡例の端とグラフの端を合わせる
 plt.rcParams['figure.dpi'] = 300
 
-line_styles = ['-', ':', '-.', '--']
+line_styles = ['-', ':', '--', '-.']
 main_color_list = ["r", "g", "b", "c", "m", "y", "k", "w"]
 
 data = "baseline"
 # data = "embedding_comparison"
 # data = "number_of_layers_comparison"
 
-classifier = "1NN"
-# classifier = "SVM"
+# classifier = "1NN"
+classifier = "SVM"
 
 with open('data/' + classifier + '/' + data + '.json', 'r') as f:
     data = json.load(f)
@@ -69,7 +69,7 @@ for j in range(len(dataFrames)):
 
 fig_1.set_xlabel(r"Number of training samples $n$")
 fig_1.set_ylabel(r"Accuracy(%)")
-fig_1.set_ylim([0, 95])
+fig_1.set_ylim([0, 100])
 
 fig_1.set_xticks(range(len(dataFrames[0]["x"])))
 fig_1.set_xticklabels(dataFrames[0]["x"])
