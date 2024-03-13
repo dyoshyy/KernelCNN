@@ -366,10 +366,11 @@ def visualize_emb(
     filename = f"{embedding_method}_{dataset_name}"
     filename = make_unique_filename(filename, file_dir)
 
-    # # 前１００データに制限
-    input_data = input_data[:100]
-    input_data_label = input_data_label[:100]
-    convolved_data = convolved_data[:100]
+    # ランダムに１００データに制限
+    indices = np.random.choice(len(input_data), size=min(len(input_data), 100), replace=False)
+    input_data = input_data[indices]
+    input_data_label = input_data_label[indices]
+    convolved_data = convolved_data[indices]
 
     # 画像データからブロックに変換
     blocks = np.empty((0, block_size, block_size, input_data.shape[3]))
