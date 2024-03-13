@@ -54,11 +54,11 @@ from components import execute_each_datasets_each_samples, embedding_method_comp
 # 埋め込み手法の比較
 embedding_method_comparison(
     file_dir="../results/embedding_method_comparison.txt",
-    datasets_array=datasets_array[1:],
+    datasets_array=datasets_array,
     # datasets_array=["KTH"],
     sample_num_array=[10, 100, 300, 648],
-    # embedding_methods_array= ["PCA", "LDA", "LE", "SLE"],
-    embedding_methods_array= ["PCA"]
+    embedding_methods_array= ["PCA", "LDA", "LE", "SLE"],
+    # embedding_methods_array= ["PCA"]
     # embedding_methods_array=["SLE"]
 )
 
