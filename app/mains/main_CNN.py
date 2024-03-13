@@ -279,6 +279,6 @@ if __name__ == "__main__":
     block_size = list(map(int, args[4].split(",")))
     layers_BOOL = list(map(int, args[5].split(",")))
     arguments = [num_train, num_test, datasets, None]
-    main_LeNet(
+    main_CNN(
         num_train, num_test, datasets, block_size=block_size, layers_BOOL=layers_BOOL
     )
