@@ -442,7 +442,10 @@ class GaussianProcess(LabelLearningLayer):
         self.threshold: int = 10000
 
     def fit(self, X, Y):
-        input_dim = X.shape[1] * X.shape[2] * X.shape[3]
+        if len(X.shape) == 4:
+            input_dim = X.shape[1] * X.shape[2] * X.shape[3]
+        else:
+            input_dim = X.shape[1]
         X = self.vectorize_standarize(X)
 
         if self.classifier is None:

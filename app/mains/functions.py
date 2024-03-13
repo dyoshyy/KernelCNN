@@ -81,10 +81,10 @@ def display_images(
         data_to_display = data[n]
         # data_to_display = scale_to_0_255(data_to_display)
         if data_to_display.shape[2] == 6:
-            num_in_a_row = 10
+            num_in_a_row = 9
         else:
             # data_to_display = data_to_display[:, :, :16]
-            num_in_a_row = 10  # default 4
+            num_in_a_row = 9  # default 4
         Channels = data_to_display.shape[2]
         Rows = math.ceil(Channels / num_in_a_row)
 
@@ -126,23 +126,38 @@ def display_weights(weights, dataset_name, layer_idx):
     num_output_channels = weights.shape[3]
 
     fig, axs = plt.subplots(
-        num_input_channels,
-        num_output_channels,
-        figsize=(num_output_channels + 10, num_input_channels + 1),
-        dpi=72,
+        # num_input_channels,
+        nrows=1,
+        ncols=num_output_channels,
+        figsize=(num_output_channels + 10,  2),
+        dpi=50,
     )
     # fig.suptitle(f"Layer{layer_idx} weights")
 
-    for i in range(num_input_channels):
-        for j in range(num_output_channels):
-            filter_weights = weights[:, :, i, j]
-            if num_input_channels == 1:
-                axs[j].imshow(filter_weights, cmap="gray")
-                axs[j].axis("off")
+    # for i in range(num_input_channels):
+    #     for j in range(num_output_channels):
+    #         filter_weights = weights[:, :, i, j]
+    #         if num_input_channels == 1:
+    #             axs[j].imshow(filter_weights, cmap="gray")
+    #             axs[j].axis("off")
+    #         else:
+    #             axs[i, j].imshow(filter_weights, cmap="gray")
+    #             axs[i, j].axis("off")
+    for i in range(num_output_channels):
+        filter_weights = weights[:, :, :, i]
+        if num_input_channels <= 3:
+            # filter_weights = (filter_weights - filter_weights.min()) / (filter_weights.max() - filter_weights.min())
+            # RGBチャンネルごとに最小値と最大値を取得
+            min_val = np.amin(filter_weights, axis=(0, 1))
+            max_val = np.amax(filter_weights, axis=(0, 1))
+            # RGBチャンネルごとに正規化
+            filter_weights = (filter_weights - min_val) / (max_val - min_val)
+            if filter_weights.shape[2] == 1:
+                axs[i].imshow(filter_weights, cmap="gray")
             else:
-                axs[i, j].imshow(filter_weights, cmap="gray")
-                axs[i, j].axis("off")
-
+                axs[i].imshow(filter_weights)
+            axs[i].axis("off")
+            
     # 横の余白を小さくし、縦の余白を大きくする
     plt.subplots_adjust(wspace=0.6, hspace=1.5)
     plt.tight_layout()
