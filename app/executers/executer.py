@@ -13,7 +13,6 @@ from components import (
 )
 
 # ベースライン
-# if True:
 execute_each_datasets_each_samples(
     file_dir="../results/baseline_results.txt",
     model="KernelCNN",

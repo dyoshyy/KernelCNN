@@ -30,9 +30,9 @@ line_styles = ['-', ':', '--', '-.']
 main_color_list = ["r", "g", "b", "c", "m", "y", "k", "w"]
 
 # data = "baseline" # 1 convolution
-data = "baseline2" # 2 convolutions
+# data = "baseline2" # 2 convolutions
 
-# data = "embedding_comparison"
+data = "embedding_comparison"
 # data = "number_of_layers_comparison"
 
 # classifier = "1NN"
