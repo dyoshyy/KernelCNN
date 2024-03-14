@@ -55,7 +55,7 @@ def execute_each_datasets_each_samples(
                             block_size=[5, 5],
                             stride=stride,
                             display=True,
-                            layers_BOOL=[1, 0, 0, 0],
+                            layers_BOOL=[1, 1, 1, 0],
                             model_type=model_type,
                         )
                     elif model == "HOG":
