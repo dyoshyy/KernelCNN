@@ -225,10 +225,10 @@ def main_CNN(
             display_images(
                 block_outputs[2],
                 test_Y,
-                2,
+                4,
                 "LeNet",
                 datasets,
-                f"LeNet Output layer 2 n={num_train}",
+                f"LeNet Output layer 4 n={num_train}",
             )
 
     epochs_to_check = [1, 5, 10, 20, 30, 40, 50]

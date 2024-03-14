@@ -13,44 +13,45 @@ from components import (
 )
 
 # ベースライン
-execute_each_datasets_each_samples(
-    file_dir="../results/baseline_results.txt",
-    model="KernelCNN",
-    datasets_array=datasets_array,
-    # sample_num_array=num_samples_array,
-    sample_num_array=[10, 100, 300, 648, 1000, 5000, 10000],
-    model_type=[1, 0, 0, 0],
-)
-execute_each_datasets_each_samples(
-    file_dir="../results/baseline_results.txt",
-    model="KernelCNN",
-    datasets_array=datasets_array,
-    sample_num_array=[10, 100, 300, 648, 1000, 5000, 10000],
-    model_type=[1, 1, 1, 0],
-)
+# execute_each_datasets_each_samples(
+#     file_dir="../results/baseline_results.txt",
+#     model="KernelCNN",
+#     datasets_array=datasets_array,
+#     # sample_num_array=num_samples_array,
+#     sample_num_array=[10, 100, 300, 648, 1000, 5000, 10000],
+#     model_type=[1, 0, 0, 0],
+# )
+# execute_each_datasets_each_samples(
+#     file_dir="../results/baseline_results.txt",
+#     model="KernelCNN",
+#     datasets_array=datasets_array,
+#     sample_num_array=[10, 100, 300, 648, 1000, 5000, 10000],
+#     model_type=[1, 1, 1, 0],
+# )
+# execute_each_datasets_each_samples(
+#     file_dir="../results/baseline_results.txt",
+#     model="CNN",
+#     # datasets_array=datasets_array,
+#     # sample_num_array=num_samples_array,
+#     sample_num_array=[10, 100, 300, 648, 1000, 5000, 10000],
+#     model_type="2LayerCNN",
+# )
 execute_each_datasets_each_samples(
     file_dir="../results/baseline_results.txt",
     model="CNN",
-    # datasets_array=datasets_array,
+    datasets_array=["KTH"],
     # sample_num_array=num_samples_array,
-    sample_num_array=[10, 100, 300, 648, 1000, 5000, 10000],
-    model_type="2LayerCNN",
-)
-execute_each_datasets_each_samples(
-    file_dir="../results/baseline_results.txt",
-    model="CNN",
-    datasets_array=datasets_array,
-    # sample_num_array=num_samples_array,
-    sample_num_array=[10, 100, 300, 648, 1000, 5000, 10000],
+    # sample_num_array=[10, 100, 300, 648, 1000, 5000, 10000],
+    sample_num_array=[648],
     model_type="LeNet",
 )
-execute_each_datasets_each_samples(
-    file_dir="../results/average_accuracy_HOG.txt",
-    model="HOG",
-    datasets_array=datasets_array,
-    # sample_num_array=num_samples_array,
-    sample_num_array=[10, 100, 300, 648, 1000, 5000, 10000],
-)
+# execute_each_datasets_each_samples(
+#     file_dir="../results/average_accuracy_HOG.txt",
+#     model="HOG",
+#     datasets_array=datasets_array,
+#     # sample_num_array=num_samples_array,
+#     sample_num_array=[10, 100, 300, 648, 1000, 5000, 10000],
+# )
 
 # 埋め込み手法の比較
 # embedding_method_comparison(
