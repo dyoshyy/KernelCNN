@@ -24,7 +24,6 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     if datasets == "MNIST" or datasets == "CIFAR10":
         pixels_per_cell = (4, 4)
     elif datasets == "KTH":
-        print("KTH")
         pixels_per_cell = (25, 25)
 
     descriptors_train = []
@@ -76,8 +75,8 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     display_images(images_test, Y_test, 1, "HOG", datasets, "")
 
     # SVM classification
-    classifier = my_layers.GaussianProcess()
-    # classifier = my_layers.SupportVectorsMachine()
+    # classifier = my_layers.GaussianProcess()
+    classifier = my_layers.SupportVectorsMachine()
     # classifier = my_layers.RandomForest()
     # classifier = my_layers.GaussianProcess()
     # classifier = my_layers.kNearestNeighbors(n_neighbors=1)

@@ -8,14 +8,14 @@ import json
 
 plt.rcParams["font.family"] = "Times New Roman"  # font familyの設定
 plt.rcParams["mathtext.fontset"] = "stix"  # math fontの設定
-plt.rcParams["font.size"] = 45  # 全体のフォントサイズが変更されます。
-plt.rcParams["xtick.labelsize"] = 30  # 軸だけ変更されます。
-plt.rcParams["ytick.labelsize"] = 30  # 軸だけ変更されます
+plt.rcParams["font.size"] = 55  # 全体のフォントサイズが変更されます。
+plt.rcParams["xtick.labelsize"] = 40  # 軸だけ変更されます。
+plt.rcParams["ytick.labelsize"] = 40  # 軸だけ変更されます
 plt.rcParams["xtick.direction"] = "in"  # x axis in
 plt.rcParams["ytick.direction"] = "in"  # y axis in
 plt.rcParams["axes.linewidth"] = 1.0  # axis line width
 plt.rcParams["axes.grid"] = True  # make grid
-plt.rcParams["legend.fontsize"] = 15  # 凡例のフォントサイズ
+plt.rcParams["legend.fontsize"] = 22  # 凡例のフォントサイズ
 plt.rcParams["legend.fancybox"] = False  # 丸角
 plt.rcParams["legend.framealpha"] = 1  # 透明度の指定、0で塗りつぶしなし
 plt.rcParams["legend.edgecolor"] = "black"  # edgeの色を変更
@@ -29,10 +29,9 @@ plt.rcParams['figure.dpi'] = 300
 line_styles = ['-', ':', '--', '-.']
 main_color_list = ["r", "g", "b", "c", "m", "y", "k", "w"]
 
-# data = "baseline" # 1 convolution
-# data = "baseline2" # 2 convolutions
+data = "baseline" # 1 convolution
 
-data = "embedding_comparison"
+# data = "embedding_comparison"
 # data = "number_of_layers_comparison"
 
 # classifier = "1NN"
@@ -44,20 +43,21 @@ with open('data/' + classifier + '/' + data + '.json', 'r') as f:
 dataFrames = []
 for i in range(len(data)):
     dataFrames.append(pd.DataFrame(data[i]))
-
-fig = plt.figure(figsize=(15, 15))
-fig_1 = fig.add_subplot(111)
-
+    
 # parameters
 markersize = 10
 markeredgewidth = 3.0
 linewidth = 2.5  
+
 # Plot
 for j in range(len(dataFrames)):
+    fig = plt.figure(figsize=(15, 15))
+    # fig_1 = fig.add_subplot(111)
+    ax = fig.add_subplot(111)
     df = dataFrames[j]
     for i in range(df.shape[1]-2):
         dataset = df["dataset"][0]
-        fig_1.plot(
+        ax.plot(
             df.iloc[:, i+2],
             marker="o",
             markersize=markersize,
@@ -65,20 +65,19 @@ for j in range(len(dataFrames)):
             markeredgecolor="none",
             color=main_color_list[j],
             linestyle = line_styles[i],
-            label=f"{df.columns[i+2]}({dataset})",
+            label=f"{df.columns[i+2]}",
             linewidth=linewidth,
     )
+    ax.set_xlabel(r"Number of training samples $n$")
+    ax.set_ylabel(r"Accuracy(%)")
+    # fig_1.set_ylim([0, 100])
 
-fig_1.set_xlabel(r"Number of training samples $n$")
-fig_1.set_ylabel(r"Accuracy(%)")
-fig_1.set_ylim([0, 100])
+    ax.set_xticks(range(len(df["x"])))
+    ax.set_xticklabels(df["x"])
+    ax.legend(ncol=3, bbox_to_anchor=(0.975, 0.025), loc="lower right")
 
-fig_1.set_xticks(range(len(dataFrames[0]["x"])))
-fig_1.set_xticklabels(dataFrames[0]["x"])
+    # save
+    fig.savefig(f"{dataset}.png", bbox_inches="tight", pad_inches=0.05)
 
-fig_1.legend(ncol=3, bbox_to_anchor=(0.975, 0.025), loc="lower right")
 
-# save
-fig.savefig("graph.png", bbox_inches="tight", pad_inches=0.05)
-# fig.savefig("graph.eps", bbox_inches="tight", pad_inches=0.05)
 

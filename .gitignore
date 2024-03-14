@@ -21,3 +21,5 @@ app/executers/featureValues/
 .devcontainer/.ssh/
 
 app/tools/graph.png
+app/tools/*.png
+app/executers/executer.py
