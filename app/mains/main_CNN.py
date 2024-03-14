@@ -210,6 +210,26 @@ def main_CNN(
             f"LeNet Output layer 2 n={num_train}",
         )
         display_weights(weights1, datasets, layer_idx=2)
+        
+        if layers_BOOL[1]:
+            visualize_emb(
+                block_outputs[1],
+                test_Y,
+                block_outputs[2],
+                block_size=block_size[0],
+                stride=stride,
+                B=0,
+                embedding_method="LeNet",
+                dataset_name=datasets,
+            )
+            display_images(
+                block_outputs[2],
+                test_Y,
+                2,
+                "LeNet",
+                datasets,
+                f"LeNet Output layer 2 n={num_train}",
+            )
 
     epochs_to_check = [1, 5, 10, 20, 30, 40, 50]
 
