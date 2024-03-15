@@ -18,6 +18,7 @@ app/mains/learning_historyAccuracy.png
 app/mains/learning_historyLoss.png
 app/mains/KTH_test.py
 app/executers/featureValues/
+app/executers/executer.py
 .devcontainer/.ssh/
 
 app/tools/graph.png
