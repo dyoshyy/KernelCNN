@@ -1,4 +1,5 @@
 import matplotlib.font_manager
+import numpy as np
 
 del matplotlib.font_manager.weight_dict["roman"]
 # matplotlib.font_manager._rebuild()
@@ -42,43 +43,38 @@ with open('data/' + classifier + '/' + data + '.json', 'r') as f:
 dataFrames = []
 for i in range(len(data)):
     dataFrames.append(pd.DataFrame(data[i]))
-    
-# parameters
-markersize = 10
-markeredgewidth = 3.0
-linewidth = 2.5  
 
-# Plot
-for j in range(len(dataFrames)):
+for i, feature in enumerate(["Embedded", "Deep"]):
+    
+    # data
+    labels = ["MNIST", "CIFAR10", "KTH_TIP"]
+    accuracy_1 = []
+    accuracy_2 = []
+
+    for df in dataFrames:
+        print("df:", df)
+        accuracy_1.append(df.iloc[-1, i*2+2]) # n=50,000
+        accuracy_2.append(df.iloc[-1, i*2+3])
+
+    print(accuracy_1)
+    print(accuracy_2)
+
+    # parameters
+    width = 0.3
+
     fig = plt.figure(figsize=(15, 15))
-    # fig_1 = fig.add_subplot(111)
     ax = fig.add_subplot(111)
-    df = dataFrames[j]
-    for i in range(df.shape[1]-2):
-        dataset = df["dataset"][0]
-        ax.plot(
-            df.iloc[:, i+2],
-            marker="o",
-            markersize=markersize,
-            markeredgewidth=markeredgewidth,
-            markeredgecolor="none",
-            color=main_color_list[j],
-            linestyle = line_styles[i],
-            label=f"{df.columns[i+2]}",
-            linewidth=linewidth,
-    )
-    ax.set_xlabel(r"Number of training samples $n$")
+    # Plot
+    left = np.arange(len(labels))
+    ax.set_xlabel(r"Datasets")
     ax.set_ylabel(r"Accuracy(%)")
-    ax.set_ylim([0, 100])
+    ax.bar(left , accuracy_1, width, color="c", align="center")
+    ax.bar(left + width, accuracy_2, width, color="b", align="center")
 
-    ax.set_xticks(range(len(df["x"])))
-    ax.set_xticklabels(df["x"])
-    ax.legend(ncol=3, bbox_to_anchor=(0.975, 0.025), loc="lower right")
-    # ax.legend(ncol=2, bbox_to_anchor=(0.5, -0.3), loc="lower center")
-    
-
-    # save
-    fig.savefig(f"{dataset}.png", bbox_inches="tight", pad_inches=0.05)
+    ax.set_xticks(left + width/2, labels)
+    ax.set_ylim([40, 100])
+    ax.grid(False)
+    fig.savefig(f"bar_graph_{feature}.png", bbox_inches="tight", pad_inches=0.05)
 
 
 

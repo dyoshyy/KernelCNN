@@ -53,23 +53,6 @@ def main_CNN(
     # activation = None
     # activation = 'tanh'
     model = models.Sequential()
-    
-    if model_type == "2LayerCNN":
-        model = models.Sequential()
-        model.add(
-            layers.Conv2D(
-                9,
-                kernel_size=(block_size[0], block_size[0]),
-                activation=activation,
-                strides=stride,
-                input_shape=(image_size, image_size, channel),
-            )
-        )
-
-        model.add(layers.MaxPooling2D((2, 2)))
-        model.add(layers.Flatten())
-        model.add(layers.Dense(10, activation="softmax"))
-        # model.summary()
 
     if model_type == "LeNet":
         model.add(
