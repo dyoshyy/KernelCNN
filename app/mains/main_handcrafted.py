@@ -22,10 +22,9 @@ def main_HOG(num_train=1000, num_test=1000, datasets: str = "MNIST"):
     orientations = 8
     cells_per_block = (2, 2)
     if datasets == "MNIST" or datasets == "CIFAR10":
-        pixels_per_cell = (4, 4)
+        pixels_per_cell = (5, 5)
     elif datasets == "KTH":
-        print("KTH")
-        pixels_per_cell = (25, 25)
+        pixels_per_cell = (5, 5)
 
     descriptors_train = []
     descriptors_test = []
