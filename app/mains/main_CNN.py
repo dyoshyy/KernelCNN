@@ -40,6 +40,8 @@ def main_CNN(
 ):
     backend.clear_session()
     print("Number of training samples:", num_train)
+    
+    layer_for_clf = 4 #識別層で使う層の番号
 
     train_X, train_Y, test_X, test_Y, channel, image_size = select_datasets(
         num_train, num_test, datasets
@@ -109,7 +111,7 @@ def main_CNN(
         model.add(layers.Dense(120, activation=activation))
         model.add(layers.Dense(84, activation=activation))
         model.add(layers.Dense(10, activation="softmax"))
-        model.summary()
+        # model.summary()
 
     # Model parameters
     batch_size = 64
@@ -141,17 +143,17 @@ def main_CNN(
     )
 
     # SVMによる識別
-    train_features = get_intermediate_output(model, 2, train_X)
-    # print("train_features.shape:", train_features.shape)
+    train_features = get_intermediate_output(model, layer_for_clf, train_X)
+    print("train_features.shape:", train_features.shape)
 
     # Train a classifier
-    # classifier = my_layers.SupportVectorsMachine()
+    classifier = my_layers.SupportVectorsMachine()
     # classifier = my_layers.RandomForest()
-    classifier = my_layers.GaussianProcess()
+    # classifier = my_layers.GaussianProcess()
     # classifier = my_layers.kNearestNeighbors(n_neighbors=1)
     classifier.fit(train_features, train_Y)
 
-    test_features = get_intermediate_output(model, 2, test_X)
+    test_features = get_intermediate_output(model, layer_for_clf, test_X)
     predictions = classifier.predict(test_features)
     accuracy = metrics.accuracy_score(np.argmax(test_Y, axis=1), predictions) * 100
     classification_report = metrics.classification_report(np.argmax(test_Y, axis=1), predictions)
