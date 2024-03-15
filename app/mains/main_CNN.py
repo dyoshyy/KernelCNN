@@ -111,7 +111,7 @@ def main_CNN(
         model.add(layers.Dense(120, activation=activation))
         model.add(layers.Dense(84, activation=activation))
         model.add(layers.Dense(10, activation="softmax"))
-        model.summary()
+        # model.summary()
 
     # Model parameters
     batch_size = 64
