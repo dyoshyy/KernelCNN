@@ -44,37 +44,37 @@ dataFrames = []
 for i in range(len(data)):
     dataFrames.append(pd.DataFrame(data[i]))
 
-for i, feature in enumerate(["Embedded", "Deep"]):
-    
-    # data
-    labels = ["MNIST", "CIFAR10", "KTH_TIP"]
-    accuracy_1 = []
-    accuracy_2 = []
+for x_idx in [1, -1]:
+    for i, feature in enumerate(["Embedded", "Deep"]):
+        
+        # data
+        labels = ["MNIST", "CIFAR10", "KTH_TIP"]
+        accuracy_1 = []
+        accuracy_2 = []
 
-    for df in dataFrames:
-        print("df:", df)
-        accuracy_1.append(df.iloc[-1, i*2+2]) # n=50,000
-        accuracy_2.append(df.iloc[-1, i*2+3])
+        for df in dataFrames:
+            accuracy_1.append(df.iloc[x_idx, i*2+2]) # n=50,000
+            accuracy_2.append(df.iloc[x_idx, i*2+3])
+            
+        # get number of samples
+        num_samples = dataFrames[0].iloc[x_idx, 1]
 
-    print(accuracy_1)
-    print(accuracy_2)
+        # parameters
+        width = 0.3
 
-    # parameters
-    width = 0.3
+        fig = plt.figure(figsize=(15, 15))
+        ax = fig.add_subplot(111)
+        # Plot
+        left = np.arange(len(labels))
+        # ax.set_xlabel(r"Datasets")
+        ax.set_ylabel(r"Accuracy(%)")
+        ax.bar(left , accuracy_1, width, color="c", align="center")
+        ax.bar(left + width, accuracy_2, width, color="b", align="center")
 
-    fig = plt.figure(figsize=(15, 15))
-    ax = fig.add_subplot(111)
-    # Plot
-    left = np.arange(len(labels))
-    ax.set_xlabel(r"Datasets")
-    ax.set_ylabel(r"Accuracy(%)")
-    ax.bar(left , accuracy_1, width, color="c", align="center")
-    ax.bar(left + width, accuracy_2, width, color="b", align="center")
-
-    ax.set_xticks(left + width/2, labels)
-    ax.set_ylim([40, 100])
-    ax.grid(False)
-    fig.savefig(f"bar_graph_{feature}.png", bbox_inches="tight", pad_inches=0.05)
+        ax.set_xticks(left + width/2, labels)
+        ax.set_ylim([20, 100])
+        ax.grid(False)
+        fig.savefig(f"bar_graph_{feature}_{num_samples}.png", bbox_inches="tight", pad_inches=0.05)
 
 
 

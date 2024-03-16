@@ -41,7 +41,7 @@ def main_CNN(
     backend.clear_session()
     print("Number of training samples:", num_train)
     
-    layer_for_clf = 4 #識別層で使う層の番号
+    layer_for_clf = 2 #識別層で使う層の番号
 
     train_X, train_Y, test_X, test_Y, channel, image_size = select_datasets(
         num_train, num_test, datasets
@@ -98,7 +98,7 @@ def main_CNN(
 
     # Model parameters
     batch_size = 64
-    epochs = 100
+    epochs = 300
 
     # Callbacks
     lrr = ReduceLROnPlateau(
