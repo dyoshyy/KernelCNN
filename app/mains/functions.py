@@ -8,6 +8,7 @@ import os
 import sys
 
 from sklearn.naive_bayes import LabelBinarizer
+from sympy import N
 
 sys.path.append("/workspaces/KernelCNN/app/data")
 import matplotlib.pyplot as plt
@@ -191,6 +192,10 @@ def visualize_emb(
         embedding_method : 埋め込み手法
         dataset_name : データセットの名前
     """
+    plt.rcParams["xtick.labelsize"] = 10  # 軸だけ変更されます。
+    plt.rcParams["ytick.labelsize"] = 10  # 軸だけ変更されます
+    plt.rcParams["font.size"] = 20  # 全体のフォントサイズが変更されます。
+
     # ファイル名の重複を防ぐ処理
 
     file_dir = "../results/results_emb"
@@ -242,23 +247,35 @@ def visualize_emb(
 
     # ２チャネルごとに列方向に描画
     # num_images = int(convolved_data.shape[1] / 2)
-    num_images = 3
+    num_images = 1
     if int(input_data.shape[3]) == 1 or int(input_data.shape[3]) == 3:
         num_input_channels = int(input_data.shape[3])
     else:
         num_input_channels = 6
     # num_input_channels = int(input_data.shape[3])
-    fig, axs = plt.subplots(num_images, 1, figsize=(8, num_images * 6 + 1))
+    
+    # figureの定義
+    fig, axs = plt.subplots(
+        ncols=1, 
+        nrows=1, 
+        figsize=(8, 8), 
+        dpi=300
+        )
     fig2, axs2 = plt.subplots(
-        num_blocks_to_display,
-        num_input_channels + 1,
-        figsize=(3 + 2 * num_input_channels / 3, num_blocks_to_display),
+        ncols=num_blocks_to_display,
+        nrows=2,
+        figsize=(15, 2),
+        dpi = 300
     )
-
+    
+    # 散布図の描画
     for img_idx in range(num_images):
         convolved_data_sep = convolved_data[:, (2 * img_idx) : (2 * (img_idx + 1))]
-        ax = axs[img_idx]
-
+        if num_images != 1:
+            ax = axs[img_idx]
+        else:
+            ax = axs
+            
         # 軸の範囲を設定
         x_min = np.min(convolved_data_sep[:, 0])
         x_max = np.max(convolved_data_sep[:, 0])
@@ -294,10 +311,13 @@ def visualize_emb(
         ax.set_box_aspect(1)
         ax.set_xlim(x_min - k, x_max + k)
         ax.set_ylim(y_min - l, y_max + l)
+        ax.set_xlabel(r"Channel 1")
+        ax.set_ylabel(r"Channel 2")
         # ax.set_title(f"Channel {2*img_idx+1}-{2*(img_idx+1)} Dataset:{dataset_name}, Embedding:{embedding_method}\n(B={B}, b={block_size})")
+    # ブロックの描画
     for dot_idx in range(len(convolved_data)):
-        for channel_idx in range(num_input_channels + 1):
-            ax2 = axs2[dot_idx, channel_idx]
+        for channel_idx in range(2):
+            ax2 = axs2[channel_idx, dot_idx]
             ax2.axis("off")
             if channel_idx == 0:
                 # ax2に文字を書く
@@ -307,34 +327,32 @@ def visualize_emb(
                     chr(dot_idx + 65),
                     horizontalalignment="center",
                     verticalalignment="center",
-                    fontsize=20,
+                    fontsize=15,
                 )
             else:
-                img = input_data[dot_idx, :, :, channel_idx - 1]
+                img = input_data[dot_idx, :, :, :3]
+                imgbox = OffsetImage(
+                    img, zoom=12, cmap="gray"
+                )  # 解像度を上げるためにzoomパラメータを調整
                 # print(input_data[dot_idx])
                 # print(img)
-                ax2.imshow(img, cmap="gray")  # vmin, vmaxの指定
-                if dot_idx == 0:
-                    ax2.set_title(f"Channel{channel_idx}")
+                ab = AnnotationBbox(imgbox, (0.5, 0.5), frameon=True, pad=0.0)
+                ax2.add_artist(ab)
+                # ax2.imshow(imgbox, cmap="gray")  # vmin, vmaxの指定
+                # if dot_idx == 0:
+                    # ax2.set_title(f"Channel{channel_idx}")
 
     # 画像として保存
     # plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95)
+    fig2.subplots_adjust(wspace=0.1)
     fig.tight_layout()
     fig2.tight_layout()
+    
     fig.savefig(file_dir + f"/{filename}.png")
     fig2.savefig(file_dir + f"/{filename}_blocks.png")
     plt.close()
 
-    output_dots = False
-    if output_dots:
-        visualize_emb_dots(
-            input_data_label,
-            convolved_data,
-            block_size,
-            B,
-            embedding_method,
-            dataset_name,
-        )
+    return None
 
 
 # def visualize_emb(

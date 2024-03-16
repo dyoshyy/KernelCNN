@@ -171,7 +171,7 @@ def main_CNN(
     if display:
         # 学習後のモデルの出力
         block_outputs = []
-        for layer_idx in range(len(model.layers) - 2):
+        for layer_idx in range(len(model.layers) - 4):
             block_outputs.append(get_intermediate_output(model, layer_idx, test_X))
             print(f"Block {layer_idx+1} output shape:", block_outputs[layer_idx].shape)
 
