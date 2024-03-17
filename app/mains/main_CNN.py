@@ -36,7 +36,7 @@ def main_CNN(
     stride = 1,
     display=True,
     layers_BOOL=[1, 1, 1, 0],
-    model_type: Literal["2LayerCNN", "LeNet"] = "2LayerCNN",
+    model_type: Literal["2LayerCNN", "LeNet"] = "LeNet",
 ):
     backend.clear_session()
     print("Number of training samples:", num_train)
@@ -278,6 +278,12 @@ def main_CNN(
 
 if __name__ == "__main__":
     args = sys.argv
+    if len(args) != 6:
+        print(
+            "Usage: python main_CNN.py <train> <test> <dataset> <block_size> <layers_BOOL>"
+        )
+        sys.exit(1)
+        
     num_train = int(args[1])
     num_test = int(args[2])
     datasets = args[3]

@@ -89,7 +89,7 @@ def embedding_method_comparison(
                 for n in sample_num_array:
                     accuracy = main_kernelCNN(
                         n,
-                        10000,
+                        100,
                         dataset,
                         B=3000,
                         embedding_method=[embedding, embedding],

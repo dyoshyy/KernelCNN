@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import random
 from turtle import pd
@@ -224,20 +225,18 @@ def visualize_emb(
     )  # １枚の画像のラベルをブロックの個数分繰り返す　（例：３のラベルを２８ｘ２８繰り返す）
     convolved_data = convolved_data.reshape(-1, convolved_data.shape[3])
 
-    # convolved_dataの重複を削除
-    convolved_data, unique_indices = np.unique(
-        convolved_data, axis=0, return_index=True
-    )
-    input_data_label = input_data_label[unique_indices]
-    input_data = input_data[unique_indices]
+    # # convolved_dataの重複を削除
+    # convolved_data, unique_indices = np.unique(
+    #     convolved_data, axis=0, return_index=True
+    # )
+    # input_data_label = input_data_label[unique_indices]
+    # input_data = input_data[unique_indices]
 
     # ランダムに一部の点にのみブロックの画像を表示
     num_samples = len(convolved_data)
     num_blocks_to_display = min(15, num_samples)
     np.random.seed(0)  # Fix the seed for reproducibility
     random_indices = np.random.choice(num_samples, num_blocks_to_display, replace=False)
-    # random_indices = [157222, 771083, 203848, 231814, 517608, 630900, 174863, 861036, 749684, 262324, 8638,  77385, 283762, 592353, 752354]
-    print(random_indices)
     convolved_data = convolved_data[random_indices]
     input_data = input_data[random_indices]
     input_data_label = input_data_label[random_indices]
@@ -246,16 +245,10 @@ def visualize_emb(
     input_data = scale_to_0_255(input_data)
 
     # ２チャネルごとに列方向に描画
-    # num_images = int(convolved_data.shape[1] / 2)
     num_images = 1
-    if int(input_data.shape[3]) == 1 or int(input_data.shape[3]) == 3:
-        num_input_channels = int(input_data.shape[3])
-    else:
-        num_input_channels = 6
-    # num_input_channels = int(input_data.shape[3])
     
     # figureの定義
-    fig, axs = plt.subplots(
+    fig1, axs1 = plt.subplots(
         ncols=1, 
         nrows=1, 
         figsize=(8, 8), 
@@ -272,9 +265,9 @@ def visualize_emb(
     for img_idx in range(num_images):
         convolved_data_sep = convolved_data[:, (2 * img_idx) : (2 * (img_idx + 1))]
         if num_images != 1:
-            ax = axs[img_idx]
+            ax = axs1[img_idx]
         else:
-            ax = axs
+            ax = axs1
             
         # 軸の範囲を設定
         x_min = np.min(convolved_data_sep[:, 0])
@@ -345,10 +338,10 @@ def visualize_emb(
     # 画像として保存
     # plt.subplots_adjust(left=0.05, right=0.95, bottom=0.05, top=0.95)
     fig2.subplots_adjust(wspace=0.1)
-    fig.tight_layout()
+    fig1.tight_layout()
     fig2.tight_layout()
     
-    fig.savefig(file_dir + f"/{filename}.png")
+    fig1.savefig(file_dir + f"/{filename}.png")
     fig2.savefig(file_dir + f"/{filename}_blocks.png")
     plt.close()
 
