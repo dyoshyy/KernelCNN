@@ -224,18 +224,19 @@ def visualize_emb(
         convolved_data.shape[1] * convolved_data.shape[2],
     )  # １枚の画像のラベルをブロックの個数分繰り返す　（例：３のラベルを２８ｘ２８繰り返す）
     convolved_data = convolved_data.reshape(-1, convolved_data.shape[3])
-
-    # # convolved_dataの重複を削除
-    # convolved_data, unique_indices = np.unique(
-    #     convolved_data, axis=0, return_index=True
-    # )
-    # input_data_label = input_data_label[unique_indices]
-    # input_data = input_data[unique_indices]
+    
+    # input_dataの重複を削除
+    input_data, unique_indices = np.unique(
+        input_data, axis=0, return_index=True
+    )
+    input_data_label = input_data_label[unique_indices]
+    convolved_data = convolved_data[unique_indices]
 
     # ランダムに一部の点にのみブロックの画像を表示
     num_samples = len(convolved_data)
     num_blocks_to_display = min(15, num_samples)
-    np.random.seed(0)  # Fix the seed for reproducibility
+    
+    np.random.seed(3)  # Fix the seed for reproducibility
     random_indices = np.random.choice(num_samples, num_blocks_to_display, replace=False)
     convolved_data = convolved_data[random_indices]
     input_data = input_data[random_indices]
@@ -257,7 +258,7 @@ def visualize_emb(
     fig2, axs2 = plt.subplots(
         ncols=num_blocks_to_display,
         nrows=2,
-        figsize=(15, 2),
+        figsize=(num_blocks_to_display, 2),
         dpi = 300
     )
     
@@ -320,7 +321,7 @@ def visualize_emb(
                     chr(dot_idx + 65),
                     horizontalalignment="center",
                     verticalalignment="center",
-                    fontsize=15,
+                    fontsize=20,
                 )
             else:
                 img = input_data[dot_idx, :, :, :3]
