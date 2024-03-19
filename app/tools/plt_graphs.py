@@ -32,11 +32,16 @@ plt.rcParams["legend.markerscale"] = 0.8  # 点がある場合のmarker scale
 plt.rcParams["legend.borderaxespad"] = 0.0  # 凡例の端とグラフの端を合わせる
 plt.rcParams['figure.dpi'] = 300
 
-line_styles = ['-', ':', '--', '-.']
+# line_styles = ['-', ':', '--', '-.']
+line_styles = ['-', '-', ':', ':', ':', ':', '-.', '-.']
 main_color_list = ["r", "g", "b", "c", "m", "y", "k", "w"]
+# deep_red = '#B90000'  # 深い赤
+# deep_green = '#006210'  # 深い緑
+# deep_blue = '#0061A2'  # 深い青
+# main_color_list = [deep_red, deep_green, deep_blue, "c", "m", "y", "k", "w"]
 
-data = "baseline" # 1 convolution
-# data = "deepening_comparison"
+# data = "baseline" # 1 convolution
+data = "deepening_comparison"
 # data = "embedding_comparison"
 
 # classifier = "1NN"
@@ -60,7 +65,8 @@ for j in range(len(dataFrames)):
     # fig_1 = fig.add_subplot(111)
     ax = fig.add_subplot(111)
     df = dataFrames[j]
-    for i in range(df.shape[1]-2):
+    # for i in range(df.shape[1]-2):
+    for i in [1, 3]:
         dataset = df["dataset"][0]
         ax.plot(
             df.iloc[:, i+2],
@@ -79,9 +85,9 @@ for j in range(len(dataFrames)):
 
     ax.set_xticks(range(len(df["x"])))
     ax.set_xticklabels(df["x"])
-    ax.legend(ncol=4, bbox_to_anchor=(0.975, 0.025), loc="lower right")
+    # ax.legend(ncol=4, bbox_to_anchor=(0.975, 0.025), loc="lower right")
     # ax.legend(ncol=2, bbox_to_anchor=(0.5, -0.3), loc="lower center")
-    ax.set_title(f"{dataset}")
+    # ax.set_title(f"{dataset}")
 
     # save
     fig.savefig(f"{dataset}.png", bbox_inches="tight", pad_inches=0.05)

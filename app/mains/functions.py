@@ -75,7 +75,7 @@ def display_images(
 ):
     label = np.argmax(label, axis=1)
     indices = [
-        np.where(label == i)[0][0] for i in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        np.where(label == i)[0][0] for i in [0, 1, 2]
     ]  # 1,2,3,4,5のラベルを持つデータの最初のインデックスを取得
 
     img_idx = 1
@@ -193,9 +193,9 @@ def visualize_emb(
         embedding_method : 埋め込み手法
         dataset_name : データセットの名前
     """
-    plt.rcParams["xtick.labelsize"] = 10  # 軸だけ変更されます。
-    plt.rcParams["ytick.labelsize"] = 10  # 軸だけ変更されます
-    plt.rcParams["font.size"] = 20  # 全体のフォントサイズが変更されます。
+    # plt.rcParams["xtick.labelsize"] = 10  # 軸だけ変更されます。
+    # plt.rcParams["ytick.labelsize"] = 10  # 軸だけ変更されます
+    # plt.rcParams["font.size"] = 20  # 全体のフォントサイズが変更されます。
 
     # ファイル名の重複を防ぐ処理
 
